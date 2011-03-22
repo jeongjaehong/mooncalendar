@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gdata-base-1.0.jar"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gdata-calendar-2.0.jar"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gdata-client-1.0.jar"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gdata-core.jar"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gdata-core-1.0.jar"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gdata-xml.jar"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/google-collect-1.0-rc1.jar"/>
+	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
