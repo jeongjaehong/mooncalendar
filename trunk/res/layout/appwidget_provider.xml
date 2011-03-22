@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent" android:layout_height="wrap_content"
+	android:padding="5sp" android:gravity="center">
+
+	<ImageView android:layout_height="wrap_content" android:id="@+id/widget_back"
+		android:src="@drawable/widgetdday" android:adjustViewBounds="true"
+		android:layout_width="wrap_content" android:maxWidth="80dip"
+		android:maxHeight="70dip" android:scaleType="fitCenter" />
+
+	<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+		android:id="@+id/appwidget_title" android:layout_width="wrap_content"
+		android:textSize="14sp" android:padding="5sp" android:gravity="center"
+		android:layout_height="wrap_content" android:textColor="#ff000000" />
+
+	<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+		android:id="@+id/appwidget_text" android:layout_width="wrap_content"
+		android:textSize="9sp" android:padding="5sp" android:layout_below="@id/appwidget_title"
+		android:layout_height="wrap_content" android:textColor="#ff000000" />
+
+</RelativeLayout>
