@@ -22,7 +22,6 @@ import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 import org.nilriri.LunaCalendar.tools.Common;
-import org.nilriri.LunaCalendar.tools.EventFeedDemo;
 import org.nilriri.LunaCalendar.tools.OldEvent;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.Rotate3dAnimation;
@@ -347,13 +346,15 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
 
                 //AclFeedDemo.main();
 
-                EventFeedDemo.addEvents(this, dao.queryGCalendar(id));
+                //EventFeedDemo.addEvents(this, dao.queryGCalendar(id));
+                //TODO:
                 return true;
 
             }
             case MENU_ITEM_GCALIMPORT: {
 
-                EventFeedDemo.LoadEvents(this, this.mCalendar);
+                //EventFeedDemo.LoadEvents(this, this.mCalendar, "");
+                //TODO:
 
                 ScheduleLoading();
 
@@ -574,7 +575,8 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
 
             case MENU_ITEM_GCALIMPORT: {
 
-                EventFeedDemo.LoadEvents(this, this.mCalendar);
+                // EventFeedDemo.LoadEvents(this, this.mCalendar, "");
+                //TODO:
 
                 ScheduleLoading();
 
