@@ -2,13 +2,13 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
-	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gdata-base-1.0.jar"/>
-	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gdata-calendar-2.0.jar"/>
-	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gdata-client-1.0.jar"/>
-	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gdata-core.jar"/>
-	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gdata-core-1.0.jar"/>
-	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gdata-xml.jar"/>
-	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/google-collect-1.0-rc1.jar"/>
 	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/google-api-client-1.3.1-alpha.jar"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/google-api-client-extensions-1.3.1-alpha.jar"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/google-api-client-googleapis-1.3.1-alpha.jar"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/gson-1.6.jar"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/guava-r08.jar"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/jackson-core-asl-1.5.7.jar"/>
+	<classpathentry kind="lib" path="C:/AndroidProject/Workspace/LunaCalendar/lib/jsr305-1.3.9.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
