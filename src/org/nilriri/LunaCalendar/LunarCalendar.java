@@ -1,28 +1,41 @@
 package org.nilriri.LunaCalendar;
 
+import java.io.IOException;
 import java.util.Calendar;
+import java.util.List;
 
 import org.nilriri.LunaCalendar.alarm.AlarmService_Service;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
+import org.nilriri.LunaCalendar.gcal.CalendarEntry;
+import org.nilriri.LunaCalendar.gcal.CalendarFeed;
+import org.nilriri.LunaCalendar.gcal.CalendarUrl;
+import org.nilriri.LunaCalendar.gcal.EventFeed;
+import org.nilriri.LunaCalendar.gcal.RedirectHandler;
+import org.nilriri.LunaCalendar.gcal.Util;
 import org.nilriri.LunaCalendar.schedule.ScheduleEditor;
 import org.nilriri.LunaCalendar.schedule.ScheduleList;
 import org.nilriri.LunaCalendar.schedule.ScheduleViewer;
 import org.nilriri.LunaCalendar.tools.About;
 import org.nilriri.LunaCalendar.tools.DataManager;
-import org.nilriri.LunaCalendar.tools.EventFeedDemo;
 import org.nilriri.LunaCalendar.tools.OldEvent;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.Rotate3dAnimation;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
@@ -44,11 +57,53 @@ import android.widget.ListView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
+import com.google.api.client.googleapis.GoogleHeaders;
+import com.google.api.client.http.HttpResponse;
+import com.google.api.client.http.HttpResponseException;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.apache.ApacheHttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.xml.atom.AtomParser;
+import com.google.common.collect.Lists;
+
 public class LunarCalendar extends Activity {
 
     static final int DATE_DIALOG_ID = 1;
 
+    protected AccountManager accountManager;
+
     private OldEvent oldEvent;
+
+    private static final String AUTH_TOKEN_TYPE = "cl";
+
+    private static final String TAG = "CalendarSample";
+
+    private static final boolean LOGGING_DEFAULT = false;
+
+    private static final int MENU_ADD = 0;
+
+    private static final int MENU_ACCOUNTS = 1;
+
+    private static final int CONTEXT_EDIT = 0;
+
+    private static final int CONTEXT_DELETE = 1;
+
+    private static final int CONTEXT_LOGGING = 2;
+
+    private static final int REQUEST_AUTHENTICATE = 0;
+
+    private static final String PREF = "MyPrefs";
+
+    private static final int DIALOG_ACCOUNTS = 0;
+
+    private static HttpTransport transport;
+
+    private String authToken;
+
+    private final List<CalendarEntry> calendars = Lists.newArrayList();
+
+    /** SDK 2.2 ("FroYo") version build number. */
+    private static final int FROYO = 8;
 
     // Menu item ids    
     public static final int MENU_ITEM_SCHEDULELIST = Menu.FIRST;
@@ -75,6 +130,21 @@ public class LunarCalendar extends Activity {
     private LunarCalendarView lunarCalendarView;
     private ViewGroup mContainer;
     private PendingIntent mAlarmSender;
+
+    public LunarCalendar() {
+        if (Build.VERSION.SDK_INT <= FROYO) {
+            transport = new ApacheHttpTransport();
+        } else {
+            transport = new NetHttpTransport();
+        }
+        GoogleHeaders headers = new GoogleHeaders();
+        headers.setApplicationName("Google-CalendarAndroidSample/1.0");
+        headers.gdataVersion = "2";
+        transport.defaultHeaders = headers;
+        AtomParser parser = new AtomParser();
+        parser.namespaceDictionary = Util.DICTIONARY;
+        transport.addParser(parser);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -341,6 +411,22 @@ public class LunarCalendar extends Activity {
         switch (id) {
             case DATE_DIALOG_ID:
                 return new DatePickerDialog(this, mDateSetListener, mYear, mMonth, mDay);
+            case DIALOG_ACCOUNTS:
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Select a Google account");
+                final AccountManager manager = AccountManager.get(this);
+                final Account[] accounts = manager.getAccountsByType("com.google");
+                final int size = accounts.length;
+                String[] names = new String[size];
+                for (int i = 0; i < size; i++) {
+                    names[i] = accounts[i].name;
+                }
+                builder.setItems(names, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        gotAccount(manager, accounts[which]);
+                    }
+                });
+                return builder.create();
         }
         return null;
     }
@@ -406,6 +492,131 @@ public class LunarCalendar extends Activity {
         return true;
     }
 
+    private void gotAccount(boolean tokenExpired) {
+        SharedPreferences settings = getSharedPreferences(PREF, 0);
+        String accountName = settings.getString("accountName", null);
+        if (accountName != null) {
+            AccountManager manager = AccountManager.get(this);
+            Account[] accounts = manager.getAccountsByType("com.google");
+            int size = accounts.length;
+            for (int i = 0; i < size; i++) {
+                Account account = accounts[i];
+                if (accountName.equals(account.name)) {
+                    if (tokenExpired) {
+                        manager.invalidateAuthToken("com.google", this.authToken);
+                    }
+                    gotAccount(manager, account);
+                    return;
+                }
+            }
+        }
+        showDialog(DIALOG_ACCOUNTS);
+    }
+
+    void gotAccount(final AccountManager manager, final Account account) {
+        SharedPreferences settings = getSharedPreferences(PREF, 0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putString("accountName", account.name);
+        editor.commit();
+        new Thread() {
+
+            @Override
+            public void run() {
+                try {
+                    final Bundle bundle = manager.getAuthToken(account, AUTH_TOKEN_TYPE, true, null, null).getResult();
+                    runOnUiThread(new Runnable() {
+
+                        public void run() {
+                            try {
+                                if (bundle.containsKey(AccountManager.KEY_INTENT)) {
+                                    Intent intent = bundle.getParcelable(AccountManager.KEY_INTENT);
+                                    int flags = intent.getFlags();
+                                    flags &= ~Intent.FLAG_ACTIVITY_NEW_TASK;
+                                    intent.setFlags(flags);
+                                    startActivityForResult(intent, REQUEST_AUTHENTICATE);
+                                } else if (bundle.containsKey(AccountManager.KEY_AUTHTOKEN)) {
+                                    authenticated(bundle.getString(AccountManager.KEY_AUTHTOKEN));
+                                }
+                            } catch (Exception e) {
+                                handleException(e);
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    handleException(e);
+                }
+            }
+        }.start();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case REQUEST_AUTHENTICATE:
+                if (resultCode == RESULT_OK) {
+                    gotAccount(false);
+                } else {
+                    showDialog(DIALOG_ACCOUNTS);
+                }
+                break;
+        }
+    }
+
+    void authenticated(String authToken) throws IOException {
+        this.authToken = authToken;
+        ((GoogleHeaders) transport.defaultHeaders).setGoogleLogin(authToken);
+        RedirectHandler.resetSessionId(transport);
+
+        Calendar c = Calendar.getInstance();
+        c.setFirstDayOfWeek(Calendar.SUNDAY);
+
+        c.set(this.mYear, this.mMonth, this.mDay);
+
+        //EventFeedDemo.LoadEvents(this, c, authToken);
+
+        executeRefreshCalendars();
+    }
+
+    private void executeRefreshCalendars() throws IOException {
+        String[] calendarNames;
+        List<CalendarEntry> calendars = this.calendars;
+        calendars.clear();
+        try {
+            CalendarUrl url = CalendarUrl.forAllCalendarsFeed();
+            // page through results
+            while (true) {
+                CalendarFeed feed = CalendarFeed.executeGet(transport, url);
+                if (feed.calendars != null) {
+                    calendars.addAll(feed.calendars);
+                }
+                String nextLink = feed.getNextLink();
+                if (nextLink == null) {
+                    break;
+                }
+            }
+            int numCalendars = calendars.size();
+            calendarNames = new String[numCalendars];
+            for (int i = 0; i < numCalendars; i++) {
+                calendarNames[i] = calendars.get(i).title;
+            }
+        } catch (IOException e) {
+            handleException(e);
+            calendarNames = new String[] { e.getMessage() };
+            calendars.clear();
+        }
+        CalendarUrl cu = new CalendarUrl(calendars.get(0).getEventFeedLink());
+
+        EventFeed ef = EventFeed.executeGet(transport, cu);
+
+        for (int i = 0; i < ef.events.size(); i++) {
+            Log.d("XXXXXX", "events=" + ef.events.get(i).title);
+            Log.d("XXXXXX", "events=" + ef.events.get(i).toString());
+        }
+
+        //setListAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, calendarNames));
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -443,7 +654,14 @@ public class LunarCalendar extends Activity {
                 c.setFirstDayOfWeek(Calendar.SUNDAY);
 
                 c.set(this.mYear, this.mMonth, this.mDay);
-                EventFeedDemo.LoadEvents(this, c);
+
+                ////////////////-------------                //////////////////////////////                
+
+                //EventFeedDemo.LoadEvents(this, c, token);
+
+                ////////////////---------------////////////////// 
+
+                showDialog(DIALOG_ACCOUNTS);
 
                 AddMonth(0);
 
@@ -679,6 +897,35 @@ public class LunarCalendar extends Activity {
             rotation.setInterpolator(new DecelerateInterpolator());
 
             mContainer.startAnimation(rotation);
+        }
+    }
+
+    void handleException(Exception e) {
+        e.printStackTrace();
+        SharedPreferences settings = getSharedPreferences(PREF, 0);
+        boolean log = settings.getBoolean("logging", false);
+        if (e instanceof HttpResponseException) {
+            HttpResponse response = ((HttpResponseException) e).response;
+            int statusCode = response.statusCode;
+            try {
+                response.ignore();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+            if (statusCode == 401 || statusCode == 403) {
+                gotAccount(true);
+                return;
+            }
+            if (log) {
+                try {
+                    Log.e(TAG, response.parseAsString());
+                } catch (IOException parseException) {
+                    parseException.printStackTrace();
+                }
+            }
+        }
+        if (log) {
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 

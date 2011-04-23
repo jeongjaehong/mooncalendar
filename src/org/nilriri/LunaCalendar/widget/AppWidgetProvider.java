@@ -73,6 +73,7 @@ public class AppWidgetProvider extends android.appwidget.AppWidgetProvider {
 
             switch (getWidgetSize()) {
                 case Common.SIZE_1x1:
+                case Common.SIZE_2x2:
 
                     String mDday_title = "";
                     String mDday_msg = "";
@@ -120,15 +121,9 @@ public class AppWidgetProvider extends android.appwidget.AppWidgetProvider {
 
                     break;
                 case Common.SIZE_4x4:
-                    
-                
-                
-                    remoteViews.setString(R.id.lunaCalendarView,"setToday", "2011.03.01");
-                  
-                
-                 
 
-                
+                    remoteViews.setString(R.id.lunaCalendarView, "setToday", "2011.03.01");
+
                     break;
 
             }
