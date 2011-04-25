@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/schedule_child" android:layout_width="fill_parent"
+	android:layout_height="fill_parent" android:orientation="horizontal"
+	android:padding="5sp">
+	<TextView android:id="@+id/rowicon" android:layout_width="wrap_content"
+		android:paddingLeft="20sp" android:layout_height="wrap_content"
+		android:text="● " />
+	<TextView android:id="@+id/schedule_contents"
+		android:layout_width="wrap_content" android:textSize="16sp"
+		android:layout_height="wrap_content" android:layout_toRightOf="@id/rowicon" />
+
+	<TextView android:id="@+id/rowicon2" android:layout_width="wrap_content"
+		android:paddingLeft="20sp" android:layout_height="wrap_content"
+		android:text="● " android:layout_below="@id/rowicon"/>
+	<TextView android:id="@+id/alarm_detailinfo"
+		android:textColor="@color/alarm_infocolor" android:layout_width="wrap_content"
+		android:layout_height="wrap_content" android:layout_below="@id/schedule_contents"
+		android:layout_toRightOf="@id/rowicon2" android:ellipsize="none"
+		android:textSize="12sp" android:textStyle="italic" />
+
+	<TextView android:id="@+id/rowicon3" android:layout_width="wrap_content"
+		android:paddingLeft="20sp" android:layout_height="wrap_content"
+		android:text="● " android:layout_below="@id/rowicon2"/>
+	<TextView android:id="@+id/dday_detailinfo" android:textColor="@color/dday_infocolor"
+		android:layout_width="wrap_content" android:layout_height="wrap_content"
+		android:layout_below="@id/alarm_detailinfo" android:layout_toRightOf="@id/rowicon3"
+		android:ellipsize="none" android:textSize="12sp" android:textStyle="italic" />
+</RelativeLayout>
