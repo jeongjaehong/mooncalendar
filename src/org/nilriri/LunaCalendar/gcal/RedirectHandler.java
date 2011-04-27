@@ -24,6 +24,7 @@ import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.HttpTransport;
+//import com.google.api.client.sample.calendar.android.model.RedirectHandler.SessionIntercepter;
 
 /**
  * @author Yaniv Inbar
@@ -49,7 +50,11 @@ public class RedirectHandler {
       request.url.set("gsessionid", this.gsessionid);
     }
   }
-
+  
+  /** Resets the session ID stored for the HTTP transport. */
+  public static void resetSessionId(HttpTransport transport) {
+    transport.removeIntercepters(SessionIntercepter.class);
+  }
   static HttpResponse execute(HttpRequest request) throws IOException {
     try {
       return request.execute();

@@ -21,6 +21,7 @@ import android.util.Log;
 
 import com.google.api.client.googleapis.xml.atom.GoogleAtom;
 import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.util.Key;
 
@@ -54,12 +55,16 @@ public abstract class Feed {
         //Log.d("~~~~~~~~~~~~~~~~", " request.method=" + request.method);
         //Log.d("~~~~~~~~~~~~~~~~", " request.toString()=" + request.toString());
 
-        //HttpResponse response = RedirectHandler.execute(request);
+        HttpResponse response = RedirectHandler.execute(request);
+        
+        
 
-        //Log.d("~~~~~~~~~~~~~~~~", " response.headers=" + response.headers);
-        //Log.d("~~~~~~~~~~~~~~~~", " response.toString()=" + response.toString());
+       //Log.d("~~~~~~~~~~~~~~~~", " response.headers=" + response.headers);
+        Log.d("~~~~~~~~~~~~~~~~", " response.toString()=" + response.toString());
+        
+        return response.parseAs(feedClass);
 
-        return RedirectHandler.execute(request).parseAs(feedClass);
+        //return RedirectHandler.execute(request).parseAs(feedClass);
     }
 
 }

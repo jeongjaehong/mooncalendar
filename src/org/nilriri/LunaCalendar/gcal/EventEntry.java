@@ -53,7 +53,7 @@ public class EventEntry extends Entry {
     public BatchOperation batchOperation;
 
     @Key("gCal:uid")
-    public String uid;
+    public GUID uid;
 
     @Override
     public EventEntry clone() {

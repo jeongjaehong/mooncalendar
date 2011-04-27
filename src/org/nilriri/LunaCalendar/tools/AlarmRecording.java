@@ -12,7 +12,7 @@ public class AlarmRecording {
         /* Create a MediaRecorder */
         recorder = new MediaRecorder();
 
-        /* ContentValues include title, timestamp, mime type */
+        /* WhereClause2 include title, timestamp, mime type */
         ContentValues values = new ContentValues(3);
         values.put(MediaStore.MediaColumns.TITLE, fname);
         values.put(MediaStore.MediaColumns.DATE_ADDED, System.currentTimeMillis());

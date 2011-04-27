@@ -47,8 +47,8 @@ public class DataManager {
                     }
 
                     cursor.close();
-                    daoSource.CloseDatabase();
-                    daoTarget.CloseDatabase();
+                    daoSource.close();
+                    daoTarget.close();
 
                     handler.sendEmptyMessage(0);
 
@@ -92,7 +92,7 @@ public class DataManager {
                     } else {
                         Error = "";
                     }
-                    daoTarget.CloseDatabase();
+                    daoTarget.close();
 
                     handler.sendEmptyMessage(0);
 
@@ -139,7 +139,7 @@ public class DataManager {
                     }
 
                     cursor.close();
-                    daoSource.CloseDatabase();
+                    daoSource.close();
 
                     handler.sendEmptyMessage(0);
 
