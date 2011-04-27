@@ -171,4 +171,18 @@
 		<item>3</item>
 		<item>4</item>
 	</string-array>
+
+	<string-array name="entries_syncmethod_preference">
+		<item>자동(시작,종료시)</item>
+		<item>수동(선택시)</item>
+		<item>동기화안함</item>
+	</string-array>
+
+	<string-array name="entryvalues_syncmethod_preference">
+		<item>auto</item>
+		<item>manual</item>
+		<item>stop</item>
+	</string-array>
+
+
 </resources>
