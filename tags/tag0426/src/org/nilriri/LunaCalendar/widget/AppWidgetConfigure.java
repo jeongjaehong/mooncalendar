@@ -32,10 +32,10 @@ import android.widget.RadioButton;
 import android.widget.Toast;
 
 /**
- * The configuration screen for the ExampleAppWidgetProvider widget sample.
+ * The configuration screen for the WidgetProvider widget sample.
  */
-public class ExampleAppWidgetConfigure extends Activity {
-    static final String TAG = "ExampleAppWidgetConfigure";
+public class AppWidgetConfigure extends Activity {
+    static final String TAG = "AppWidgetConfigure";
 
     private static final String PREFS_NAME = "com.example.android.apis.appwidget.ExampleAppWidgetProvider";
     private static final String PREF_PREFIX_KEY = "prefix_";
@@ -43,7 +43,7 @@ public class ExampleAppWidgetConfigure extends Activity {
     int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     EditText mAppWidgetPrefix;
 
-    public ExampleAppWidgetConfigure() {
+    public AppWidgetConfigure() {
         super();
     }
 
@@ -76,12 +76,12 @@ public class ExampleAppWidgetConfigure extends Activity {
             finish();
         }
 
-        //mAppWidgetPrefix.setText(loadTitlePref(ExampleAppWidgetConfigure.this, mAppWidgetId));
+        //mAppWidgetPrefix.setText(loadTitlePref(AppWidgetConfigure.this, mAppWidgetId));
     }
 
     View.OnClickListener mOnClickListener = new View.OnClickListener() {
         public void onClick(View v) {
-            final Context context = ExampleAppWidgetConfigure.this;
+            final Context context = AppWidgetConfigure.this;
 
             Toast.makeText(getBaseContext(), "Coming Soon.", Toast.LENGTH_LONG).show();
 
@@ -94,7 +94,7 @@ public class ExampleAppWidgetConfigure extends Activity {
 
             // Push widget update to surface with newly set prefix
             AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-            ExampleAppWidgetProvider.updateAppWidget(context, appWidgetManager, mAppWidgetId, rb.isChecked());
+            WidgetProvider.updateAppWidget(context, appWidgetManager, mAppWidgetId, rb.isChecked());
 
             // Make sure we pass back the original appWidgetId
             Intent resultValue = new Intent();

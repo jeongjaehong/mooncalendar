@@ -63,8 +63,6 @@ public class Prefs extends PreferenceActivity {
 
     private static final String OPT_SYNCMETHOD = "syncmethod";
     private static final String OPT_SYNCMETHOD_DEF = "auto";
-    
-    
 
     private ListPreference accounts;
     private ListPreference calendars;

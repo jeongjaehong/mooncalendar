@@ -56,12 +56,10 @@ public abstract class Feed {
         //Log.d("~~~~~~~~~~~~~~~~", " request.toString()=" + request.toString());
 
         HttpResponse response = RedirectHandler.execute(request);
-        
-        
 
-       //Log.d("~~~~~~~~~~~~~~~~", " response.headers=" + response.headers);
+        //Log.d("~~~~~~~~~~~~~~~~", " response.headers=" + response.headers);
         Log.d("~~~~~~~~~~~~~~~~", " response.toString()=" + response.toString());
-        
+
         return response.parseAs(feedClass);
 
         //return RedirectHandler.execute(request).parseAs(feedClass);

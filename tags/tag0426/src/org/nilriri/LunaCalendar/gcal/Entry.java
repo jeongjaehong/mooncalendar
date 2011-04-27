@@ -14,24 +14,26 @@
 
 package org.nilriri.LunaCalendar.gcal;
 
-
 import java.io.IOException;
 import java.util.List;
 
+import org.nilriri.LunaCalendar.tools.Common;
+
+import android.util.Log;
+
 import com.google.api.client.googleapis.xml.atom.AtomPatchRelativeToOriginalContent;
 import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.util.DataUtil;
 import com.google.api.client.util.Key;
 import com.google.api.client.xml.atom.AtomContent;
-
 
 /**
  * @author Yaniv Inbar
  */
 public class Entry implements Cloneable {
 
- 
     @Key
     public String summary;
 
@@ -62,7 +64,18 @@ public class Entry implements Cloneable {
         content.namespaceDictionary = Util.DICTIONARY;
         content.entry = this;
         request.content = content;
-        return RedirectHandler.execute(request).parseAs(getClass());
+        
+        Log.d(Common.TAG, "executeInsert request.content=" + request.content);
+        Log.d(Common.TAG, "executeInsert request.url=" + request.url);
+ 
+        
+        HttpResponse response = RedirectHandler.execute(request);
+
+        Log.d(Common.TAG, "res=" + response.parseAsString());
+
+        Log.d(Common.TAG, "statusCode=" + response.statusCode);
+
+        return response.parseAs(getClass());
     }
 
     Entry executePatchRelativeToOriginal(HttpTransport transport, Entry original) throws IOException {

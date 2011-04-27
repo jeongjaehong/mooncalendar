@@ -158,6 +158,7 @@ public class AlarmService_Service extends Service {
             mNM.notify(id, notification);
         }
         cursor.close();
+        dao.close();
     }
 
     private final IBinder mBinder = new Binder() {

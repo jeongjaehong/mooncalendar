@@ -268,6 +268,22 @@ public class LunarCalendar extends Activity {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (dao != null) {
+            dao.close();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (dao != null) {
+            dao.close();
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
@@ -327,12 +343,6 @@ public class LunarCalendar extends Activity {
         lunarCalendarView.loadSchduleExistsInfo();
 
         updateDisplay();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
     }
 
     public void updateDisplay() {
@@ -470,6 +480,8 @@ public class LunarCalendar extends Activity {
                         scheduleBean.setDate(events.get(i).getStartDate());
                         scheduleBean.setContents(events.get(i).content);
                         scheduleBean.setGID(events.get(i).uid.value);
+
+                        //TODO: 업데이트 날자를 비교해서 업데이트 대상에 따라 처리.
 
                         dao.insert(scheduleBean);
                     }

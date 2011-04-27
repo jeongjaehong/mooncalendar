@@ -14,20 +14,36 @@
 
 package org.nilriri.LunaCalendar.gcal;
 
-import com.google.api.client.xml.XmlNamespaceDictionary;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.util.Key;
+
+import java.io.IOException;
+
 
 /**
  * @author Yaniv Inbar
  */
-public class Util {
-    public static final boolean DEBUG = false;
+public class NewEventEntry extends Entry {
 
-    public static final XmlNamespaceDictionary DICTIONARY = 
-        new XmlNamespaceDictionary().set("", "http://www.w3.org/2005/Atom")
-        .set("openSearch", "http://a9.com/-/spec/opensearchrss/1.0/")
-        .set("gCal", "http://schemas.google.com/gCal/2005")
-        .set("gd", "http://schemas.google.com/g/2005");
-    
-  
+  @Key("gd:when")
+  public When when;
 
+  @Key("batch:id")
+  public String batchId;
+
+  @Key("batch:status")
+  public BatchStatus batchStatus;
+
+  @Key("batch:operation")
+  public BatchOperation batchOperation;
+
+  @Override
+  public EventEntry clone() {
+    return (EventEntry) super.clone();
+  }
+
+  @Override
+  public EventEntry executeInsert(HttpTransport transport, CalendarUrl url) throws IOException {
+    return (EventEntry) super.executeInsert(transport, url);
+  }
 }

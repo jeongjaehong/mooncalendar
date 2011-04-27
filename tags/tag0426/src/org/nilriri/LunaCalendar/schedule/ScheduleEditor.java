@@ -498,6 +498,14 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
     };
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (dao != null) {
+            dao.close();
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
 
@@ -600,6 +608,10 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
             if (!"".equals(scheduleBean.getTitle().trim())) {
                 dao.insert(scheduleBean);
             }
+        }
+
+        if (dao != null) {
+            dao.close();
         }
 
     }
