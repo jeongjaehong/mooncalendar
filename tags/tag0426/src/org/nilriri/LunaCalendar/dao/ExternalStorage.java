@@ -8,11 +8,12 @@ import android.util.Log;
 public class ExternalStorage extends DaoCreator implements StorageSelector {
     private Context mContext;
     private CursorFactory mFactory;
+    private SQLiteDatabase db;
 
     public ExternalStorage(Context context, CursorFactory factory) {
         Log.d("onCreate", "EXTERNAL_DB_NAME=" + Constants.EXTERNAL_DB_NAME);
 
-        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(Constants.EXTERNAL_DB_NAME, factory);
+        db = SQLiteDatabase.openOrCreateDatabase(Constants.EXTERNAL_DB_NAME, factory);
 
         Log.d("ExternalStorage", "db.getVersion()=" + db.getVersion());
 
@@ -32,7 +33,9 @@ public class ExternalStorage extends DaoCreator implements StorageSelector {
         }
         //db.setTransactionSuccessful();
         //db.endTransaction();
-        db.close();
+        //db.close();
+        
+        //getWritableDatabase();
 
         mContext = context;
 
@@ -45,13 +48,31 @@ public class ExternalStorage extends DaoCreator implements StorageSelector {
 
     public SQLiteDatabase getReadableDatabase() {
         // TODO Auto-generated method stub
-        return SQLiteDatabase.openDatabase(Constants.EXTERNAL_DB_NAME, mFactory, SQLiteDatabase.OPEN_READONLY);
+        this.db = SQLiteDatabase.openDatabase(Constants.EXTERNAL_DB_NAME, mFactory, SQLiteDatabase.OPEN_READONLY);
+        return db;
 
     }
 
     public SQLiteDatabase getWritableDatabase() {
         // TODO Auto-generated method stub
-        return SQLiteDatabase.openDatabase(Constants.EXTERNAL_DB_NAME, mFactory, SQLiteDatabase.OPEN_READWRITE);
+        this.db = SQLiteDatabase.openDatabase(Constants.EXTERNAL_DB_NAME, mFactory, SQLiteDatabase.OPEN_READWRITE);
+
+        return db;
+    }
+
+    public void close() {
+        if (db != null || db.isOpen()){
+            db.close();
+        }
+    }
+
+    public void onDestroy() {
+ 
+  
+        if (db != null) {
+            db.close();
+        }
+     
     }
 
 }

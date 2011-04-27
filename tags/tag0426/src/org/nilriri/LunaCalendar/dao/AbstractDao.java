@@ -9,9 +9,9 @@ import android.util.Log;
 
 public abstract class AbstractDao {
 
-    StorageSelector daoIf;
+    private StorageSelector daoIf = null;
 
-    SQLiteDatabase db;
+    private SQLiteDatabase db = null;
 
     public AbstractDao(Context context, CursorFactory factory, boolean sdcarduse) {
 
@@ -25,36 +25,48 @@ public abstract class AbstractDao {
             daoIf = new InternalStorage(context, Constants.DATABASE_NAME, factory, Constants.DATABASE_VERSION);
         }
 
+       // CloseDatabase();
+        
+        this.db = getWritableDatabase();
+
     }
 
     public Context getContext() {
         return daoIf.getContext();
     }
 
-    public void CloseDatabase() {
-        if (db == null || !db.isOpen()) {
+    public void close() {
+        if (db != null || db.isOpen()) {
+            db.close();
+        }
+        daoIf.close();
+    }
+
+     protected void onDestroy() {
+        if (daoIf != null) {
+            daoIf.close();
+        }
+        if (db != null) {
             db.close();
         }
     }
 
-    private void OpenDatabase() {
-        db = daoIf.getWritableDatabase();
-    }
+ 
+     public SQLiteDatabase getWritableDatabase() {
+         if (db == null || !db.isOpen()) {
+            db = daoIf.getWritableDatabase();
+         }
+         return db;
+       
+     }
+     public SQLiteDatabase getReadableDatabase() {
+         if (db == null || !db.isOpen()) {
+            db = daoIf.getReadableDatabase();
+         }
+         return db;
+       
+     }
 
-    public SQLiteDatabase getWritableDatabase() {
-        if (db == null || !db.isOpen()) {
-            this.OpenDatabase();
-        }
-        return db;
-        //return daoIf.getWritableDatabase();
-    }
-
-    public SQLiteDatabase getReadableDatabase() {
-        //return daoIf.getReadableDatabase();
-        if (db == null || !db.isOpen()) {
-            this.OpenDatabase();
-        }
-        return db;
-    }
+  
 
 }

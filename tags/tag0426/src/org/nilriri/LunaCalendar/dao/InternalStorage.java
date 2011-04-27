@@ -9,9 +9,13 @@ public class InternalStorage extends SQLiteOpenHelper implements StorageSelector
 
     private Context mContext;
 
+    //  private SQLiteDatabase db;
+
     public InternalStorage(Context context, String name, CursorFactory factory, int version) {
         super(context, name, factory, version);
         mContext = context;
+
+        //    this.db = getWritableDatabase();
     }
 
     public Context getContext() {
@@ -33,12 +37,28 @@ public class InternalStorage extends SQLiteOpenHelper implements StorageSelector
     @Override
     public SQLiteDatabase getReadableDatabase() {
         return super.getReadableDatabase();
+        //  return db;
+    }
+
+    @Override
+    public SQLiteDatabase getWritableDatabase()
+
+    {
+        return super.getWritableDatabase();
 
     }
 
     @Override
-    public SQLiteDatabase getWritableDatabase() {
-        return super.getWritableDatabase();
+    public void close() {
+
+        super.close();
+    }
+
+    public void onDestroy() {
+        // TODO Auto-generated method stub
+
+        super.close();
+
     }
 
 }

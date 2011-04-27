@@ -10,6 +10,7 @@ import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Prefs;
+import org.nilriri.LunaCalendar.tools.WhereClause;
 import org.nilriri.LunaCalendar.tools.lunar2solar;
 
 import android.content.ContentValues;
@@ -113,8 +114,17 @@ public class ScheduleDaoImpl extends AbstractDao {
             db.setTransactionSuccessful();
             db.endTransaction();
 
+            Log.d("DaoImpl-insert", "succ.");
+        } else {
+            
+            WhereClause where = new WhereClause();
+            
+            where.put(Schedule.GID, Schedule.GID);
+            
+            getWritableDatabase().update(Schedule.SCHEDULE_TABLE_NAME, val, where.toString(), null);
+
+            Log.d("DaoImpl-update", "succ.");
         }
-        Log.d("DaoImpl-insert", "succ.");
         //getWritableDatabase().insert(Schedule.SCHEDULE_TABLE_NAME, null, val);
     }
 
@@ -191,26 +201,28 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("     or (alarm_lunasolar = 1 and alarm_date = '" + lday + "') ) ");
         query.append("and alarm_time = '00:00' ");
 
-        if (Prefs.getBplan(mContext) && (Prefs.getBplanFamily(mContext) || Prefs.getBplanPersonal(mContext))) {
-            // 성경읽기 플랜
-            query.append("union all  ");
-            query.append("select _id, 'B-Plan' schedule_type, schedule_title ");
-            query.append("    ,alarm_day kind "); //붉은깃발 혹은 녹색깃발.
-            query.append("    ,bible_book ");
-            query.append("    ,bible_chapter ");
-            query.append("from schedule ");
-            query.append("where 1 = 1 ");
-            if (Prefs.getBplanFamily(mContext) && Prefs.getBplanPersonal(mContext))
-                query.append(" and schedule_repeat in ('F','P') ");
-            else if (Prefs.getBplanFamily(mContext))
-                query.append(" and schedule_repeat = 'F' ");
-            else if (Prefs.getBplanPersonal(mContext))
-                query.append(" and schedule_repeat = 'P' ");
-            query.append("and schedule_date = '1900-01-01' ");
-            query.append("and (   (alarm_lunasolar = 0 and alarm_date = '" + sday + "') ");
-            query.append("     or (alarm_lunasolar = 1 and alarm_date = '" + lday + "') ) ");
-            query.append("and alarm_time = '00:00' ");
-        }
+        /*
+                if (Prefs.getBplan(mContext) && (Prefs.getBplanFamily(mContext) || Prefs.getBplanPersonal(mContext))) {
+                    // 성경읽기 플랜
+                    query.append("union all  ");
+                    query.append("select _id, 'B-Plan' schedule_type, schedule_title ");
+                    query.append("    ,alarm_day kind "); //붉은깃발 혹은 녹색깃발.
+                    query.append("    ,bible_book ");
+                    query.append("    ,bible_chapter ");
+                    query.append("from schedule ");
+                    query.append("where 1 = 1 ");
+                    if (Prefs.getBplanFamily(mContext) && Prefs.getBplanPersonal(mContext))
+                        query.append(" and schedule_repeat in ('F','P') ");
+                    else if (Prefs.getBplanFamily(mContext))
+                        query.append(" and schedule_repeat = 'F' ");
+                    else if (Prefs.getBplanPersonal(mContext))
+                        query.append(" and schedule_repeat = 'P' ");
+                    query.append("and schedule_date = '1900-01-01' ");
+                    query.append("and (   (alarm_lunasolar = 0 and alarm_date = '" + sday + "') ");
+                    query.append("     or (alarm_lunasolar = 1 and alarm_date = '" + lday + "') ) ");
+                    query.append("and alarm_time = '00:00' ");
+                }
+        */
         //d-day
         query.append("union all  ");
         query.append("SELECT   ");
@@ -253,12 +265,15 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("FROM  schedule ");
         query.append("WHERE schedule_date > '1900-01-01' ");
 
-        if (Prefs.getBplan(mContext) && (Prefs.getBplanFamily(mContext) || Prefs.getBplanPersonal(mContext))) {
-            query.append("  AND schedule_repeat not in ( '9') ");
-        } else {
+        query.append("  AND schedule_repeat not in ('F','P', '9') ");
+        /*
+                if (Prefs.getBplan(mContext) && (Prefs.getBplanFamily(mContext) || Prefs.getBplanPersonal(mContext))) {
+                    query.append("  AND schedule_repeat not in ( '9') ");
+                } else {
 
-            query.append("  AND schedule_repeat not in ('F','P', '9') ");
-        }
+                    query.append("  AND schedule_repeat not in ('F','P', '9') ");
+                }
+        */
         return getReadableDatabase().rawQuery(query.toString(), null);
 
     }
@@ -987,12 +1002,14 @@ public class ScheduleDaoImpl extends AbstractDao {
                 query.append("and strftime('%Y-%m-%d', DATE(schedule_date, dday_alarmsign || dday_alarmday ||' DAY', 'LOCALTIME'), 'localtime') = '" + date + "'  ) )");
 
                 //성경읽기플랜
+                /*
                 if (Prefs.getBplan(mContext) && (Prefs.getBplanFamily(mContext) || Prefs.getBplanPersonal(mContext))) {
                     query.append("  or( schedule_repeat in ('F','P') ");
                     query.append("and schedule_date = '1900-01-01' ");
                     query.append("and alarm_date like '" + date.substring(5, 10) + "%' ");
                     query.append("and alarm_time = '00:00' )");
                 }
+                */
 
                 if (Prefs.getAnniversary(this.mContext)) {
 
@@ -1071,12 +1088,14 @@ public class ScheduleDaoImpl extends AbstractDao {
                 query.append("and strftime('%Y-%m-%d', DATE(schedule_date, dday_alarmsign || dday_alarmday ||' DAY', 'LOCALTIME'), 'localtime') between '" + Start + "' and '" + End + "' ) )");
 
                 //성경읽기플랜
+                /*
                 if (Prefs.getBplan(mContext) && (Prefs.getBplanFamily(mContext) || Prefs.getBplanPersonal(mContext))) {
                     query.append("  or( schedule_repeat in ('F','P') ");
                     query.append("and schedule_date = '1900-01-01' ");
                     query.append("and alarm_date between '" + Start.substring(5, 10) + "' and '" + End.substring(5, 10) + "' ");
                     query.append("and alarm_time = '00:00' )");
                 }
+                */
 
                 if (Prefs.getAnniversary(this.mContext)) {
 
@@ -1150,12 +1169,14 @@ public class ScheduleDaoImpl extends AbstractDao {
                 query.append("and strftime('%Y-%m-%d', DATE(schedule_date, dday_alarmsign || dday_alarmday ||' DAY', 'LOCALTIME'), 'localtime') like '" + date.substring(0, 7) + "%'  ) )");
 
                 //성경읽기플랜
+                /*
                 if (Prefs.getBplan(mContext) && (Prefs.getBplanFamily(mContext) || Prefs.getBplanPersonal(mContext))) {
                     query.append("  or( schedule_repeat in ('F','P') ");
                     query.append("and schedule_date = '1900-01-01' ");
                     query.append("and  alarm_date like '" + date.substring(5, 7) + "%' ");
                     query.append("and alarm_time = '00:00' )");
                 }
+                */
 
                 if (Prefs.getAnniversary(this.mContext)) {
                     // 시스템 기념일

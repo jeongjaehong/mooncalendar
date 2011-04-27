@@ -40,6 +40,11 @@ import android.util.Log;
 public class Common extends Activity {
     public final static String TAG = "LunarCalendar";
 
+    /** SDK 2.2 ("FroYo") version build number. */
+    public static final int FROYO = 8;    
+    public static final String AUTH_TOKEN_TYPE = "cl";
+
+
     public static final int SIZE_1x1 = 11;
     public static final int SIZE_2x2 = 22;
     public static final int SIZE_4x4 = 44;
@@ -320,7 +325,7 @@ public class Common extends Activity {
       String filepath ="/sdcard/play2.mp3";   
     File ringtoneFile = new File(filepath);   
       
-    ContentValues content = new ContentValues();   
+    WhereClause2 content = new WhereClause2();   
     content.put(MediaStore.MediaColumns.DATA,      ringtoneFile.getAbsolutePath());   
     content.put(MediaStore.MediaColumns.TITLE, "chinnu");   
     content.put(MediaStore.MediaColumns.SIZE, 215454);   

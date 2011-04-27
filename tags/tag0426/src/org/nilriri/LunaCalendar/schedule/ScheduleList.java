@@ -275,10 +275,12 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
             }
 
         }
+/*
         if (Prefs.getGCalendarSync(this)) {
             menu.add(0, MENU_ITEM_GCALADDEVENT, 0, R.string.schedule_gcaladdevent_label);
             menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_label);
         }
+*/        
 
     }
 
@@ -659,13 +661,14 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
             }
         }
 
+/*
         if (Prefs.getGCalendarSync(this)) {
             if (menu.findItem(MENU_ITEM_GCALIMPORT) == null) {
                 MenuItem item3 = menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_menu);
                 item3.setIcon(android.R.drawable.ic_menu_rotate);
             }
         }
-
+*/
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
 
