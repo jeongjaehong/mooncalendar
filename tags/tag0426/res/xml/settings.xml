@@ -16,40 +16,33 @@
 	<CheckBoxPreference android:key="anniversary"
 		android:title="@string/anniversary_title" android:summary="@string/anniversary_summary"
 		android:defaultValue="false" />
-	<CheckBoxPreference android:key="GCalendarSync"
-		android:title="Google Calendar Sync" android:defaultValue="false"
-		android:summary="Google Calendar Sync" />
-	<PreferenceCategory android:title="Google Calendar Sync"
-		android:dependency="GCalendarSync" android:enabled="false"
-		android:key="GoogleAccountInfo">
-		<EditTextPreference android:key="username"
-			android:defaultValue="userid@gmail.com" android:title="Google Account"
-			android:summary="GMail Address ( userid@gmail.com )"
-			android:dependency="GCalendarSync" />
 
-		<EditTextPreference android:key="password"
-			android:password="true" android:title="Password" android:summary="Google Account Password"
-			android:dependency="GCalendarSync" />
-	</PreferenceCategory>
 	<CheckBoxPreference android:key="sdcarduse"
 		android:title="@string/sdcarduse" android:summary="@string/sdcarduse_summary"
 		android:defaultValue="false" />
+
 	<ListPreference android:key="widgetcolor"
 		android:title="@string/title_list_preference" android:summary="@string/summary_list_preference"
 		android:entries="@array/entries_list_preference" android:entryValues="@array/entryvalues_list_preference"
 		android:dialogTitle="@string/dialog_title_list_preference" />
-<!-- 
-	<CheckBoxPreference android:key="bplan"
-		android:title="맥체인성경읽기표" android:defaultValue="false" android:summary="온라인성경 프로그램과 연결하시겠습니까?" />
-	<PreferenceCategory android:title="맥체인성경읽기표"
-		android:dependency="bplan" android:enabled="false" android:key="bplaninfo">
-		<CheckBoxPreference android:key="bplanfamily"
-			android:title="가족 읽기표" android:summary="가족 읽기표를 사용하시겠습니까?"
-			android:defaultValue="false" android:dependency="bplan" />
-		<CheckBoxPreference android:key="bplanpersonal"
-			android:title="개인 읽기표" android:summary="개인 읽기표를 사용하시겠습니까?"
-			android:defaultValue="true" android:dependency="bplan" />
+
+
+
+	<PreferenceCategory android:title="Google Account..."
+		android:key="GoogleAccountInfo">
+
+		<ListPreference android:key="accounts" android:title="Google 계정"
+			android:summary="Sync할 계정을 선택하십시오." android:dialogTitle="Google 계정선택" />
+
+		<ListPreference android:key="calendars" android:title="Calendar 선택"
+			android:summary="동기화할 달력을 선택하십시오." android:dialogTitle="달력 선택" />
+
+		<ListPreference android:key="syncmethod" android:title="Sync 방법"
+			android:summary="Sync 방법을 선택하십시오." android:dialogTitle="Sync 방법"
+			android:entries="@array/entries_syncmethod_preference"
+			android:entryValues="@array/entryvalues_syncmethod_preference" />
+
 
 	</PreferenceCategory>
--->
+
 </PreferenceScreen>
