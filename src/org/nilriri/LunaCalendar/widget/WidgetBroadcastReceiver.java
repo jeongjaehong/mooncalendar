@@ -25,11 +25,11 @@ import android.content.Intent;
 import android.util.Log;
 
 /**
- * A BroadcastReceiver that listens for updates for the ExampleAppWidgetProvider.  This
+ * A BroadcastReceiver that listens for updates for the WidgetProvider.  This
  * BroadcastReceiver starts off disabled, and we only enable it when there is a widget
  * instance created, in order to only receive notifications when we need them.
  */
-public class ExampleBroadcastReceiver extends BroadcastReceiver {
+public class WidgetBroadcastReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -43,11 +43,11 @@ public class ExampleBroadcastReceiver extends BroadcastReceiver {
             ArrayList<Integer> appWidgetIds = new ArrayList();
             ArrayList<String> texts = new ArrayList();
 
-            ExampleAppWidgetConfigure.loadAllTitlePrefs(context, appWidgetIds, texts);
+            AppWidgetConfigure.loadAllTitlePrefs(context, appWidgetIds, texts);
 
             final int N = appWidgetIds.size();
             for (int i = 0; i < N; i++) {
-                ExampleAppWidgetProvider.updateAppWidget(context, gm, appWidgetIds.get(i), true);
+                WidgetProvider.updateAppWidget(context, gm, appWidgetIds.get(i), true);
             }
         }
     }

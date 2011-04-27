@@ -3,12 +3,14 @@ package org.nilriri.LunaCalendar.gcal;
 import java.io.IOException;
 import java.util.List;
 
+import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.tools.Common;
 
 import android.os.Build;
 import android.util.Log;
 
 import com.google.api.client.googleapis.GoogleHeaders;
+import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.apache.ApacheHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -19,14 +21,14 @@ public class GoogleUtil {// extends Activity {
 
     private final List<CalendarEntry> calendars = Lists.newArrayList();
     private final List<EventEntry> events = Lists.newArrayList();
-    private HttpTransport transport;
-    
-    public GoogleUtil(String authToken){
+    private static HttpTransport transport;
+
+    public GoogleUtil(String authToken) {
         initTransport();
 
         ((GoogleHeaders) transport.defaultHeaders).setGoogleLogin(authToken);
         RedirectHandler.resetSessionId(transport);
-        
+
         Log.d("XXXXXX", "GoogleLogin");
 
     }
@@ -45,71 +47,70 @@ public class GoogleUtil {// extends Activity {
         AtomParser parser = new AtomParser();
         parser.namespaceDictionary = Util.DICTIONARY;
         transport.addParser(parser);
-        
+
         Log.d("XXXXXX", "initTransport");
 
     }
-/*
-    public void GoogleLogin(String authToken) throws IOException {
-        initTransport();
 
-        ((GoogleHeaders) transport.defaultHeaders).setGoogleLogin(authToken);
-        RedirectHandler.resetSessionId(transport);
-        
-        Log.d("XXXXXX", "GoogleLogin");
+    /*
+        public void GoogleLogin(String authToken) throws IOException {
+            initTransport();
 
-    }
-*/    
+            ((GoogleHeaders) transport.defaultHeaders).setGoogleLogin(authToken);
+            RedirectHandler.resetSessionId(transport);
+            
+            Log.d("XXXXXX", "GoogleLogin");
+
+        }
+    */
 
     public List<CalendarEntry> getCalendarList() throws IOException {
         Log.d("XXXXXX", "-------------getCalendarList Start-------------");
         String[] calendarNames;
         List<CalendarEntry> calendars = this.calendars;
         calendars.clear();
-       //try {
-            CalendarUrl url = CalendarUrl.forOwnCalendarsFeed();
-            //CalendarUrl url = CalendarUrl.forAllCalendarsFeed();
-            // page through results
-            while (true) {
-                Log.d("XXXXXX", "forAllCalendarsFeed=" + url);
+        //try {
+        CalendarUrl url = CalendarUrl.forOwnCalendarsFeed();
+        //CalendarUrl url = CalendarUrl.forAllCalendarsFeed();
+        // page through results
+        while (true) {
+            Log.d("XXXXXX", "forAllCalendarsFeed=" + url);
 
-                CalendarFeed feed = CalendarFeed.executeGet(transport, url);
-                if (feed.calendars != null) {
-                    calendars.addAll(feed.calendars);
-                }
-                String nextLink = feed.getNextLink();
-                if (nextLink == null) {
-                    break;
-                }
+            CalendarFeed feed = CalendarFeed.executeGet(transport, url);
+            if (feed.calendars != null) {
+                calendars.addAll(feed.calendars);
             }
-            
-            
-            int numCalendars = calendars.size();
-            calendarNames = new String[numCalendars];
-            for (int i = 0; i < numCalendars; i++) {
-                calendarNames[i] = calendars.get(i).title;
+            String nextLink = feed.getNextLink();
+            if (nextLink == null) {
+                break;
             }
-
-            for (int i = 0; i < calendars.size(); i++) {
-                Log.d(Common.TAG, "Calendars=" + calendars.get(i));
-                //showEvents(calendars.get(i));
-            }
-            
-
-       /* } catch (IOException e) {
-            //handleException(e);
-            calendarNames = new String[] { e.getMessage() };
-            calendars.clear();
         }
-        */
+
+        int numCalendars = calendars.size();
+        calendarNames = new String[numCalendars];
+        for (int i = 0; i < numCalendars; i++) {
+            calendarNames[i] = calendars.get(i).title;
+        }
+
+        for (int i = 0; i < calendars.size(); i++) {
+            Log.d(Common.TAG, "Calendars=" + calendars.get(i));
+            //showEvents(calendars.get(i));
+        }
+
+        /* } catch (IOException e) {
+             //handleException(e);
+             calendarNames = new String[] { e.getMessage() };
+             calendars.clear();
+         }
+         */
         Log.d("XXXXXX", "-------------getCalendarList End-------------");
-         
+
         return calendars;
         //return calendarNames;
 
     }
 
-    public  List<EventEntry> getEvents(CalendarEntry calendar) throws IOException {
+    public List<EventEntry> getEvents(CalendarEntry calendar) throws IOException {
 
         String[] eventNames;
         List<EventEntry> events = this.events;
@@ -132,6 +133,7 @@ public class GoogleUtil {// extends Activity {
                     url = new CalendarUrl(nexturl);
                 }
             }
+            /*
             int numCalendars = events.size();
             eventNames = new String[numCalendars];
             for (int i = 0; i < numCalendars; i++) {
@@ -141,15 +143,56 @@ public class GoogleUtil {// extends Activity {
 
             for (int i = 0; i < eventNames.length; i++)
                 Log.d(Common.TAG, "events=" + eventNames[i]);
-
+            */
         } catch (IOException e) {
             //handleException(e);
-            eventNames = new String[] { e.getMessage() };
+            // eventNames = new String[] { e.getMessage() };
             events.clear();
         }
 
         return events;
 
+    }
+
+    public void addEvent(CalendarEntry calendar, ScheduleBean scheduleBean) throws IOException {
+        CalendarUrl url = new CalendarUrl(calendar.getEventFeedLink());
+        NewEventEntry event = newEvent(scheduleBean);
+        EventEntry result = event.executeInsert(transport, url);
+
+    }
+
+    private NewEventEntry newEvent(ScheduleBean scheduleBean) {
+        NewEventEntry event = new NewEventEntry();
+
+        When when = new When();
+        when.startTime = Common.toDateTime(scheduleBean.getDate());
+        when.endTime = Common.toDateTime(scheduleBean.getDate());
+
+        event.title = scheduleBean.getTitle();
+        event.when = when;
+
+        return event;
+    }
+
+    private void batchAddEvents(CalendarEntry calendar, ScheduleBean scheduleBean) throws IOException {
+        EventFeed feed = new EventFeed();
+        for (int i = 0; i < 3; i++) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+            NewEventEntry event = newEvent(scheduleBean);
+            event.batchId = Integer.toString(i);
+            event.batchOperation = BatchOperation.INSERT;
+          //  feed.events.add(event);
+        }
+        EventFeed result = feed.executeBatch(transport, calendar);
+        for (EventEntry event : result.events) {
+            BatchStatus batchStatus = event.batchStatus;
+            if (batchStatus != null && !HttpResponse.isSuccessStatusCode(batchStatus.code)) {
+                System.err.println("Error posting event: " + batchStatus.reason);
+            }
+        }
     }
 
 }

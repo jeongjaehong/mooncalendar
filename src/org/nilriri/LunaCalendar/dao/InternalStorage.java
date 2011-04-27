@@ -4,18 +4,18 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteDatabase.CursorFactory;
+import android.util.Log;
 
 public class InternalStorage extends SQLiteOpenHelper implements StorageSelector {
 
     private Context mContext;
-
-    //  private SQLiteDatabase db;
+    private SQLiteDatabase db;
 
     public InternalStorage(Context context, String name, CursorFactory factory, int version) {
         super(context, name, factory, version);
         mContext = context;
 
-        //    this.db = getWritableDatabase();
+        db = getWritableDatabase();
     }
 
     public Context getContext() {
@@ -34,28 +34,39 @@ public class InternalStorage extends SQLiteOpenHelper implements StorageSelector
 
     }
 
-    @Override
     public SQLiteDatabase getReadableDatabase() {
-        return super.getReadableDatabase();
-        //  return db;
+        if (db == null) {
+            db = super.getReadableDatabase();
+        } else if (!db.isOpen()) {
+            db = super.getReadableDatabase();
+        }
+        return db;
     }
 
-    @Override
-    public SQLiteDatabase getWritableDatabase()
+    public SQLiteDatabase getWritableDatabase() {
+        Log.d("XXXXXX", "Location=InternalStorage.getWritableDatabase");
 
-    {
-        return super.getWritableDatabase();
+        if (db == null) {
+            db = super.getWritableDatabase();
+        } else if (db.isReadOnly()) {
+            close();
+            db = super.getWritableDatabase();
+        }
 
+        return db;
     }
 
     @Override
     public void close() {
-
-        super.close();
+        if (db != null) {
+            db.close();
+        }
     }
 
     public void onDestroy() {
-        // TODO Auto-generated method stub
+        if (db != null) {
+            db.close();
+        }
 
         super.close();
 

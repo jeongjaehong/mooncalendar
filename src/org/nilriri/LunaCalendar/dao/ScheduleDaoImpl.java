@@ -22,12 +22,16 @@ import android.util.Log;
 
 public class ScheduleDaoImpl extends AbstractDao {
 
+    private SQLiteDatabase db;
+
     private Context mContext;
 
     public ScheduleDaoImpl(Context context, CursorFactory factory, boolean sdcarduse) {
         super(context, factory, sdcarduse);
 
         mContext = context;
+
+        db = getWritableDatabase();
     }
 
     public void delete(Long id) {
@@ -42,6 +46,9 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     public void insert(ScheduleBean scheduleBean) {
         ContentValues val = new ContentValues();
+        WhereClause whereClause = new WhereClause();
+
+        whereClause.put(Schedule.GID, scheduleBean.getGID());
 
         int gCnt = 0;
 
@@ -81,27 +88,38 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         Log.d("DaoImpl-insert", "val=" + val.toString());
 
-        String gid = scheduleBean.getGID();
-        if ("".equals(gid)) {
+        if ("".equals(scheduleBean.getGID())) {
             gCnt = 0;
         } else {
 
-            String sql = "select count(*) from " + Schedule.SCHEDULE_TABLE_NAME + " where " + Schedule.GID + " = '" + gid + "'";
+            String sql = "SELECT _id FROM " + Schedule.SCHEDULE_TABLE_NAME + " WHERE " + whereClause;
 
             Cursor c = getReadableDatabase().rawQuery(sql, null);
 
             Log.d("DaoImpl-insert", "sql=" + sql);
 
-            c.moveToNext();
+            if (c.moveToNext()) {
 
-            Log.d("DaoImpl-insert", "c.getInt(0)=" + c.getInt(0));
-
-            gCnt = c.getInt(0);
+                gCnt = c.getCount();
+                scheduleBean.setId(c.getInt(Schedule.COL_ID));
+                val.put(Schedule._ID, c.getString(Schedule.COL_ID));
+            }
             c.close();
         }
-        if (gCnt == 0) {
+        if (gCnt > 0) {
+            // db = getWritableDatabase();
 
-            SQLiteDatabase db = getWritableDatabase();
+            // int cnt = db.update(Schedule.SCHEDULE_TABLE_NAME, val, whereClause.toString(), null);
+
+            // Log.d("DaoImpl-update", "update count is " + cnt);
+
+            // db.close();
+
+            update(scheduleBean);
+
+        } else if (gCnt == 0) {
+
+            // db = getWritableDatabase();
 
             db.beginTransaction();
             if (1 == scheduleBean.getDday_displayyn()) {
@@ -115,17 +133,66 @@ public class ScheduleDaoImpl extends AbstractDao {
             db.endTransaction();
 
             Log.d("DaoImpl-insert", "succ.");
-        } else {
-            
-            WhereClause where = new WhereClause();
-            
-            where.put(Schedule.GID, Schedule.GID);
-            
-            getWritableDatabase().update(Schedule.SCHEDULE_TABLE_NAME, val, where.toString(), null);
-
-            Log.d("DaoImpl-update", "succ.");
         }
+
         //getWritableDatabase().insert(Schedule.SCHEDULE_TABLE_NAME, null, val);
+    }
+
+    public void update(ScheduleBean scheduleBean) {
+
+        String[] args = new String[] { scheduleBean.getId() + "" };
+        ContentValues val = new ContentValues();
+
+        val.put(Schedule._ID, scheduleBean.getId());
+        val.put(Schedule.SCHEDULE_DATE, scheduleBean.getDate());
+
+        val.put(Schedule.SCHEDULE_LDATE, scheduleBean.getLDate());
+        val.put(Schedule.LUNARYN, scheduleBean.getLunarYN() == true ? "Y" : "N");
+        val.put(Schedule.ANNIVERSARY, scheduleBean.getAnniversary() == true ? "Y" : "N");
+
+        val.put(Schedule.SCHEDULE_TITLE, scheduleBean.getTitle());
+        val.put(Schedule.SCHEDULE_CONTENTS, scheduleBean.getContents());
+        val.put(Schedule.SCHEDULE_REPEAT, scheduleBean.getRepeat());
+        val.put(Schedule.SCHEDULE_CHECK, scheduleBean.getCheck());
+
+        val.put(Schedule.ALARM_LUNASOLAR, scheduleBean.getLunaSolar());
+
+        switch (scheduleBean.getRepeat()) {
+            case 5:
+                // 매년주기 알람인경우 년도를 빼고 월과 일만 저장한다.
+                String alarmdate = scheduleBean.getAlarmDate();
+                if (alarmdate.length() > 5)
+                    alarmdate = alarmdate.substring(5);
+                val.put(Schedule.ALARM_DATE, alarmdate);
+                break;
+            default:
+                val.put(Schedule.ALARM_DATE, scheduleBean.getAlarmDate());
+        }
+
+        val.put(Schedule.ALARM_TIME, scheduleBean.getAlarmTime());
+        val.put(Schedule.ALARM_DAYS, scheduleBean.getAlarmDays());
+        val.put(Schedule.ALARM_DAY, scheduleBean.getAlarmDay());
+
+        val.put(Schedule.DDAY_ALARMYN, scheduleBean.getDday_alarmyn());
+        val.put(Schedule.DDAY_ALARMDAY, scheduleBean.getDday_alarmday());
+        val.put(Schedule.DDAY_ALARMSIGN, scheduleBean.getDday_alarmsign());
+        val.put(Schedule.DDAY_DISPLAYYN, scheduleBean.getDday_displayyn());
+
+        Log.d("DaoImpl-update", val.toString());
+
+        // db = getWritableDatabase();
+
+        db.beginTransaction();
+        if (1 == scheduleBean.getDday_displayyn()) {
+            // 기존에 상단에 표시하도록 되어있던 D-day정보는 목록표시로 변경한다.
+            db.execSQL("update schedule set dday_displayyn = 0 where dday_displayyn = 1");
+        }
+
+        db.update(Schedule.SCHEDULE_TABLE_NAME, val, Schedule._ID + "=?", args);
+
+        db.setTransactionSuccessful();
+        db.endTransaction();
+
     }
 
     public Cursor query(String date, String lDay) {
@@ -140,7 +207,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         String having = null;
         String orderBy = "_id desc";
 
-        SQLiteDatabase db = getReadableDatabase();
+        // db = getReadableDatabase();
 
         return db.query(Schedule.SCHEDULE_TABLE_NAME, mColumns, selection, selectionArgs, groupBy, having, orderBy);
         */
@@ -391,7 +458,7 @@ public class ScheduleDaoImpl extends AbstractDao {
             return true;
         }
 
-        SQLiteDatabase db = getWritableDatabase();
+        // db = getWritableDatabase();
         try {
 
             //DataInputStream fis = new DataInputStream(new FileInputStream(file));
@@ -466,7 +533,7 @@ public class ScheduleDaoImpl extends AbstractDao {
     public boolean copy(Cursor cursor) {
 
         ContentValues val = null;
-        SQLiteDatabase db = getWritableDatabase();
+        // db = getWritableDatabase();
 
         if (!export(cursor)) {
             return false;
@@ -1256,59 +1323,17 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     }
 
-    public void update(ScheduleBean scheduleBean) {
-
-        String[] args = new String[] { scheduleBean.getId() + "" };
-        ContentValues val = new ContentValues();
-
-        val.put(Schedule._ID, scheduleBean.getId());
-        val.put(Schedule.SCHEDULE_DATE, scheduleBean.getDate());
-
-        val.put(Schedule.SCHEDULE_LDATE, scheduleBean.getLDate());
-        val.put(Schedule.LUNARYN, scheduleBean.getLunarYN() == true ? "Y" : "N");
-        val.put(Schedule.ANNIVERSARY, scheduleBean.getAnniversary() == true ? "Y" : "N");
-
-        val.put(Schedule.SCHEDULE_TITLE, scheduleBean.getTitle());
-        val.put(Schedule.SCHEDULE_CONTENTS, scheduleBean.getContents());
-        val.put(Schedule.SCHEDULE_REPEAT, scheduleBean.getRepeat());
-        val.put(Schedule.SCHEDULE_CHECK, scheduleBean.getCheck());
-
-        val.put(Schedule.ALARM_LUNASOLAR, scheduleBean.getLunaSolar());
-
-        switch (scheduleBean.getRepeat()) {
-            case 5:
-                // 매년주기 알람인경우 년도를 빼고 월과 일만 저장한다.
-                String alarmdate = scheduleBean.getAlarmDate();
-                if (alarmdate.length() > 5)
-                    alarmdate = alarmdate.substring(5);
-                val.put(Schedule.ALARM_DATE, alarmdate);
-                break;
-            default:
-                val.put(Schedule.ALARM_DATE, scheduleBean.getAlarmDate());
+    public void close() {
+        if (db != null) {
+            db.close();
         }
-
-        val.put(Schedule.ALARM_TIME, scheduleBean.getAlarmTime());
-        val.put(Schedule.ALARM_DAYS, scheduleBean.getAlarmDays());
-        val.put(Schedule.ALARM_DAY, scheduleBean.getAlarmDay());
-
-        val.put(Schedule.DDAY_ALARMYN, scheduleBean.getDday_alarmyn());
-        val.put(Schedule.DDAY_ALARMDAY, scheduleBean.getDday_alarmday());
-        val.put(Schedule.DDAY_ALARMSIGN, scheduleBean.getDday_alarmsign());
-        val.put(Schedule.DDAY_DISPLAYYN, scheduleBean.getDday_displayyn());
-
-        Log.d("DaoImpl-update", val.toString());
-
-        SQLiteDatabase db = getWritableDatabase();
-
-        db.beginTransaction();
-        if (1 == scheduleBean.getDday_displayyn()) {
-            // 기존에 상단에 표시하도록 되어있던 D-day정보는 목록표시로 변경한다.
-            db.execSQL("update schedule set dday_displayyn = 0 where dday_displayyn = 1");
-        }
-
-        db.update(Schedule.SCHEDULE_TABLE_NAME, val, Schedule._ID + "=?", args);
-
-        db.setTransactionSuccessful();
-        db.endTransaction();
+        super.close();
     }
+
+    public void onDestroy() {
+        close();
+        super.onDestroy();
+
+    }
+
 }

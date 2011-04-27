@@ -37,13 +37,14 @@ import android.telephony.TelephonyManager;
 import android.util.FloatMath;
 import android.util.Log;
 
+import com.google.api.client.util.DateTime;
+
 public class Common extends Activity {
     public final static String TAG = "LunarCalendar";
 
     /** SDK 2.2 ("FroYo") version build number. */
-    public static final int FROYO = 8;    
+    public static final int FROYO = 8;
     public static final String AUTH_TOKEN_TYPE = "cl";
-
 
     public static final int SIZE_1x1 = 11;
     public static final int SIZE_2x2 = 22;
@@ -101,6 +102,22 @@ public class Common extends Activity {
         String returnValue = "";
         returnValue = (new StringBuilder()).append(year).append("-").append(month > 9 ? month : "0" + month).append("-").append(day > 9 ? day : "0" + day).toString();
         return returnValue;
+    }
+
+    public static DateTime toDateTime(String date) {
+        Calendar c = Calendar.getInstance();
+
+        String value = date.replace("-", "");
+
+        int year = Integer.parseInt(value.substring(0, 4));
+        int month = Integer.parseInt(value.substring(4, 6)) - 1;
+        int day = Integer.parseInt(value.substring(6));
+
+        c.set(Calendar.YEAR, year);
+        c.set(Calendar.MONTH, month);
+        c.set(Calendar.DAY_OF_MONTH, day);
+
+        return new DateTime(c.getTime());
     }
 
     public static String fmtDate(String date) {

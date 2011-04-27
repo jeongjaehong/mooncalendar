@@ -16,11 +16,15 @@
 
 package org.nilriri.LunaCalendar.schedule;
 
+import java.io.IOException;
 import java.util.Calendar;
 
 import org.nilriri.LunaCalendar.R;
+import org.nilriri.LunaCalendar.dao.DAOUtil;
+import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
+import org.nilriri.LunaCalendar.gcal.GoogleUtil;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.OldEvent;
 import org.nilriri.LunaCalendar.tools.Prefs;
@@ -218,6 +222,22 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (dao != null) {
+            dao.close();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (dao != null) {
+            dao.close();
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
 
@@ -275,12 +295,11 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
             }
 
         }
-/*
-        if (Prefs.getGCalendarSync(this)) {
+
+        if (!"".equals(Prefs.getSyncCalName(this))) {
             menu.add(0, MENU_ITEM_GCALADDEVENT, 0, R.string.schedule_gcaladdevent_label);
             menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_label);
         }
-*/        
 
     }
 
@@ -349,8 +368,15 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
                 //AclFeedDemo.main();
 
                 //EventFeedDemo.addEvents(this, dao.queryGCalendar(id));
-                //TODO:
 
+                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(getBaseContext()));
+                ScheduleBean scheduleBean = DAOUtil.Cursor2Bean(dao.query(id));
+
+                try {
+                    gu.addEvent(Prefs.getSyncCalendar(getBaseContext()), scheduleBean);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 return true;
 
             }
@@ -661,14 +687,14 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
             }
         }
 
-/*
-        if (Prefs.getGCalendarSync(this)) {
-            if (menu.findItem(MENU_ITEM_GCALIMPORT) == null) {
-                MenuItem item3 = menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_menu);
-                item3.setIcon(android.R.drawable.ic_menu_rotate);
-            }
-        }
-*/
+        /*
+                if (Prefs.getGCalendarSync(this)) {
+                    if (menu.findItem(MENU_ITEM_GCALIMPORT) == null) {
+                        MenuItem item3 = menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_menu);
+                        item3.setIcon(android.R.drawable.ic_menu_rotate);
+                    }
+                }
+        */
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
 

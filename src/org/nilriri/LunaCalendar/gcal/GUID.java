@@ -26,5 +26,4 @@ public class GUID {
     @Key("@value")
     public String value;
 
-
 }

@@ -194,8 +194,19 @@ public class AlarmViewer extends Activity implements OnClickListener {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (dao != null) {
+            dao.close();
+        }
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
-
+        if (dao != null) {
+            dao.close();
+        }
     }
+
 }

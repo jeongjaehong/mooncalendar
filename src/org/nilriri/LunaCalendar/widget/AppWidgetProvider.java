@@ -133,6 +133,9 @@ public class AppWidgetProvider extends android.appwidget.AppWidgetProvider {
             remoteViews.setOnClickPendingIntent(R.id.widget, PendingIntent.getActivity(context, 0, new Intent(context, LunarCalendar.class), 0));
 
             appWidgetManager.updateAppWidget(new ComponentName(context, getWidgetClass()), remoteViews);
+
+            if (dao != null)
+                dao.close();
         } catch (Exception e) {
             Log.d(Common.TAG, "doDisplay error=" + e.getMessage());
         }

@@ -38,16 +38,16 @@ import android.widget.Toast;
  *
  * <p>See also the following files:
  * <ul>
- *   <li>ExampleAppWidgetConfigure.java</li>
- *   <li>ExampleBroadcastReceiver.java</li>
+ *   <li>AppWidgetConfigure.java</li>
+ *   <li>WidgetBroadcastReceiver.java</li>
  *   <li>res/layout/appwidget_configure.xml</li>
  *   <li>res/layout/appwidget_provider.xml</li>
  *   <li>res/xml/appwidget_provider.xml</li>
  * </ul>
  */
-public class ExampleAppWidgetProvider extends AppWidgetProvider {
+public class WidgetProvider extends AppWidgetProvider {
     // log tag
-    private static final String TAG = "ExampleAppWidgetProvider";
+    private static final String TAG = "WidgetProvider";
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -59,7 +59,7 @@ public class ExampleAppWidgetProvider extends AppWidgetProvider {
         final int N = appWidgetIds.length;
         for (int i = 0; i < N; i++) {
             int appWidgetId = appWidgetIds[i];
-            String titlePrefix = ExampleAppWidgetConfigure.loadTitlePref(context, appWidgetId);
+            String titlePrefix = AppWidgetConfigure.loadTitlePref(context, appWidgetId);
             updateAppWidget(context, appWidgetManager, appWidgetId, true);
         }
     }
@@ -70,7 +70,7 @@ public class ExampleAppWidgetProvider extends AppWidgetProvider {
         // When the user deletes the widget, delete the preference associated with it.
         final int N = appWidgetIds.length;
         for (int i = 0; i < N; i++) {
-            ExampleAppWidgetConfigure.deleteTitlePref(context, appWidgetIds[i]);
+            AppWidgetConfigure.deleteTitlePref(context, appWidgetIds[i]);
         }
     }
 
@@ -90,7 +90,7 @@ public class ExampleAppWidgetProvider extends AppWidgetProvider {
         // When the first widget is created, stop listening for the TIMEZONE_CHANGED and
         // TIME_CHANGED broadcasts.
         Log.d(TAG, "onDisabled");
-        Class clazz = ExampleBroadcastReceiver.class;
+        Class clazz = WidgetBroadcastReceiver.class;
         PackageManager pm = context.getPackageManager();
         pm.setComponentEnabledSetting(new ComponentName("org.nilriri.LunarCalendar", ".widget.ExampleBroadcastReceiver"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
     }
@@ -99,7 +99,7 @@ public class ExampleAppWidgetProvider extends AppWidgetProvider {
         Log.d(TAG, "updateAppWidget appWidgetId=" + appWidgetId + " titlePrefix=" + titlePrefix);
         // Getting the string this way allows the string to be localized.  The format
         // string is filled in using java.util.Formatter-style format strings.
-        //CharSequence text = context.getString(R.string.appwidget_text_format, ExampleAppWidgetConfigure.loadTitlePref(context, appWidgetId), "0x" + Long.toHexString(SystemClock.elapsedRealtime()));
+        //CharSequence text = context.getString(R.string.appwidget_text_format, AppWidgetConfigure.loadTitlePref(context, appWidgetId), "0x" + Long.toHexString(SystemClock.elapsedRealtime()));
 
         ScheduleDaoImpl dao = new ScheduleDaoImpl(context, null, Prefs.getSDCardUse(context));
 
@@ -128,6 +128,7 @@ public class ExampleAppWidgetProvider extends AppWidgetProvider {
             mDday_msg = "";
         }
         cursor.close();
+        dao.close();
 
         if ("".equals(mDday_msg))
             Toast.makeText(context, "D-day Empty...", Toast.LENGTH_LONG).show();
@@ -142,4 +143,5 @@ public class ExampleAppWidgetProvider extends AppWidgetProvider {
         // Tell the widget manager
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
+
 }
