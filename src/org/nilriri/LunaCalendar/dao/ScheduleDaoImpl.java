@@ -4,10 +4,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
+import org.nilriri.LunaCalendar.gcal.CalendarUrl;
+import org.nilriri.LunaCalendar.gcal.EventEntry;
+import org.nilriri.LunaCalendar.gcal.GoogleUtil;
+import org.nilriri.LunaCalendar.gcal.Link;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.WhereClause;
@@ -34,7 +40,39 @@ public class ScheduleDaoImpl extends AbstractDao {
         db = getWritableDatabase();
     }
 
+    public void syncDelete(Long id) {
+
+        Log.d("XXXXXX", "syncDelete id=" + id);
+
+        Cursor c = query(id);
+        if (c.moveToNext()) {
+            String gid = c.getString(Schedule.COL_GID);
+            c.close();
+
+            Log.d("XXXXXX", "Schedule.GID=" + gid);
+
+            if (!"".equals(gid)) {
+                String[] gids = Common.tokenFn(gid, "@");
+
+                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
+                try {
+                    String account = Prefs.getAccountName(mContext);
+
+                    gu.deleteEvent(account, gids[0]);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        c.close();
+
+    }
+
     public void delete(Long id) {
+
+        // TODO: 동기화 방식 여부에 따라서 동기화 삭제를 진행할지 추가 필요.
+        syncDelete(id);
+
         String sql = "DELETE FROM " + Schedule.SCHEDULE_TABLE_NAME + " WHERE " + Schedule._ID + "=" + id;
         getWritableDatabase().execSQL(sql);
     }
@@ -42,6 +80,26 @@ public class ScheduleDaoImpl extends AbstractDao {
     public void deleteAll() {
         String sql = "DELETE FROM " + Schedule.SCHEDULE_TABLE_NAME;
         getWritableDatabase().execSQL(sql);
+    }
+
+    public void insert(List<EventEntry> events) {
+        for (int i = 0; i < events.size(); i++) {
+            insert(events.get(i));
+        }
+    }
+
+    public void insert(EventEntry event) {
+
+        ScheduleBean scheduleBean = new ScheduleBean();
+
+        scheduleBean.setTitle(event.title);
+        scheduleBean.setDate(event.getStartDate());
+        scheduleBean.setContents(event.content);
+        scheduleBean.setGID(event.uid.value);
+
+        //TODO: 업데이트 날자를 비교해서 업데이트 대상에 따라 처리.
+
+        insert(scheduleBean);
     }
 
     public void insert(ScheduleBean scheduleBean) {

@@ -48,21 +48,12 @@ public abstract class Feed {
         HttpRequest request = transport.buildGetRequest();
         request.url = url;
 
-        //Log.d("~~~~~~~~~~~~~~~~", " request.headers=" + request.headers);
-        //Log.d("~~~~~~~~~~~~~~~~", " request.content=" + request.content);
-        //Log.d("~~~~~~~~~~~~~~~~", " request.transport.defaultHeaders=" + request.transport.defaultHeaders);
-        Log.d("~~~~~~~~~~~~~~~~", " request.url=" + (request.url == null ? "" : request.url));
-        //Log.d("~~~~~~~~~~~~~~~~", " request.method=" + request.method);
-        //Log.d("~~~~~~~~~~~~~~~~", " request.toString()=" + request.toString());
-
         HttpResponse response = RedirectHandler.execute(request);
-
-        //Log.d("~~~~~~~~~~~~~~~~", " response.headers=" + response.headers);
-        Log.d("~~~~~~~~~~~~~~~~", " response.toString()=" + response.toString());
+        //Log.d("~~~~~~~~~~~~~~~~", "response.toString()=" + response.parseAsString());
 
         return response.parseAs(feedClass);
 
-        //return RedirectHandler.execute(request).parseAs(feedClass);
+        // return RedirectHandler.execute(request).parseAs(feedClass);
     }
 
 }

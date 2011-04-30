@@ -24,6 +24,7 @@ import org.nilriri.LunaCalendar.dao.DAOUtil;
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
+import org.nilriri.LunaCalendar.gcal.EventEntry;
 import org.nilriri.LunaCalendar.gcal.GoogleUtil;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.OldEvent;
@@ -31,10 +32,13 @@ import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.Rotate3dAnimation;
 
 import android.app.ExpandableListActivity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Gravity;
 import android.view.Menu;
@@ -357,7 +361,7 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
             }
             case MENU_ITEM_DELSCHEDULE: {
                 dao.delete(id);
-
+                
                 ScheduleLoading();
                 return true;
             }
@@ -369,14 +373,8 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
 
                 //EventFeedDemo.addEvents(this, dao.queryGCalendar(id));
 
-                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(getBaseContext()));
-                ScheduleBean scheduleBean = DAOUtil.Cursor2Bean(dao.query(id));
+                new AddEvent().execute(id);
 
-                try {
-                    gu.addEvent(Prefs.getSyncCalendar(getBaseContext()), scheduleBean);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
                 return true;
 
             }
@@ -394,6 +392,46 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
         }
 
         return false;
+    }
+
+    private class AddEvent extends AsyncTask<Long, Void, Void> {
+        private ProgressDialog dialog;
+
+        @Override
+        protected void onPreExecute() {
+            dialog = ProgressDialog.show(ScheduleList.this, "", "Add event...", true);
+
+            Log.e(Common.TAG, "****** onPreExecute ********");
+        }
+
+        @Override
+        protected Void doInBackground(Long... params) {
+            Log.e(Common.TAG, "****** doInBackground ********");
+
+            GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(getBaseContext()));
+            ScheduleBean scheduleBean = DAOUtil.Cursor2Bean(dao.query(params[0]));
+
+            try {
+                EventEntry event = gu.addEvent(Prefs.getSyncCalendar(getBaseContext()), scheduleBean);
+
+                // 등록후 결과를 스케쥴 정보에 반영한다.
+                dao.insert(event);
+
+            } catch (IOException e) {
+                cancel(true);
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            dialog.dismiss();
+
+            Log.e(Common.TAG, "****** onPostExecute ********");
+        }
+
     }
 
     /**

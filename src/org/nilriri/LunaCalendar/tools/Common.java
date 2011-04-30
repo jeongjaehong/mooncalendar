@@ -111,7 +111,7 @@ public class Common extends Activity {
 
         int year = Integer.parseInt(value.substring(0, 4));
         int month = Integer.parseInt(value.substring(4, 6)) - 1;
-        int day = Integer.parseInt(value.substring(6));
+        int day = Integer.parseInt(value.substring(6, 8));
 
         c.set(Calendar.YEAR, year);
         c.set(Calendar.MONTH, month);
@@ -122,7 +122,7 @@ public class Common extends Activity {
 
     public static String fmtDate(String date) {
         String returnValue = "";
-        returnValue = (new StringBuilder()).append(date.substring(0, 4)).append("-").append(date.substring(4, 6)).append("-").append(date.substring(6)).toString();
+        returnValue = (new StringBuilder()).append(date.substring(0, 4)).append("-").append(date.substring(4, 6)).append("-").append(date.substring(6, 8)).toString();
         return returnValue;
     }
 

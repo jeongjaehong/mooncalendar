@@ -1,10 +1,12 @@
 package org.nilriri.LunaCalendar.gcal;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.tools.Common;
+import org.nilriri.LunaCalendar.tools.Prefs;
 
 import android.os.Build;
 import android.util.Log;
@@ -133,7 +135,7 @@ public class GoogleUtil {// extends Activity {
                     url = new CalendarUrl(nexturl);
                 }
             }
-            /*
+            
             int numCalendars = events.size();
             eventNames = new String[numCalendars];
             for (int i = 0; i < numCalendars; i++) {
@@ -143,7 +145,7 @@ public class GoogleUtil {// extends Activity {
 
             for (int i = 0; i < eventNames.length; i++)
                 Log.d(Common.TAG, "events=" + eventNames[i]);
-            */
+           
         } catch (IOException e) {
             //handleException(e);
             // eventNames = new String[] { e.getMessage() };
@@ -154,22 +156,70 @@ public class GoogleUtil {// extends Activity {
 
     }
 
-    public void addEvent(CalendarEntry calendar, ScheduleBean scheduleBean) throws IOException {
-        CalendarUrl url = new CalendarUrl(calendar.getEventFeedLink());
-        NewEventEntry event = newEvent(scheduleBean);
-        EventEntry result = event.executeInsert(transport, url);
+    public void deleteEvent(String account, String uid) throws IOException {
+
+        //       https://www.google.com/calendar/feeds/default/private/full/
+
+        CalendarUrl eventEditUrl = new CalendarUrl(CalendarUrl.ROOT_URL);
+        EventEntry event = new EventEntry();
+        List<Link> links = new ArrayList<Link>();
+        
+        String editUrl = eventEditUrl.forDeleteEventFeed(account, uid).build();        
+        
+        Link link = new Link();
+        link.href = editUrl;
+        link.rel = "edit";
+        
+        
+
+        Log.d("XXXXXX", "delete url=" + link.href);
+        
+
+        links.add(link);
+
+        event.links = links;
+        event.id = editUrl;
+        
+        links = event.links;
+        for(int i=0;i<links.size();i++)
+            Log.d("XXXXXX", "links("+i+")=" + links.get(i).href);
+
+        event.executeDelete(transport);
 
     }
 
-    private NewEventEntry newEvent(ScheduleBean scheduleBean) {
-        NewEventEntry event = new NewEventEntry();
+    public EventEntry addEvent(CalendarEntry calendar, ScheduleBean scheduleBean) throws IOException {
+        CalendarUrl url = new CalendarUrl(calendar.getEventFeedLink());
+        EventEntry event = newEvent(scheduleBean);
+
+        // 등록된 결과를 리턴받는다.
+        return event.executeInsert(transport, url);
+
+    }
+
+    private EventEntry newEvent(ScheduleBean scheduleBean) {
+        EventEntry event = new EventEntry();
 
         When when = new When();
         when.startTime = Common.toDateTime(scheduleBean.getDate());
         when.endTime = Common.toDateTime(scheduleBean.getDate());
 
+        //WhoList whoList = new WhoList();
+        //whoList.add("", "", "");
+
+        List<Who> whoList = new ArrayList<Who>();
+        Who who = new Who();
+        who.email = "gyjeong@gmail.com";
+        who.rel = "frendly";
+        who.valueString = "정갑용";
+        whoList.add(who);
+
         event.title = scheduleBean.getTitle();
         event.when = when;
+        //event.who = whoList.getList();
+        //event.who = whoList;
+        event.content = scheduleBean.getContents();
+        //event.recurrence = "";
 
         return event;
     }
@@ -181,10 +231,10 @@ public class GoogleUtil {// extends Activity {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
             }
-            NewEventEntry event = newEvent(scheduleBean);
+            EventEntry event = newEvent(scheduleBean);
             event.batchId = Integer.toString(i);
             event.batchOperation = BatchOperation.INSERT;
-          //  feed.events.add(event);
+            feed.events.add(event);
         }
         EventFeed result = feed.executeBatch(transport, calendar);
         for (EventEntry event : result.events) {
