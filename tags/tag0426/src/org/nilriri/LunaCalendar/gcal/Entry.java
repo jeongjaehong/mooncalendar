@@ -35,6 +35,9 @@ import com.google.api.client.xml.atom.AtomContent;
 public class Entry implements Cloneable {
 
     @Key
+    public String id;
+
+    @Key
     public String summary;
 
     @Key
@@ -42,6 +45,9 @@ public class Entry implements Cloneable {
 
     @Key
     public String updated;
+
+    @Key("@gd:etag")
+    public String etag;
 
     @Key("link")
     public List<Link> links;
@@ -54,7 +60,15 @@ public class Entry implements Cloneable {
     public void executeDelete(HttpTransport transport) throws IOException {
         HttpRequest request = transport.buildDeleteRequest();
         request.setUrl(getEditLink());
-        RedirectHandler.execute(request).ignore();
+        request.headers.ifNoneMatch = "";
+        //request.execute().ignore();
+        HttpResponse response = RedirectHandler.execute(request);//.ignore();
+
+        if (response.statusCode == 403) {
+            Log.d(Common.TAG, "executeDelete=" + response.parseAsString());
+            Log.d(Common.TAG, "executeDelete=" + response.headers);
+        }
+
     }
 
     Entry executeInsert(HttpTransport transport, CalendarUrl url) throws IOException {
@@ -64,18 +78,22 @@ public class Entry implements Cloneable {
         content.namespaceDictionary = Util.DICTIONARY;
         content.entry = this;
         request.content = content;
-        
+
         Log.d(Common.TAG, "executeInsert request.content=" + request.content);
         Log.d(Common.TAG, "executeInsert request.url=" + request.url);
- 
-        
+
         HttpResponse response = RedirectHandler.execute(request);
 
         Log.d(Common.TAG, "res=" + response.parseAsString());
 
         Log.d(Common.TAG, "statusCode=" + response.statusCode);
 
-        return response.parseAs(getClass());
+        // HTTP 리턴코드가 201 CREATED.일 경우 Google UID를 UPDATE한다.
+        if ("201".equals(response.statusCode)) {
+            return response.parseAs(getClass());
+        } else {
+            return null;
+        }
     }
 
     Entry executePatchRelativeToOriginal(HttpTransport transport, Entry original) throws IOException {

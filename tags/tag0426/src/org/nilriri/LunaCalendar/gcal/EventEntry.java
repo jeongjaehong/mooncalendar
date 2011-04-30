@@ -31,8 +31,7 @@ public class EventEntry extends Entry {
     public When when;
 
     @Key("gd:who")
-    //public Who who;
-    public List<Who> who;// = new ArrayList<Who>();
+    public List<Who> who;
 
     @Key("gd:recurrence")
     public String recurrence;
@@ -69,7 +68,6 @@ public class EventEntry extends Entry {
         return (EventEntry) super.executePatchRelativeToOriginal(transport, original);
     }
 
-    /*   */
     public String getStartDate() {
         if (when != null) {
             return when.startTime.toString().substring(0, 10);

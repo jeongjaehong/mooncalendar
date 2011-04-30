@@ -5,6 +5,7 @@ import java.util.Calendar;
 import java.util.List;
 
 import org.nilriri.LunaCalendar.alarm.AlarmService_Service;
+import org.nilriri.LunaCalendar.dao.DAOUtil;
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.gcal.EventEntry;
@@ -13,6 +14,7 @@ import org.nilriri.LunaCalendar.schedule.ScheduleEditor;
 import org.nilriri.LunaCalendar.schedule.ScheduleList;
 import org.nilriri.LunaCalendar.schedule.ScheduleViewer;
 import org.nilriri.LunaCalendar.tools.About;
+import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.DataManager;
 import org.nilriri.LunaCalendar.tools.OldEvent;
 import org.nilriri.LunaCalendar.tools.Prefs;
@@ -23,10 +25,12 @@ import android.app.AlarmManager;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Rect;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
@@ -458,42 +462,9 @@ public class LunarCalendar extends Activity {
 
                 c.set(this.mYear, this.mMonth, this.mDay);
 
-                ////////////////-------------                //////////////////////////////                
+                new ImportEvent().execute();
 
-                //TODO:
-                //EventFeedDemo.LoadEvents(this, c, token);
-
-                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(getBaseContext()));
-
-                // gu.GoogleLogin(authToken);
-
-                try {
-                    List<EventEntry> events = gu.getEvents(Prefs.getSyncCalendar(getBaseContext()));
-
-                    ScheduleBean scheduleBean = null;
-
-                    for (int i = 0; i < events.size(); i++) {
-
-                        scheduleBean = new ScheduleBean();
-
-                        scheduleBean.setTitle(events.get(i).title);
-                        scheduleBean.setDate(events.get(i).getStartDate());
-                        scheduleBean.setContents(events.get(i).content);
-                        scheduleBean.setGID(events.get(i).uid.value);
-
-                        //TODO: 업데이트 날자를 비교해서 업데이트 대상에 따라 처리.
-
-                        dao.insert(scheduleBean);
-                    }
-
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-
-                ////////////////---------------////////////////// 
-
-                AddMonth(0);
+                //AddMonth(0);
 
                 return true;
 
@@ -527,6 +498,46 @@ public class LunarCalendar extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private class ImportEvent extends AsyncTask<Void, Void, Void> {
+        private ProgressDialog dialog;
+
+        @Override
+        protected void onPreExecute() {
+            dialog = ProgressDialog.show(LunarCalendar.this, "", "Importing event from google...", true);
+
+            Log.e(Common.TAG, "****** onPreExecute ********");
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Log.e(Common.TAG, "****** doInBackground ********");
+
+            GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(getBaseContext()));
+
+            try {
+                List<EventEntry> events = gu.getEvents(Prefs.getSyncCalendar(getBaseContext()));
+
+                dao.insert(events);
+
+            } catch (IOException e) {
+                cancel(true);
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            dialog.dismiss();
+
+            AddMonth(0);
+
+            Log.e(Common.TAG, "****** onPostExecute ********");
+        }
+
     }
 
     @Override

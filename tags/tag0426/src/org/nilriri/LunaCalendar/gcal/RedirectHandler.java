@@ -61,19 +61,47 @@ public class RedirectHandler {
 
     static HttpResponse execute(HttpRequest request) throws IOException {
         try {
-            
-            Log.d(Common.TAG, "RedirectHandler.execute.request.content=" + request.content);
-            Log.d(Common.TAG, "RedirectHandler.execute.request.url=" + request.url);
-
+            //HttpResponse res = request.execute();
+            //Log.d(Common.TAG, "RedirectHandler response=" + res.parseAsString());
+            //return res;
             return request.execute();
         } catch (HttpResponseException e) {
             if (e.response.statusCode == 302) {
+
                 GoogleUrl url = new GoogleUrl(e.response.headers.location);
                 request.url = url;
+
+                Log.d(Common.TAG, "302 url=" + url);
+
                 new SessionIntercepter(request.transport, url);
                 e.response.ignore(); // force the connection to close
-                return request.execute();
+
+                try {
+                    HttpResponse res = request.execute();
+                    return res;
+                } catch (HttpResponseException re) {
+
+                    if (re.response.statusCode == 403) {
+
+                        Log.d(Common.TAG, "403 request.headers =" + request.headers.toString());
+                        Log.d(Common.TAG, "403 request.method =" + request.method);
+                        Log.d(Common.TAG, "403 request.content =" + request.content);
+                        Log.d(Common.TAG, "403 response.headers =" + e.response.headers.toString());
+                        Log.d(Common.TAG, "403 response =" + e.response.parseAsString());
+
+                        return re.response;
+
+                    } else {
+                        re.printStackTrace();
+                        throw re;
+                    }
+
+                }
+
             } else {
+
+                e.printStackTrace();
+
                 throw e;
             }
         }

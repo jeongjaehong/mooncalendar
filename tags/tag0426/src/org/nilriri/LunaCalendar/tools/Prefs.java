@@ -347,8 +347,8 @@ public class Prefs extends PreferenceActivity {
                 calendars.setValue(entryValues[0].toString());
             } else {
                 calendars.setEnabled(false);
-                calendars.setSummary(entryValues[0]);
-                calendars.setValue(entryValues[0].toString());
+                calendars.setSummary("");
+                calendars.setValue("");
             }
 
         }
