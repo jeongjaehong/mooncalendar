@@ -2,6 +2,7 @@ package org.nilriri.LunaCalendar.tools;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.nilriri.LunaCalendar.R;
@@ -10,12 +11,15 @@ import org.nilriri.LunaCalendar.gcal.GoogleUtil;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
@@ -23,6 +27,8 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.preference.Preference.OnPreferenceChangeListener;
+import android.preference.Preference.OnPreferenceClickListener;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -39,6 +45,8 @@ public class Prefs extends PreferenceActivity {
 
     private static final String OPT_ALARMCHECK = "alarmcheck";
     private static final boolean OPT_ALARMCHECK_DEF = true;
+
+    private static final String OPT_RINGTONE = "ringtone";
 
     private static final String OPT_ANIMATION = "useanimation";
     private static final boolean OPT_ANIMATION_DEF = false;
@@ -58,19 +66,26 @@ public class Prefs extends PreferenceActivity {
     private static final String OPT_CALENDARS = "calendars";
     private static final String OPT_CALENDARS_DEF = "";
 
+    private static final String OPT_ONLINECALENDARS = "onlinecalendars";
+    private static final String OPT_ONLINECALENDARS_DEF = "";
+
     private static final String OPT_AUTHTOKEN = "authtoken";
     private static final String OPT_CALLIST = "callist";
 
     private static final String OPT_SYNCMETHOD = "syncmethod";
-    private static final String OPT_SYNCMETHOD_DEF = "auto";
+    private static final String OPT_SYNCMETHOD_DEF = "stop";
 
     private ListPreference accounts;
     private ListPreference calendars;
+    private ListPreference onlinecalendars;
+    private ListPreference syncmethod;
+    private CheckBoxPreference alarmcheck;
 
     protected AccountManager manager;
 
     private static final int DIALOG_ACCOUNTS = 0;
-    private static final int REQUEST_AUTHENTICATE = 0;
+    private static final int REQUEST_AUTHENTICATE = 1;
+    private static final int REQUEST_RINGTONE = 2;
 
     public static ProgressDialog pd;
 
@@ -94,70 +109,30 @@ public class Prefs extends PreferenceActivity {
         accounts.setEntries(entries);
         accounts.setEntryValues(entries);
         accounts.setSummary(getAccountName(getBaseContext()));
-
-        //pd = new ProgressDialog(this);
-        //pd.setTitle("Move!");
-        //pd.setMessage("Connecting to Google server...");
-
-        //accounts.getDialog();
-
-        accounts.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            public boolean onPreferenceChange(Preference preference, Object obj) {
-                ListPreference listPref = (ListPreference) preference;
-
-                if (!obj.toString().equals(getSyncCalName(getBaseContext()))) {
-
-                    // 변경된 계정정보를 셋팅.
-                    setAccountName(getBaseContext(), obj.toString());
-                    /*
-                                        Log.e(Common.TAG, "****** changing ********");
-
-                                        // 기존 선택된 계정의 캘린더 목록초기화
-                                        setCalendars(getBaseContext(), new String[] { "" });
-
-                                        // 기존선택값 삭제.
-                                        setSyncCalName(getBaseContext(), "");
-
-                                        calendars.setEnabled(false);
-                                        calendars.setSummary("");
-
-                                        // 변경된 계정정보를 셋팅.
-                                        setAccountName(getBaseContext(), obj.toString());
-
-                                        // 계정이 변경되면 캘린더 목록을 다시 조회하여 셋팅한다.                      
-                                        //loadCalendarList(manager, getAccounts(getBaseContext()));
-                    */
-                    loadCalendarList();
-
-                }
-
-                listPref.setSummary((String) obj.toString());
-                return true;
-            }
-        });
+        accounts.setOnPreferenceChangeListener(new accountPreferenceChangeListener());
 
         // 동기화 대상 캘린더 목록을 설정한다.
         calendars = (ListPreference) findPreference("calendars");
-        CharSequence entryValues[] = Common.tokenFn(getCalendars(getBaseContext()), ",");
-        if (entryValues.length > 0) {
-            calendars.setEntries(entryValues);
-            calendars.setEntryValues(entryValues);
-        } else {
-            calendars.setEnabled(false);
-        }
-        calendars.setSummary(getSyncCalName(getBaseContext()));
-        calendars.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            public boolean onPreferenceChange(Preference preference, Object obj) {
-                ListPreference listPref = (ListPreference) preference;
+        onlinecalendars = (ListPreference) findPreference("onlinecalendars");
+        syncmethod = (ListPreference) findPreference("syncmethod");
+        alarmcheck = (CheckBoxPreference) findPreference("alarmcheck");
 
-                // 캘린더를 변경하고 자동으로 일정(이벤트)을 동기화 하려면 여기서 작업한다.
-                // TODO:
+        // 저장된 캘린더 목록을 조회한다.
+        String entryValues[] = getCalendars(getBaseContext());
 
-                // 선택된 캘린더 명을 표시한다.
-                listPref.setSummary((String) obj.toString());
-                return true;
-            }
-        });
+        // 캘린더를 목록에 설정한다.
+        setCalendarList(entryValues);
+
+        // 선택된 캘린더 명을 표시한다.
+        setSummary(calendars);
+        setSummary(onlinecalendars);
+        setSummary(syncmethod);
+
+        calendars.setOnPreferenceChangeListener(new myOnPreferenceChangeListener());
+        onlinecalendars.setOnPreferenceChangeListener(new myOnPreferenceChangeListener());
+        syncmethod.setOnPreferenceChangeListener(new myOnPreferenceChangeListener());
+
+        alarmcheck.setOnPreferenceClickListener(new myOnPreferenceClickListener());
 
         findPreference("sdcarduse").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             public boolean onPreferenceClick(Preference preference) {
@@ -181,6 +156,136 @@ public class Prefs extends PreferenceActivity {
                 return false;
             }
         });
+    }
+
+    public class myOnPreferenceClickListener implements OnPreferenceClickListener {
+        public boolean onPreferenceClick(Preference preference) {
+            CheckBoxPreference cpf = (CheckBoxPreference) preference;
+            if (cpf.isChecked()) {
+
+                String uri = null;
+                Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
+
+                intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION);
+                intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Select Tone");
+                if (uri != null) {
+                    intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(uri));
+                }
+
+                else {
+                    intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, (Uri) null);
+                }
+
+                startActivityForResult(intent, REQUEST_RINGTONE);
+            }
+            return false;
+
+        }
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+
+        switch (requestCode) {
+            case REQUEST_AUTHENTICATE:
+                if (resultCode == RESULT_OK) {
+                    gotAccount(false);
+                }/* else {
+                    showDialog(DIALOG_ACCOUNTS);
+                 }*/
+                break;
+            case REQUEST_RINGTONE:
+                if (resultCode == RESULT_OK) {
+                    Uri uri = intent.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
+                    String title = intent.getStringExtra(RingtoneManager.EXTRA_RINGTONE_TITLE);
+
+                    Log.d(Common.TAG, "RingTone Uri=" + uri.toString());
+                    Log.d(Common.TAG, "RingTone Title=" + title);
+                     if (uri != null) {
+                        setRingtone(getBaseContext(), uri.toString());
+                     
+                    }
+                }
+                break;
+        }
+    }
+
+    public class accountPreferenceChangeListener implements OnPreferenceChangeListener {
+        public boolean onPreferenceChange(Preference preference, Object obj) {
+            ListPreference listPref = (ListPreference) preference;
+
+            if (!obj.toString().equals(getSyncCalendar(getBaseContext()))) {
+
+                // 변경된 계정정보를 셋팅.
+                setAccountName(getBaseContext(), obj.toString());
+
+                new BackgroundTask().execute();
+
+            }
+
+            listPref.setSummary((String) obj.toString());
+            return true;
+        }
+    }
+
+    public class myOnPreferenceChangeListener implements OnPreferenceChangeListener {
+        public boolean onPreferenceChange(Preference preference, Object obj) {
+            ListPreference listPref = (ListPreference) preference;
+
+            int idx = listPref.findIndexOfValue((String) obj.toString());
+            listPref.setSummary(listPref.getEntries()[idx]);
+            return true;
+        }
+    }
+
+    public void setSummary(ListPreference lp) {
+        int selectIndex = lp.findIndexOfValue(lp.getValue());
+        if (selectIndex >= 0) {
+            lp.setSummary(lp.getEntries()[selectIndex]);
+        }
+    }
+
+    private void setCalendarList(String[] calArrays) {
+        String calEntries[] = new String[calArrays.length];
+        String calEntryValues[] = new String[calArrays.length];
+
+        String calEntries2[] = new String[calEntries.length + 1];
+        String calEntryValues2[] = new String[calEntryValues.length + 1];
+
+        for (int i = 0; i < calArrays.length; i++) {
+            String items[] = Common.tokenFn(calArrays[i], "|");
+            if (items.length > 1) {
+                calEntries[i] = items[0];
+                calEntryValues[i] = items[1];
+
+                calEntries2[i + 1] = items[0];
+                calEntryValues2[i + 1] = items[1];
+            } else {
+                calendars.setEnabled(false);
+                onlinecalendars.setEnabled(false);
+                return;
+            }
+        }
+
+        if (calEntries.length > 0) {
+            calendars.setEntries(calEntries);
+            calendars.setEntryValues(calEntryValues);
+            calendars.setEnabled(true);
+
+            calEntries2[0] = "구독취소";
+            calEntryValues2[0] = "";
+
+            onlinecalendars.setEntries(calEntries2);
+            onlinecalendars.setEntryValues(calEntryValues2);
+            onlinecalendars.setEnabled(true);
+        } else {
+            calendars.setEnabled(false);
+
+            onlinecalendars.setEnabled(false);
+        }
+
     }
 
     @Override
@@ -220,30 +325,23 @@ public class Prefs extends PreferenceActivity {
                     if (tokenExpired) {
                         manager.invalidateAuthToken("com.google", Prefs.getAuthToken(getBaseContext()));
                     }
-                    loadCalendarList();
+                    new BackgroundTask().execute();
                     return;
                 }
             }
         }
     }
 
-    void loadCalendarList() {
-
-        new BackgroundTask().execute();
-    }
-
-    /*
-    void loadCalendarList(final AccountManager manager, final Account account) {
-
-
-    }
-    */
-
     private class BackgroundTask extends AsyncTask<Void, Void, Void> {
         private ProgressDialog dialog;
+        private String[] entryValues;
+        List<CalendarEntry> cals;
 
         @Override
         protected void onPreExecute() {
+            entryValues = new String[0];
+            cals = new ArrayList<CalendarEntry>();
+
             dialog = ProgressDialog.show(Prefs.this, "", "Connecting to google...", true);
 
             Log.e(Common.TAG, "****** onPreExecute ********");
@@ -252,7 +350,7 @@ public class Prefs extends PreferenceActivity {
             setCalendars(getBaseContext(), new String[] { "" });
 
             // 기존선택값 삭제.
-            setSyncCalName(getBaseContext(), "");
+            setSyncCalendar(getBaseContext(), "");
 
             calendars.setEnabled(false);
             calendars.setSummary("");
@@ -262,18 +360,9 @@ public class Prefs extends PreferenceActivity {
         @Override
         protected Void doInBackground(Void... params) {
 
-            //new Thread() {
-
-            //@Override
-            //public void run() {
             try {
 
                 final Bundle bundle = manager.getAuthToken(getAccounts(getBaseContext()), Common.AUTH_TOKEN_TYPE, true, null, null).getResult();
-                //runOnUiThread(new Runnable() {
-
-                //                            public void run() {
-                //                              try {
-
                 if (bundle.containsKey(AccountManager.KEY_INTENT)) {
                     Intent intent = bundle.getParcelable(AccountManager.KEY_INTENT);
                     int flags = intent.getFlags();
@@ -286,45 +375,21 @@ public class Prefs extends PreferenceActivity {
 
                     GoogleUtil gu = new GoogleUtil(getAuthToken(getBaseContext()));
 
-                    // gu.GoogleLogin(authToken);
-
-                    List<CalendarEntry> cals = gu.getCalendarList();
+                    cals.addAll(gu.getCalendarList());
                     int numCalendars = cals.size();
-                    CharSequence entryValues[] = new CharSequence[numCalendars];
+                    entryValues = new String[numCalendars];
                     for (int i = 0; i < numCalendars; i++) {
-                        entryValues[i] = cals.get(i).title;
-                    }
-
-                    // 캘린더 목록을 저장해 둔다.
-                    if (entryValues.length > 0) {
-                        setCalendars(getBaseContext(), entryValues);
-                        setSyncCalName(getBaseContext(), entryValues[0].toString());
-                    } else {
-                        setCalendars(getBaseContext(), new CharSequence[0]);
-                        setSyncCalName(getBaseContext(), "");
-
+                        entryValues[i] = cals.get(i).title + "|" + cals.get(i).getEventFeedLink();
                     }
 
                 }
 
-                //Toast.makeText(getBaseContext(), "", Toast.LENGTH_LONG).show();
-                /*                                    
-                                                } catch (Exception e) {
-                                                    calendars.setEnabled(false);
-                                                    calendars.setSummary(e.getMessage());
-                                                    handleException(e);
-                                                }
-                */
-                //}
-                //});
             } catch (Exception e) {
                 dialog.dismiss();
                 cancel(true);
                 handleException(e);
                 e.printStackTrace();
             }
-            //   }
-            // }.start();            
 
             Log.e(Common.TAG, "****** doInBackground ********");
 
@@ -333,40 +398,25 @@ public class Prefs extends PreferenceActivity {
 
         @Override
         protected void onPostExecute(Void result) {
-            dialog.dismiss();
 
             Log.e(Common.TAG, "****** onPostExecute ********");
 
-            // 동기화 대상 캘린더 목록을 설정한다.
-            CharSequence entryValues[] = Common.tokenFn(getCalendars(getBaseContext()), ",");
-            if (entryValues.length > 0) {
-                calendars.setEntries(entryValues);
-                calendars.setEntryValues(entryValues);
-                calendars.setEnabled(true);
-                calendars.setSummary(entryValues[0]);
-                calendars.setValue(entryValues[0].toString());
-            } else {
-                calendars.setEnabled(false);
-                calendars.setSummary("");
-                calendars.setValue("");
+            // 계정이 바뀔때 로드된 캘린더 목록을 저장해 둔다.
+            setCalendars(getBaseContext(), entryValues);
+
+            // 캘린더 목록을 설정한다.
+            setCalendarList(entryValues);
+
+            // 첫번째 캘린더로 기본값을 지정한다.
+            if (cals.size() > 0) {
+                calendars.setValue(cals.get(0).getEventFeedLink());
+                calendars.setSummary(cals.get(0).title);
             }
 
+            dialog.dismiss();
+
         }
 
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        switch (requestCode) {
-            case REQUEST_AUTHENTICATE:
-                if (resultCode == RESULT_OK) {
-                    gotAccount(false);
-                }/* else {
-                    showDialog(DIALOG_ACCOUNTS);
-                 }*/
-                break;
-        }
     }
 
     void handleException(Exception e) {
@@ -416,6 +466,17 @@ public class Prefs extends PreferenceActivity {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OPT_ALARMCHECK, OPT_ALARMCHECK_DEF);
     }
 
+    public static void setRingtone(Context context, String uri) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putString(OPT_RINGTONE, uri).commit();
+    }
+
+  
+    public static String getRingtone(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_RINGTONE, "");
+    }
+
+   
+
     public static boolean getAnimation(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OPT_ANIMATION, OPT_ANIMATION_DEF);
     }
@@ -440,32 +501,20 @@ public class Prefs extends PreferenceActivity {
         PreferenceManager.getDefaultSharedPreferences(context).edit().putString(OPT_AUTHTOKEN, value).commit();
     }
 
-    public static void setSyncCalName(Context context, String value) {
+    public static void setSyncCalendar(Context context, String value) {
         PreferenceManager.getDefaultSharedPreferences(context).edit().putString(OPT_CALENDARS, value).commit();
     }
 
-    public static String getSyncCalName(Context context) {
+    public static String getSyncCalendar(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_CALENDARS, OPT_CALENDARS_DEF);
+    }
+
+    public static String getOnlineCalendar(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_ONLINECALENDARS, OPT_ONLINECALENDARS_DEF);
     }
 
     public static String getSyncMethod(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_SYNCMETHOD, OPT_SYNCMETHOD_DEF);
-    }
-
-    public static CalendarEntry getSyncCalendar(Context context) throws IOException {
-        String calName = getSyncCalName(context);
-
-        GoogleUtil gu = new GoogleUtil(getAuthToken(context));
-
-        //gu.GoogleLogin(getAuthToken(context));
-
-        List<CalendarEntry> cals = gu.getCalendarList();
-        for (int i = 0; i < cals.size(); i++) {
-            if (calName.equals(cals.get(i).title))
-                return cals.get(i);
-        }
-        return null;
-
     }
 
     public static void setCalendars(Context context, CharSequence[] values) {
@@ -483,8 +532,9 @@ public class Prefs extends PreferenceActivity {
         PreferenceManager.getDefaultSharedPreferences(context).edit().putString(OPT_CALLIST, value).commit();
     }
 
-    public static String getCalendars(Context context) {
-        return PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_CALLIST, "");
+    public static String[] getCalendars(Context context) {
+        String calendars[] = Common.tokenFn(PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_CALLIST, ""), ",");
+        return calendars;
     }
 
     public static Account getAccounts(Context context) {

@@ -40,8 +40,8 @@ public class WidgetBroadcastReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         if (action.equals(Intent.ACTION_TIMEZONE_CHANGED) || action.equals(Intent.ACTION_TIME_CHANGED)) {
             AppWidgetManager gm = AppWidgetManager.getInstance(context);
-            ArrayList<Integer> appWidgetIds = new ArrayList();
-            ArrayList<String> texts = new ArrayList();
+            ArrayList<Integer> appWidgetIds = new ArrayList<Integer>();
+            ArrayList<String> texts = new ArrayList<String>();
 
             AppWidgetConfigure.loadAllTitlePrefs(context, appWidgetIds, texts);
 

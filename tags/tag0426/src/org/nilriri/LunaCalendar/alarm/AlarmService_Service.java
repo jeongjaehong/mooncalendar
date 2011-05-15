@@ -24,6 +24,7 @@ import java.util.Calendar;
 import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.schedule.AlarmViewer;
+import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Music;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.lunar2solar;
@@ -35,10 +36,14 @@ import android.app.Service;
 import android.app.PendingIntent.CanceledException;
 import android.content.Intent;
 import android.database.Cursor;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.RemoteException;
+import android.util.Log;
 import android.widget.Toast;
 
 /**
@@ -50,6 +55,7 @@ import android.widget.Toast;
  * @see AlarmService_Alarm
  */
 public class AlarmService_Service extends Service {
+    ScheduleDaoImpl dao = null;
     public NotificationManager mNM;
 
     @Override
@@ -68,6 +74,8 @@ public class AlarmService_Service extends Service {
     public void onStart(Intent intent, int startId) {
         //Log.i("AlarmService_Service", "onStart #" + startId + ": " + intent.getLongExtra("id", -9));
 
+        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+
         // show the icon in the status bar
         try {
             showNotification();
@@ -85,6 +93,8 @@ public class AlarmService_Service extends Service {
 
         // Tell the user we stopped.
         // Toast.makeText(this, "R.string.alarm_service_finished", Toast.LENGTH_SHORT).show();
+
+        dao.close();
     }
 
     /**
@@ -138,7 +148,6 @@ public class AlarmService_Service extends Service {
     }
 
     private void displayNotify(Calendar c, String lDay) {
-        ScheduleDaoImpl dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
 
         Cursor cursor = dao.queryAlarm(c, lDay);
 
@@ -146,6 +155,7 @@ public class AlarmService_Service extends Service {
             int id = cursor.getInt(0);
             CharSequence title = cursor.getString(1);
             CharSequence content = cursor.getString(2);
+            cursor.close();
 
             Notification notification = new Notification(R.drawable.clock, title, System.currentTimeMillis());
 
@@ -153,12 +163,33 @@ public class AlarmService_Service extends Service {
 
             notification.setLatestEventInfo(this, title, content, contentIntent);
 
-            Music.play(this, R.raw.ding);
+            try {
+                Log.d(Common.TAG, "Ringtone Original url=" + Prefs.getRingtone(this));
+                Uri uri = Uri.parse(Prefs.getRingtone(this));
+
+                Log.d(Common.TAG, "Ringtone url=" + uri.toString());
+                
+              
+
+               // RingtoneManager.setActualDefaultRingtoneUri(this, RingtoneManager.TYPE_NOTIFICATION, uri);
+
+                Ringtone rt = RingtoneManager.getRingtone(this, uri);
+
+                if (null != rt) {
+                   if (rt.isPlaying())rt.stop();
+
+                    rt.play();
+                } else {
+                    Music.play(this, R.raw.ding);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.d(Common.TAG, "error=" + e.getMessage());
+            }
 
             mNM.notify(id, notification);
         }
         cursor.close();
-        dao.close();
     }
 
     private final IBinder mBinder = new Binder() {

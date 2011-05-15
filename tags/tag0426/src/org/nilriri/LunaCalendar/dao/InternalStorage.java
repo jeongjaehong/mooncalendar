@@ -29,9 +29,7 @@ public class InternalStorage extends SQLiteOpenHelper implements StorageSelector
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
         new DaoCreator().onUpgrade(this.mContext, db, oldVersion, newVersion);
-
     }
 
     public SQLiteDatabase getReadableDatabase() {
@@ -51,8 +49,9 @@ public class InternalStorage extends SQLiteOpenHelper implements StorageSelector
         } else if (db.isReadOnly()) {
             close();
             db = super.getWritableDatabase();
+        } else if (!db.isOpen()) {
+            db = super.getWritableDatabase();
         }
-
         return db;
     }
 
@@ -61,15 +60,14 @@ public class InternalStorage extends SQLiteOpenHelper implements StorageSelector
         if (db != null) {
             db.close();
         }
+        super.close();
     }
 
     public void onDestroy() {
         if (db != null) {
             db.close();
         }
-
         super.close();
-
     }
 
 }

@@ -939,30 +939,22 @@ public class LunarCalendarView extends View {
         setSelY(Math.min(Math.max(y, 0), 8));
 
         if (y >= 2 && y <= 7) {
-            lunarCalendar.mDay = (getSelY() - 2) * 7 + (getSelX() + 1) - (7 - (8 - dayofweek));
-
-            // 기존위치 다시그리기
-            //invalidate(selRect);
+            
+            int newDay = (getSelY() - 2) * 7 + (getSelX() + 1) - (7 - (8 - dayofweek));
+            
+            if ( lunarCalendar.mDay != newDay ) {
+                lunarCalendar.todayEvents.clear();
+            }
+            
+            lunarCalendar.mDay = newDay; 
 
             getRect(getSelX(), getSelY(), selRect);
-            //getContractRect(getSelX(), getSelY(), todayRect, 2);
 
-            // 새로운위치 그리기
-            // invalidate(selRect);
-
-            // 선택된 날짜에 해당하는 스케쥴 정보 조회.
-            if (lunarCalendar.mListView.getCount() > 0) {
-                Cursor c = (Cursor) lunarCalendar.mListView.getItemAtPosition(0);
-                if (c.moveToFirst())
-                    c.close();
-            }
             Cursor cursor = lunarCalendar.dao.query(Common.fmtDate(lunarCalendar.mYear, lunarCalendar.mMonth + 1, lunarCalendar.mDay), this.getLunaday(lunarCalendar.mDay));
             SimpleCursorAdapter adapter = new EfficientAdapter(getContext(), R.layout.shcedule_item, cursor, new String[] { Schedule.SCHEDULE_TYPE, Schedule.SCHEDULE_TITLE }, new int[] { R.id.schedule_date, R.id.schedule_title });
 
-            lunarCalendar.mListView.setAdapter(adapter);
-
-            // 새로운 선택위치를 제목(음력정보)에 반영
-            // invalidate(titleRect);
+            lunarCalendar.mListView.setAdapter(adapter);            
+            
             invalidate();
         }
 

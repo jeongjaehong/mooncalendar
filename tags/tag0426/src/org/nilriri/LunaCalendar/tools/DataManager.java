@@ -30,7 +30,7 @@ public class DataManager {
         pd.setMessage("Move to external storage...");
 
         //pd.setCancelable(true);
-        //pd.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        pd.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         //pd.setIndeterminate(true);
         pd.show();
 
@@ -39,12 +39,25 @@ public class DataManager {
             public void run() {
 
                 try {
+                    
+                    Log.d(Common.TAG, "########    Start     #######");
 
                     Cursor cursor = daoSource.queryAll();
-                    if (cursor.getCount() > 0) {
-                        if (!daoTarget.copy(cursor))
-                            Error = "저장위치 변경 실패!";
+
+                    Log.d(Common.TAG, "########    "+cursor.getCount()+"     #######");
+
+                    if (!daoSource.exportdata(cursor, pd)) {
+                        Error = "백업이 실패하였습니다.";
+                    } else {
+
+                        if (cursor.getCount() > 0) {
+                            if (!daoTarget.copy(cursor))
+                                Error = "저장위치 변경 실패!";
+                        }
                     }
+                    
+                    Log.d(Common.TAG, "########   End    #######");
+
 
                     cursor.close();
                     daoSource.close();
@@ -53,6 +66,8 @@ public class DataManager {
                     handler.sendEmptyMessage(0);
 
                 } catch (Exception e) {
+                    Log.d(Common.TAG, "########    "+e.getMessage()+"     #######");
+                    handler.sendEmptyMessage(0);
 
                     Error = e.getMessage();
 
@@ -97,7 +112,7 @@ public class DataManager {
                     handler.sendEmptyMessage(0);
 
                 } catch (Exception e) {
-
+                    handler.sendEmptyMessage(0);
                     Error = e.getMessage();
 
                 }
@@ -120,7 +135,8 @@ public class DataManager {
         pd.setMessage("Backup schedule data...");
 
         //pd.setCancelable(true);
-        //pd.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        pd.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+
         //pd.setIndeterminate(true);
         pd.show();
 
@@ -129,21 +145,29 @@ public class DataManager {
             public void run() {
 
                 try {
-
+                    Log.d(Common.TAG, "########    Start     #######");
                     Cursor cursor = daoSource.queryAll();
+                    
+                    Log.d(Common.TAG, "########    "+cursor.getCount()+"     #######");
 
-                    if (!daoSource.exportdata(cursor)) {
+                    if (!daoSource.exportdata(cursor, pd)) {
+                        Log.d(Common.TAG, "########   Backup Fail     #######");
                         Error = "백업이 실패하였습니다.";
                     } else {
+                        Log.d(Common.TAG, "########    Succ     #######");
                         Error = "";
                     }
 
+                    Log.d(Common.TAG, "########    close     #######");
                     cursor.close();
                     daoSource.close();
 
                     handler.sendEmptyMessage(0);
 
                 } catch (Exception e) {
+                    handler.sendEmptyMessage(0);
+                    
+                    Log.d(Common.TAG, "########    Exception="+e.getMessage()+"     #######");
 
                     Error = e.getMessage();
 
@@ -163,7 +187,7 @@ public class DataManager {
             pd.dismiss();
 
             if ("".equals(Error)) {
-                Toast.makeText(mContext, "백업/복구 작업이 완료 되었습니다.", Toast.LENGTH_LONG).show();
+                Toast.makeText(mContext, "작업이 정상적으로 완료 되었습니다.", Toast.LENGTH_LONG).show();
             } else {
                 Log.e("Copy", "Error = " + Error);
                 Toast.makeText(mContext, Error, Toast.LENGTH_LONG).show();

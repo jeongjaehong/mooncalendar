@@ -16,11 +16,10 @@
 
 package org.nilriri.LunaCalendar.gcal;
 
+import org.nilriri.LunaCalendar.tools.Common;
+
 import com.google.api.client.util.Key;
 
-/**
- * @author Yaniv Inbar
- */
 public class Reminder {
 
     @Key("@method")
@@ -28,5 +27,24 @@ public class Reminder {
 
     @Key("@minutes")
     public String minutes;
+
+    public Reminder() {
+    }
+
+    public Reminder(String str) {
+        String reminItem[] = Common.tokenFn(str, "|");
+
+        this.method = reminItem[0];
+        this.minutes = reminItem[1];
+
+    }
+
+    public String parseAsString() {
+        StringBuilder result = new StringBuilder();
+
+        result.append(method).append("|").append(minutes);
+
+        return result.toString();
+    }
 
 }

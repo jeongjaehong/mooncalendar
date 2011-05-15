@@ -134,8 +134,7 @@ public class AppWidgetProvider extends android.appwidget.AppWidgetProvider {
 
             appWidgetManager.updateAppWidget(new ComponentName(context, getWidgetClass()), remoteViews);
 
-            if (dao != null)
-                dao.close();
+           
         } catch (Exception e) {
             Log.d(Common.TAG, "doDisplay error=" + e.getMessage());
         }
@@ -172,7 +171,7 @@ public class AppWidgetProvider extends android.appwidget.AppWidgetProvider {
                 switch (Prefs.getWidgetColor(context)) {
 
                     case 0:
-                        return R.layout.widget1x1_transparent;
+                        return R.layout.widget2x2_transparent;
                     case 1:
                         return R.layout.widget2x2_black;
                     case 2:
@@ -182,7 +181,7 @@ public class AppWidgetProvider extends android.appwidget.AppWidgetProvider {
                     case 4:
                         return R.layout.widget2x2_blue;
                     default:
-                        return R.layout.widget1x1_transparent;
+                        return R.layout.widget2x2_transparent;
                 }
             case Common.SIZE_4x4:
 

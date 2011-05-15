@@ -18,6 +18,7 @@ package org.nilriri.LunaCalendar.gcal;
 
 import java.io.IOException;
 
+import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.tools.Common;
 
 import android.util.Log;
@@ -28,6 +29,7 @@ import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.HttpTransport;
+import com.google.api.client.xml.atom.AtomContent;
 
 /**
  * @author Yaniv Inbar
@@ -72,6 +74,7 @@ public class RedirectHandler {
                 request.url = url;
 
                 Log.d(Common.TAG, "302 url=" + url);
+                Log.d(Common.TAG, "302 header=" + request.headers.toString());
 
                 new SessionIntercepter(request.transport, url);
                 e.response.ignore(); // force the connection to close
@@ -81,14 +84,16 @@ public class RedirectHandler {
                     return res;
                 } catch (HttpResponseException re) {
 
-                    if (re.response.statusCode == 403) {
+                    if (re.response.statusCode == 400 || re.response.statusCode == 403 || re.response.statusCode == 412) {
 
-                        Log.d(Common.TAG, "403 request.headers =" + request.headers.toString());
-                        Log.d(Common.TAG, "403 request.method =" + request.method);
-                        Log.d(Common.TAG, "403 request.content =" + request.content);
-                        Log.d(Common.TAG, "403 response.headers =" + e.response.headers.toString());
-                        Log.d(Common.TAG, "403 response =" + e.response.parseAsString());
+                        Log.d(Common.TAG, re.response.statusCode + " request.headers =" + request.headers.toString());
+                        Log.d(Common.TAG, re.response.statusCode + " request.method =" + request.method);
+                        Log.d(Common.TAG, re.response.statusCode + " request.content =" + request.content);
 
+                        Log.d(Common.TAG, re.response.statusCode + " response.headers =" + e.response.headers.toString());
+                        Log.d(Common.TAG, re.response.statusCode + " response =" + e.response.parseAsString());
+
+                     
                         return re.response;
 
                     } else {
@@ -99,6 +104,8 @@ public class RedirectHandler {
                 }
 
             } else {
+                Log.d(Common.TAG, "response.STATUS =" + e.response.statusCode);
+                Log.d(Common.TAG, "response =" + e.response.parseAsString());
 
                 e.printStackTrace();
 

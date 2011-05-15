@@ -59,7 +59,7 @@ public class WidgetProvider extends AppWidgetProvider {
         final int N = appWidgetIds.length;
         for (int i = 0; i < N; i++) {
             int appWidgetId = appWidgetIds[i];
-            String titlePrefix = AppWidgetConfigure.loadTitlePref(context, appWidgetId);
+            //String titlePrefix = AppWidgetConfigure.loadTitlePref(context, appWidgetId);
             updateAppWidget(context, appWidgetManager, appWidgetId, true);
         }
     }
@@ -82,7 +82,7 @@ public class WidgetProvider extends AppWidgetProvider {
         // This setting is sticky across reboots, but that doesn't matter, because this will
         // be called after boot if there is a widget instance for this provider.
         PackageManager pm = context.getPackageManager();
-        pm.setComponentEnabledSetting(new ComponentName("org.nilriri.LunarCalendar", ".widget.ExampleBroadcastReceiver"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(new ComponentName("org.nilriri.LunarCalendar", ".widget.BroadcastReceiver"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
     }
 
     @Override
@@ -90,9 +90,10 @@ public class WidgetProvider extends AppWidgetProvider {
         // When the first widget is created, stop listening for the TIMEZONE_CHANGED and
         // TIME_CHANGED broadcasts.
         Log.d(TAG, "onDisabled");
-        Class clazz = WidgetBroadcastReceiver.class;
+        //Class clazz = WidgetBroadcastReceiver.class;
+
         PackageManager pm = context.getPackageManager();
-        pm.setComponentEnabledSetting(new ComponentName("org.nilriri.LunarCalendar", ".widget.ExampleBroadcastReceiver"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(new ComponentName("org.nilriri.LunarCalendar", ".widget.BroadcastReceiver"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
     }
 
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId, boolean titlePrefix) {
@@ -128,7 +129,6 @@ public class WidgetProvider extends AppWidgetProvider {
             mDday_msg = "";
         }
         cursor.close();
-        dao.close();
 
         if ("".equals(mDday_msg))
             Toast.makeText(context, "D-day Empty...", Toast.LENGTH_LONG).show();

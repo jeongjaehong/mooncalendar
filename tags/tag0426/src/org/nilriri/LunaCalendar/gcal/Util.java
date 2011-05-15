@@ -22,6 +22,12 @@ import com.google.api.client.xml.XmlNamespaceDictionary;
 public class Util {
     public static final boolean DEBUG = false;
 
-    public static final XmlNamespaceDictionary DICTIONARY = new XmlNamespaceDictionary().set("", "http://www.w3.org/2005/Atom").set("openSearch", "http://a9.com/-/spec/opensearchrss/1.0/").set("gCal", "http://schemas.google.com/gCal/2005").set("gd", "http://schemas.google.com/g/2005");
-
+    public static final XmlNamespaceDictionary DICTIONARY = //namespaece Á¤ÀÇ
+    new XmlNamespaceDictionary() //
+            .set("", "http://www.w3.org/2005/Atom")//
+            //.set("app", "http://www.w3.org/2007/app")//
+            //.set("batch", "http://schemas.google.com/gdata/batch")//
+            .set("openSearch", "http://a9.com/-/spec/opensearchrss/1.0/")//
+            .set("gCal", "http://schemas.google.com/gCal/2005")//
+            .set("gd", "http://schemas.google.com/g/2005");//
 }

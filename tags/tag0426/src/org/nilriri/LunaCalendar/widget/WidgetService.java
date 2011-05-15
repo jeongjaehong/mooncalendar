@@ -94,8 +94,6 @@ public class WidgetService extends android.app.Service {
     protected synchronized void doRefresh() {
         Log.d(Common.TAG, "Service.doRefresh() - begin");
 
-        StringBuffer exception = new StringBuffer();
-
         running = true;
 
         sendBroadcast(new Intent(Common.ACTION_REFRESH_START));
