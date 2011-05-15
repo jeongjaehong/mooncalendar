@@ -22,21 +22,17 @@ public abstract class AbstractDao {
         return daoIf.getContext();
     }
 
-    public void close() {
-        if (daoIf != null)
-            daoIf.close();
-    }
-
     public SQLiteDatabase getWritableDatabase() {
-
         return daoIf.getWritableDatabase();
-
     }
 
     public SQLiteDatabase getReadableDatabase() {
-
         return daoIf.getReadableDatabase();
+    }
 
+    public void close() {
+        if (daoIf != null)
+            daoIf.close();
     }
 
     public void onDestroy() {
@@ -44,7 +40,6 @@ public abstract class AbstractDao {
             daoIf.close();
         }
         daoIf.onDestroy();
-
     }
 
 }

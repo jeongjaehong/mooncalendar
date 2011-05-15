@@ -2,7 +2,7 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="org.nilriri.LunaCalendar" android:installLocation="auto"
-	android:versionName="3.4.3" android:versionCode="107">
+	android:versionName="3.6.3" android:versionCode="115">
 
 	<meta-data android:name="PublisherId" android:value="PE08TRFN03" />
 	<meta-data android:name="SlotID" android:value="PE08TRFN03" />
@@ -34,6 +34,11 @@
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+			<intent-filter>
+				<action android:name="org.nilriri.lunarcalendar.MAIN" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.org.nilriri/lunarcalendar" />
 			</intent-filter>
 		</activity>
 
@@ -71,6 +76,11 @@
 			android:label="@string/app_name">
 		</activity>
 
+		<activity android:name=".tools.SearchData"
+			android:screenOrientation="user" android:configChanges="keyboardHidden|orientation"
+			android:label="일정검색" android:theme="@android:style/Theme.Dialog">
+		</activity>
+
 		<activity android:name=".tools.AppInfo" android:label="@string/app_name">
 		</activity>
 
@@ -90,14 +100,13 @@
 			<meta-data android:name="android.appwidget.provider"
 				android:resource="@xml/widget2x2" />
 		</receiver>
-		<receiver android:name=".widget.AppWidgetProvider4x4"
-			android:label="@string/widget_label_4x4">
-			<intent-filter>
-				<action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-			</intent-filter>
-			<meta-data android:name="android.appwidget.provider"
-				android:resource="@xml/widget4x4" />
-		</receiver>
+		<!--
+			<receiver android:name=".widget.AppWidgetProvider4x4"
+			android:label="@string/widget_label_4x4"> <intent-filter> <action
+			android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+			</intent-filter> <meta-data android:name="android.appwidget.provider"
+			android:resource="@xml/widget4x4"/> </receiver>
+		-->
 		<service android:name=".widget.WidgetService" />
 
 		<activity android:name=".widget.ExampleAppWidgetConfigure">
@@ -146,5 +155,8 @@
 		<uses-permission
 		android:name="android.permission.ACCESS_COARSE_LOCATION"></uses-permission>
 	-->
+
+
+<uses-permission android:name="android.permission.WRITE_SETTINGS"></uses-permission>
 
 </manifest>

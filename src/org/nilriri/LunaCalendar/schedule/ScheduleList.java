@@ -16,27 +16,22 @@
 
 package org.nilriri.LunaCalendar.schedule;
 
-import java.io.IOException;
 import java.util.Calendar;
 
 import org.nilriri.LunaCalendar.R;
-import org.nilriri.LunaCalendar.dao.DAOUtil;
+import org.nilriri.LunaCalendar.RefreshManager;
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
-import org.nilriri.LunaCalendar.gcal.EventEntry;
-import org.nilriri.LunaCalendar.gcal.GoogleUtil;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.OldEvent;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.Rotate3dAnimation;
 
 import android.app.ExpandableListActivity;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -66,7 +61,7 @@ import android.widget.ExpandableListView.OnChildClickListener;
  * Demonstrates expandable lists using a custom {@link ExpandableListAdapter}
  * from {@link BaseExpandableListAdapter}.
  */
-public class ScheduleList extends ExpandableListActivity implements OnTouchListener {
+public class ScheduleList extends ExpandableListActivity implements OnTouchListener, RefreshManager {
 
     // Menu item ids    
     public static final int MENU_ITEM_EDITCHEDULE = Menu.FIRST;
@@ -85,6 +80,10 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
     private OldEvent mOldEvent;
     private String mSearchRange;
     private ViewGroup mContainer;
+    private boolean isSearch;
+    private int mOperator;
+    private String mKeyword1;
+    private String mKeyword2;
 
     private ExpandableListAdapter mAdapter;
     private ScheduleDaoImpl dao = null;
@@ -92,7 +91,7 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+        //dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
         mContainer = this.getExpandableListView();//findViewById(R.id.container);
 
         mContainer.setOnTouchListener(this);
@@ -104,11 +103,16 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
         mCalendar = (Calendar) data.get("workday");
         mSearchRange = intent.getStringExtra("ScheduleRange");
         mSearchRange = mSearchRange == null ? "" : mSearchRange;
+        isSearch = intent.getBooleanExtra("isSearch", false);
+
+        mOperator = intent.getIntExtra("operator", 0);
+        mKeyword1 = intent.getStringExtra("keyword1");
+        mKeyword2 = intent.getStringExtra("keyword2");
 
         if (mCalendar == null)
             mCalendar = Calendar.getInstance();
 
-        ScheduleLoading();
+        //ScheduleLoading();
 
         registerForContextMenu(getExpandableListView());
 
@@ -148,6 +152,7 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
     }
 
     private void ChangeScheduleList(int arg) {
+
         if ("TODAY".equals(mSearchRange)) {
             mCalendar.add(Calendar.DAY_OF_MONTH, arg);
         } else if ("WEEK".equals(mSearchRange)) {
@@ -209,11 +214,13 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
         } else if ("MONTH".equals(mSearchRange)) {
             date = Common.fmtDate(mCalendar).substring(0, 7);
             this.setTitle(getResources().getString(R.string.schedule_monthlist_label) + " (" + date + ")");
+        } else if (isSearch) {
+            this.setTitle("검색결과");
         } else {
             this.setTitle(getResources().getString(R.string.schedule_alllist_label));
         }
 
-        groupCursor = dao.queryGroup(mSearchRange, date);
+        groupCursor = dao.queryGroup(mSearchRange, date, isSearch, mOperator, mKeyword1, mKeyword2);
 
         // Cache the ID column index
         mGroupIdColumnIndex = groupCursor.getColumnIndexOrThrow(Schedule._ID);
@@ -236,14 +243,14 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
     @Override
     protected void onPause() {
         super.onPause();
-        if (dao != null) {
-            dao.close();
-        }
+        // if (dao != null) {            dao.close();        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
+        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
 
         ScheduleLoading();
     }
@@ -271,11 +278,13 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
         menu.setHeaderTitle(cursor.getString(2));
 
         String anniversary = getResources().getString(R.string.anniversary_label);
+
         Cursor c = (Cursor) mAdapter.getGroup(groupPos);
         if (!anniversary.equals(c.getString(1)) && !"B-Plan".equals(c.getString(1))) {
             menu.add(0, MENU_ITEM_EDITCHEDULE, 0, R.string.schedule_modify_action);
             menu.add(0, MENU_ITEM_DELSCHEDULE, 0, R.string.schedule_delete_label);
         }
+
         //Toast.makeText(getBaseContext(), "c.getString(3)=" + c.getString(3), Toast.LENGTH_LONG).show();
         if ("F".equals(c.getString(3)) || "P".equals(c.getString(3))) {
             // menu.add(0, MENU_ITEM_BIBLEVIEW, 0, "성경읽기");
@@ -300,7 +309,8 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
 
         }
 
-        if (!"".equals(Prefs.getSyncCalName(this))) {
+        if ("auto".equals(Prefs.getSyncMethod(this)) // 동기화 방법 
+                && !"".equals(Prefs.getSyncCalendar(this))) {
             menu.add(0, MENU_ITEM_GCALADDEVENT, 0, R.string.schedule_gcaladdevent_label);
             menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_label);
         }
@@ -360,30 +370,19 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
                 return true;
             }
             case MENU_ITEM_DELSCHEDULE: {
-                dao.delete(id);
-                
-                ScheduleLoading();
+                dao.syncDelete(id, this);
+
                 return true;
             }
             case MENU_ITEM_GCALADDEVENT: {
-
-                //CalendarFeedDemo.main();
-
-                //AclFeedDemo.main();
-
-                //EventFeedDemo.addEvents(this, dao.queryGCalendar(id));
-
-                new AddEvent().execute(id);
+                dao.syncInsert(id, this);
 
                 return true;
-
             }
+
             case MENU_ITEM_GCALIMPORT: {
 
-                //EventFeedDemo.LoadEvents(this, this.mCalendar, "");
-                //TODO:
-
-                ScheduleLoading();
+                dao.syncImport(this);
 
                 return true;
 
@@ -392,46 +391,6 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
         }
 
         return false;
-    }
-
-    private class AddEvent extends AsyncTask<Long, Void, Void> {
-        private ProgressDialog dialog;
-
-        @Override
-        protected void onPreExecute() {
-            dialog = ProgressDialog.show(ScheduleList.this, "", "Add event...", true);
-
-            Log.e(Common.TAG, "****** onPreExecute ********");
-        }
-
-        @Override
-        protected Void doInBackground(Long... params) {
-            Log.e(Common.TAG, "****** doInBackground ********");
-
-            GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(getBaseContext()));
-            ScheduleBean scheduleBean = DAOUtil.Cursor2Bean(dao.query(params[0]));
-
-            try {
-                EventEntry event = gu.addEvent(Prefs.getSyncCalendar(getBaseContext()), scheduleBean);
-
-                // 등록후 결과를 스케쥴 정보에 반영한다.
-                dao.insert(event);
-
-            } catch (IOException e) {
-                cancel(true);
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void result) {
-            dialog.dismiss();
-
-            Log.e(Common.TAG, "****** onPostExecute ********");
-        }
-
     }
 
     /**
@@ -542,6 +501,7 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
         }
     }
 
+    // 하단메뉴....
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
@@ -642,10 +602,7 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
 
             case MENU_ITEM_GCALIMPORT: {
 
-                // EventFeedDemo.LoadEvents(this, this.mCalendar, "");
-                //TODO:
-
-                ScheduleLoading();
+                dao.syncImport(this);
 
                 return true;
 
@@ -737,6 +694,11 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
         inflater.inflate(R.menu.menu, menu);
 
         return true;
+    }
+
+    public void refresh() {
+        Log.e(Common.TAG, "****** refresh ********");
+        this.ScheduleLoading();
     }
 
 }

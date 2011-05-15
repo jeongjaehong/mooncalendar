@@ -18,20 +18,24 @@ package org.nilriri.LunaCalendar.gcal;
 
 import com.google.api.client.util.Key;
 
-public class BatchStatus {
+public class AtomValue {
 
-    @Key("@code")
-    public int code;
+    @Key("@value")
+    public String value="";
 
-    @Key("text()")
-    public String content;
-
-    @Key("@content-type")
-    public String contentType;
-
-    @Key("@reason")
-    public String reason;
-
-    public BatchStatus() {
+    public AtomValue() {
     }
+
+    public AtomValue(String str) {
+        this.value = str;
+    }
+
+    public void getValue(String value) {
+        this.value = (value == null ? "" : value);
+    }
+
+    public String getValue() {
+        return (this.value == null ? "" : this.value);
+    }
+
 }

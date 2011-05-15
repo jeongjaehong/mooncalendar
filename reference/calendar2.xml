@@ -1,0 +1,907 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns='http://www.w3.org/2005/Atom' xmlns:openSearch='http://a9.com/-/spec/opensearchrss/1.0/'
+	xmlns:gCal='http://schemas.google.com/gCal/2005' xmlns:gd='http://schemas.google.com/g/2005'>
+	<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full
+	</id>
+	<updated>2011-05-13T05:41:18.000Z</updated>
+	<category scheme='http://schemas.google.com/g/2005#kind' term='http://schemas.google.com/g/2005#event' />
+	<title type='text'>맥체인성경읽기(개인)</title>
+	<subtitle type='text'>맥체인성경읽기 스케쥴에 따라서 매일 읽을 신,구약 성경에 대한 년간 계획표
+	</subtitle>
+	<link rel='alternate' type='text/html'
+		href='https://www.google.com/calendar/embed?src=ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com' />
+	<link rel='http://schemas.google.com/g/2005#feed' type='application/atom+xml'
+		href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full' />
+	<link rel='http://schemas.google.com/g/2005#batch' type='application/atom+xml'
+		href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/batch' />
+	<link rel='self' type='application/atom+xml'
+		href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full?max-results=25' />
+	<link rel='next' type='application/atom+xml'
+		href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full?start-index=26&amp;max-results=25' />
+	<author>
+		<name>JEONGJAEHONG@gmail.com</name>
+		<email>jeongjaehong@gmail.com</email>
+	</author>
+	<generator version='1.0' uri='http://www.google.com/calendar'>Google Calendar</generator>
+	<openSearch:totalResults>794</openSearch:totalResults>
+	<openSearch:startIndex>1</openSearch:startIndex>
+	<openSearch:itemsPerPage>25</openSearch:itemsPerPage>
+	<gCal:timezone value='Asia/Seoul' />
+	<gCal:timesCleaned value='0' />
+	<gd:where valueString='' />
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/clsogdopu8jh6geqj7a9l6cr3k
+		</id>
+		<published>2011-05-13T05:41:17.000Z</published>
+		<updated>2011-05-13T05:41:17.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 21장</title>
+		<content type='text'>bindex:42,20</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=Y2xzb2dkb3B1OGpoNmdlcWo3YTlsNmNyM2tfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/clsogdopu8jh6geqj7a9l6cr3k' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='clsogdopu8jh6geqj7a9l6cr3k@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/lls379m7snhf3ihpbgish705fk
+		</id>
+		<published>2011-05-13T05:41:14.000Z</published>
+		<updated>2011-05-13T05:41:14.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:말라기 4장</title>
+		<content type='text'>bindex:38,3</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=bGxzMzc5bTdzbmhmM2locGJnaXNoNzA1ZmtfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/lls379m7snhf3ihpbgish705fk' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='lls379m7snhf3ihpbgish705fk@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/pqc71tqqe83bkke0emifkvf23c
+		</id>
+		<published>2011-05-13T05:41:11.000Z</published>
+		<updated>2011-05-13T05:41:11.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 20장</title>
+		<content type='text'>bindex:42,19</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=cHFjNzF0cXFlODNia2tlMGVtaWZrdmYyM2NfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/pqc71tqqe83bkke0emifkvf23c' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='pqc71tqqe83bkke0emifkvf23c@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/uvdaugeh81oshrvkq14lpt1fl8
+		</id>
+		<published>2011-05-13T05:41:08.000Z</published>
+		<updated>2011-05-13T05:41:08.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:말라기 3장</title>
+		<content type='text'>bindex:38,2</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=dXZkYXVnZWg4MW9zaHJ2a3ExNGxwdDFmbDhfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/uvdaugeh81oshrvkq14lpt1fl8' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='uvdaugeh81oshrvkq14lpt1fl8@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/busgpm7jv81h7h70a6ap22ohr4
+		</id>
+		<published>2011-05-13T05:41:05.000Z</published>
+		<updated>2011-05-13T05:41:05.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 19장</title>
+		<content type='text'>bindex:42,18</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=YnVzZ3BtN2p2ODFoN2g3MGE2YXAyMm9ocjRfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/busgpm7jv81h7h70a6ap22ohr4' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='busgpm7jv81h7h70a6ap22ohr4@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/21hggh8e5fvaob2fs596uimamo
+		</id>
+		<published>2011-05-13T05:41:02.000Z</published>
+		<updated>2011-05-13T05:41:02.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:말라기 2장</title>
+		<content type='text'>bindex:38,1</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=MjFoZ2doOGU1ZnZhb2IyZnM1OTZ1aW1hbW9fMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/21hggh8e5fvaob2fs596uimamo' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='21hggh8e5fvaob2fs596uimamo@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/tke76oab98cd9esptkmfh00e6o
+		</id>
+		<published>2011-05-13T05:40:59.000Z</published>
+		<updated>2011-05-13T05:40:59.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 18장</title>
+		<content type='text'>bindex:42,17</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=dGtlNzZvYWI5OGNkOWVzcHRrbWZoMDBlNm9fMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/tke76oab98cd9esptkmfh00e6o' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='tke76oab98cd9esptkmfh00e6o@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/iv9ne2r8onnced3oflleal1k1g
+		</id>
+		<published>2011-05-13T05:40:56.000Z</published>
+		<updated>2011-05-13T05:40:56.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:말라기 1장</title>
+		<content type='text'>bindex:38,0</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=aXY5bmUycjhvbm5jZWQzb2ZsbGVhbDFrMWdfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/iv9ne2r8onnced3oflleal1k1g' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='iv9ne2r8onnced3oflleal1k1g@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/4si267uqjl974r5eg3tjuugqng
+		</id>
+		<published>2011-05-13T05:40:54.000Z</published>
+		<updated>2011-05-13T05:40:54.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 17장</title>
+		<content type='text'>bindex:42,16</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=NHNpMjY3dXFqbDk3NHI1ZWczdGp1dWdxbmdfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/4si267uqjl974r5eg3tjuugqng' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='4si267uqjl974r5eg3tjuugqng@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/3dh3qicju2llju6mqohe6c9va4
+		</id>
+		<published>2011-05-13T05:40:51.000Z</published>
+		<updated>2011-05-13T05:40:51.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:스가랴 14장</title>
+		<content type='text'>bindex:37,13</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=M2RoM3FpY2p1MmxsanU2bXFvaGU2Yzl2YTRfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/3dh3qicju2llju6mqohe6c9va4' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='3dh3qicju2llju6mqohe6c9va4@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/nq7uqm65kfhpbcb5bt0244rak8
+		</id>
+		<published>2011-05-13T05:40:48.000Z</published>
+		<updated>2011-05-13T05:40:48.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 16장</title>
+		<content type='text'>bindex:42,15</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=bnE3dXFtNjVrZmhwYmNiNWJ0MDI0NHJhazhfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/nq7uqm65kfhpbcb5bt0244rak8' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='nq7uqm65kfhpbcb5bt0244rak8@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/n2a0ftihii83pclcshmun0es9g
+		</id>
+		<published>2011-05-13T05:40:45.000Z</published>
+		<updated>2011-05-13T05:40:45.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:스가랴 13장</title>
+		<content type='text'>bindex:37,12</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=bjJhMGZ0aWhpaTgzcGNsY3NobXVuMGVzOWdfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/n2a0ftihii83pclcshmun0es9g' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='n2a0ftihii83pclcshmun0es9g@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/om1nj25qulhq3vntgaraqrrub0
+		</id>
+		<published>2011-05-13T05:40:41.000Z</published>
+		<updated>2011-05-13T05:40:41.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 15장</title>
+		<content type='text'>bindex:42,14</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=b20xbmoyNXF1bGhxM3ZudGdhcmFxcnJ1YjBfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/om1nj25qulhq3vntgaraqrrub0' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='om1nj25qulhq3vntgaraqrrub0@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/qllhpd8thbelbq5lrpff22ef5g
+		</id>
+		<published>2011-05-13T05:40:39.000Z</published>
+		<updated>2011-05-13T05:40:39.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:스가랴 12장</title>
+		<content type='text'>bindex:37,11</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=cWxsaHBkOHRoYmVsYnE1bHJwZmYyMmVmNWdfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/qllhpd8thbelbq5lrpff22ef5g' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='qllhpd8thbelbq5lrpff22ef5g@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/to43doe9c6ejtun1j6vcj4a7uc
+		</id>
+		<published>2011-05-13T05:40:36.000Z</published>
+		<updated>2011-05-13T05:40:36.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 14장</title>
+		<content type='text'>bindex:42,13</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=dG80M2RvZTljNmVqdHVuMWo2dmNqNGE3dWNfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/to43doe9c6ejtun1j6vcj4a7uc' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='to43doe9c6ejtun1j6vcj4a7uc@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/93ep2tnq9jn078eu0iq1oddt04
+		</id>
+		<published>2011-05-13T05:40:33.000Z</published>
+		<updated>2011-05-13T05:40:33.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:스가랴 11장</title>
+		<content type='text'>bindex:37,10</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=OTNlcDJ0bnE5am4wNzhldTBpcTFvZGR0MDRfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/93ep2tnq9jn078eu0iq1oddt04' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='93ep2tnq9jn078eu0iq1oddt04@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/rp4fdr7vvtp6ehmsv76j4jk2io
+		</id>
+		<published>2011-05-13T05:40:30.000Z</published>
+		<updated>2011-05-13T05:40:30.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 13장</title>
+		<content type='text'>bindex:42,12</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=cnA0ZmRyN3Z2dHA2ZWhtc3Y3Nmo0amsyaW9fMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/rp4fdr7vvtp6ehmsv76j4jk2io' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='rp4fdr7vvtp6ehmsv76j4jk2io@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/2qaqcrk3gln64536s2mqd82uvg
+		</id>
+		<published>2011-05-13T05:40:27.000Z</published>
+		<updated>2011-05-13T05:40:27.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:스가랴 10장</title>
+		<content type='text'>bindex:37,9</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=MnFhcWNyazNnbG42NDUzNnMybXFkODJ1dmdfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/2qaqcrk3gln64536s2mqd82uvg' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='2qaqcrk3gln64536s2mqd82uvg@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/7b264evq4k7bvejuiohij0utvg
+		</id>
+		<published>2011-05-13T05:40:24.000Z</published>
+		<updated>2011-05-13T05:40:24.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 12장</title>
+		<content type='text'>bindex:42,11</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=N2IyNjRldnE0azdidmVqdWlvaGlqMHV0dmdfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/7b264evq4k7bvejuiohij0utvg' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='7b264evq4k7bvejuiohij0utvg@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/jjsqhj1loefevu63mfvrqvakv4
+		</id>
+		<published>2011-05-13T05:40:21.000Z</published>
+		<updated>2011-05-13T05:40:21.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:스가랴 9장</title>
+		<content type='text'>bindex:37,8</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=ampzcWhqMWxvZWZldnU2M21mdnJxdmFrdjRfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/jjsqhj1loefevu63mfvrqvakv4' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='jjsqhj1loefevu63mfvrqvakv4@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/37af2crni7qkjocqobp5meiupg
+		</id>
+		<published>2011-05-13T05:40:18.000Z</published>
+		<updated>2011-05-13T05:40:18.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 11장</title>
+		<content type='text'>bindex:42,10</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=MzdhZjJjcm5pN3Fram9jcW9icDVtZWl1cGdfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/37af2crni7qkjocqobp5meiupg' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='37af2crni7qkjocqobp5meiupg@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/chlc92e81q7ss18u1on9uk2740
+		</id>
+		<published>2011-05-13T05:40:14.000Z</published>
+		<updated>2011-05-13T05:40:14.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:스가랴 8장</title>
+		<content type='text'>bindex:37,7</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=Y2hsYzkyZTgxcTdzczE4dTFvbjl1azI3NDBfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/chlc92e81q7ss18u1on9uk2740' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='chlc92e81q7ss18u1on9uk2740@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/6klobkktr99beesig3vr2b2p28
+		</id>
+		<published>2011-05-13T05:40:10.000Z</published>
+		<updated>2011-05-13T05:40:10.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 10장</title>
+		<content type='text'>bindex:42,9</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=Nmtsb2Jra3RyOTliZWVzaWczdnIyYjJwMjhfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/6klobkktr99beesig3vr2b2p28' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='6klobkktr99beesig3vr2b2p28@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/et4lgujf9neel8fcakfptu5810
+		</id>
+		<published>2011-05-13T05:40:07.000Z</published>
+		<updated>2011-05-13T05:40:07.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:스가랴 7장</title>
+		<content type='text'>bindex:37,6</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=ZXQ0bGd1amY5bmVlbDhmY2FrZnB0dTU4MTBfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/et4lgujf9neel8fcakfptu5810' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='et4lgujf9neel8fcakfptu5810@google.com' />
+	</entry>
+	<entry>
+		<id>http://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/lvjssmfg0um25qhrk6fq4d88sg
+		</id>
+		<published>2011-05-13T05:40:04.000Z</published>
+		<updated>2011-05-13T05:40:04.000Z</updated>
+		<category scheme='http://schemas.google.com/g/2005#kind'
+			term='http://schemas.google.com/g/2005#event' />
+		<title type='text'>개인:요한복음 9장</title>
+		<content type='text'>bindex:42,8</content>
+		<link rel='alternate' type='text/html'
+			href='https://www.google.com/calendar/event?eid=bHZqc3NtZmcwdW0yNXFocms2ZnE0ZDg4c2dfMjAxMDExMDIgb2pncml1OGlsMXI2dnVtNG9sZ25iY21raDBAZw'
+			title='alternate' />
+		<link rel='self' type='application/atom+xml'
+			href='https://www.google.com/calendar/feeds/ojgriu8il1r6vum4olgnbcmkh0%40group.calendar.google.com/private/full/lvjssmfg0um25qhrk6fq4d88sg' />
+		<author>
+			<name>JEONGJAEHONG@gmail.com</name>
+			<email>jeongjaehong@gmail.com</email>
+		</author>
+		<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed' />
+		<gd:where />
+		<gd:who email='ojgriu8il1r6vum4olgnbcmkh0@group.calendar.google.com'
+			rel='http://schemas.google.com/g/2005#event.organizer' valueString='맥체인성경읽기(개인)' />
+		<gd:recurrence>DTSTART;VALUE=DATE:20101102
+			DTEND;VALUE=DATE:20101102
+			RRULE:FREQ=YEARLY
+</gd:recurrence>
+		<gd:transparency value='http://schemas.google.com/g/2005#event.opaque' />
+		<gd:visibility value='http://schemas.google.com/g/2005#event.default' />
+		<gCal:anyoneCanAddSelf value='false' />
+		<gCal:guestsCanInviteOthers value='true' />
+		<gCal:guestsCanModify value='false' />
+		<gCal:guestsCanSeeGuests value='true' />
+		<gCal:sequence value='0' />
+		<gCal:uid value='lvjssmfg0um25qhrk6fq4d88sg@google.com' />
+	</entry>
+</feed>

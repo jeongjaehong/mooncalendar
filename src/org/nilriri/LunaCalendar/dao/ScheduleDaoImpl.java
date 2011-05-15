@@ -9,28 +9,31 @@ import java.util.Calendar;
 import java.util.List;
 
 import org.nilriri.LunaCalendar.R;
+import org.nilriri.LunaCalendar.RefreshManager;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
-import org.nilriri.LunaCalendar.gcal.CalendarUrl;
 import org.nilriri.LunaCalendar.gcal.EventEntry;
 import org.nilriri.LunaCalendar.gcal.GoogleUtil;
-import org.nilriri.LunaCalendar.gcal.Link;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.WhereClause;
 import org.nilriri.LunaCalendar.tools.lunar2solar;
 
+import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDatabase.CursorFactory;
+import android.os.AsyncTask;
 import android.util.Log;
 
 public class ScheduleDaoImpl extends AbstractDao {
 
     private SQLiteDatabase db;
-
     private Context mContext;
+    private ScheduleBean oldBean;
+
+    protected RefreshManager refreshManager;
 
     public ScheduleDaoImpl(Context context, CursorFactory factory, boolean sdcarduse) {
         super(context, factory, sdcarduse);
@@ -40,40 +43,547 @@ public class ScheduleDaoImpl extends AbstractDao {
         db = getWritableDatabase();
     }
 
-    public void syncDelete(Long id) {
-
-        Log.d("XXXXXX", "syncDelete id=" + id);
-
-        Cursor c = query(id);
-        if (c.moveToNext()) {
-            String gid = c.getString(Schedule.COL_GID);
-            c.close();
-
-            Log.d("XXXXXX", "Schedule.GID=" + gid);
-
-            if (!"".equals(gid)) {
-                String[] gids = Common.tokenFn(gid, "@");
-
-                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
-                try {
-                    String account = Prefs.getAccountName(mContext);
-
-                    gu.deleteEvent(account, gids[0]);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+    private void CallerRefresh() {
+        try {
+            if (refreshManager != null) {
+                refreshManager.refresh();
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        c.close();
+    }
+
+    /*
+     * Sync Task
+     */
+    public void syncInsert(Long id, RefreshManager caller) {
+        this.refreshManager = caller;
+        if ("auto".equals(Prefs.getSyncMethod(this.mContext)) // 동기화 방법 
+                && !"".equals(Prefs.getSyncCalendar(mContext))) {
+            oldBean = new ScheduleBean();
+            oldBean.setId(id);
+
+            new googleInsert().execute();
+        }
+    }
+
+    public void syncInsert(ScheduleBean scheduleBean, RefreshManager caller) {
+        this.refreshManager = caller;
+        if ("auto".equals(Prefs.getSyncMethod(this.mContext)) // 동기화 방법 
+                && !"".equals(Prefs.getSyncCalendar(mContext))) {
+            oldBean = scheduleBean;
+
+            new googleInsert().execute();
+        } else {
+            localInsert(scheduleBean);
+            CallerRefresh();
+        }
 
     }
 
-    public void delete(Long id) {
+    public void syncUpdate(ScheduleBean scheduleBean, RefreshManager caller) {
+        this.refreshManager = caller;
+        if ("auto".equals(Prefs.getSyncMethod(this.mContext)) // 동기화 방법 
+                && !"".equals(Prefs.getSyncCalendar(mContext))) {
+            oldBean = scheduleBean;
 
-        // TODO: 동기화 방식 여부에 따라서 동기화 삭제를 진행할지 추가 필요.
-        syncDelete(id);
+            new googleUpdate().execute();
 
+        } else {
+            localUpdate(scheduleBean);
+            CallerRefresh();
+        }
+
+    }
+
+    public void syncDelete(Long deleteId, RefreshManager caller) {
+        this.refreshManager = caller;
+        if ("auto".equals(Prefs.getSyncMethod(mContext)) // 동기화 방법 
+                && !"".equals(Prefs.getSyncCalendar(mContext))) {
+
+            // EventEntry event = new EventEntry(query(deleteId));
+
+            oldBean = new ScheduleBean(query(deleteId));
+
+            new googleDelete().execute();
+        } else {
+            localDelete(deleteId);
+            CallerRefresh();
+        }
+    }
+
+    public void syncImport(RefreshManager caller) {
+        this.refreshManager = caller;
+        new googleImport().execute();
+    }
+
+    public void doImport(List<EventEntry> events) {
+
+        Log.d("doSync", "event count=" + events.size());
+        for (int i = 0; i < events.size(); i++) {
+            try {
+                ScheduleBean scheduleBean = new ScheduleBean(events.get(i));
+                doImport(scheduleBean);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void doImport(ScheduleBean scheduleBean) {
+
+        WhereClause whereClause = new WhereClause();
+
+        whereClause.put(Schedule.GID, scheduleBean.getGID());
+        whereClause.put(Schedule.ETAG, scheduleBean.getEtag());
+
+        String sql = "SELECT _id FROM " + Schedule.SCHEDULE_TABLE_NAME + " WHERE " + whereClause.getClause();
+
+        Log.d("doSync-insert", "exists check sql=" + sql);
+
+        Cursor c = getReadableDatabase().rawQuery(sql, null);
+
+        int updateCnt = 0;
+        if (c.moveToNext()) {
+            // uid와 etag가 동이한 자료가 존해하면...
+            Log.d("doSync-check", "exists local ID=" + c.getLong(Schedule.COL_ID));
+
+            scheduleBean.setId(c.getLong(Schedule.COL_ID));
+
+            c.close();
+
+            // 구글 캘린더로 부터 가져온 자료로 local 데이터를 수정한다.
+            updateCnt = localUpdate(scheduleBean);
+
+            // 업데이트된 기존 자료가 없으면 ...
+            // 싱크했지만 로컬에서 수정한 자료인 경우..
+            if (updateCnt <= 0) {
+
+                try {
+                    // local data가 수정 되었을때...
+                    // google캘린더 데이터를 로컬데이터와 동기화 한다. 
+                    GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
+
+                    // 구글 캘린더자료로 부터 받은 수정일자. 
+                    String googleUpdated = scheduleBean.getUpdated();
+
+                    // 로컬 데이터의 수정일자.
+                    scheduleBean = new ScheduleBean(query(scheduleBean.getId()));
+
+                    // 구글캘린더의 업데이트 시간과 로컬 업데이트 시간이 같으면 서버로 재전송 금지.
+                    if (!googleUpdated.equals(scheduleBean.getUpdated())) {
+                        gu.updateEvent(scheduleBean);
+                        //gu.insertEvent(Prefs.getSyncCalendar(mContext), scheduleBean, Prefs.getAccountName(mContext));
+                    }
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+
+        } else {
+            Log.d("doSync-check", "not Exists ");
+            c.close();
+
+            // etag와 uid가 동일한 자료가 
+            // local db에 없는 일정이므로 신규등록한다.
+            localInsert(scheduleBean);
+        }
+
+    }
+
+    public void batchMakeCalendar(RefreshManager caller) {
+        this.refreshManager = caller;
+        new googleMakeCalendar().execute();
+        //Bible Reading Plan생성.
+        //new googleMakeBiblePlan().execute();
+
+    }
+
+    /*
+     * AsyncTask     
+     */
+
+    private class googleInsert extends AsyncTask<Void, Void, Void> {
+        private ProgressDialog dialog;
+        EventEntry event;
+
+        @Override
+        protected void onPreExecute() {
+
+            if ("".equals(oldBean.getSchedule_title())) {
+                dialog = ProgressDialog.show(mContext, "", "일정을 복사 후 추가하고 있습니다...", true);
+            } else {
+                oldBean.setId(localInsert(oldBean));
+            }
+
+            Log.e(Common.TAG, "****** onPreExecute ********");
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Log.e(Common.TAG, "****** doInBackground ********");
+
+            try {
+                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
+
+                if ("".equals(oldBean.getSchedule_title())) {
+                    oldBean = new ScheduleBean(query(oldBean.getId()));
+
+                    // 기존에 구글캘린더에 존재하는 일정을 다시 추가하면 복제한다.
+                    if (!"".equals(oldBean.getSelfurl())) {
+                        oldBean.setId(localInsert(oldBean));
+                        oldBean.setEditurl(null);
+                        oldBean.setSelfUrl(null);
+                        oldBean.setEtag(null);
+                        oldBean.setGID(null);
+                    }
+                }
+
+                event = gu.insertEvent(Prefs.getSyncCalendar(mContext), oldBean, Prefs.getAccountName(mContext));
+
+                if (!"".equals(event.title)) {
+                    ScheduleBean eventBean = new ScheduleBean(event);
+                    // eventBean.setId(oldBean.getId());
+
+                    // 변경된 내용을 구글 캘린더에 반영한 후에 결과정보를 로컬에 다시 반영한다.
+                    oldBean.setTitle(eventBean.getSchedule_title());
+                    oldBean.setDate(eventBean.getSchedule_date());
+                    oldBean.setContents(eventBean.getSchedule_contents());
+                    oldBean.setGID(eventBean.getGID());
+                    oldBean.setEtag(eventBean.getEtag());
+                    oldBean.setPublished(eventBean.getPublished());
+                    oldBean.setUpdated(eventBean.getUpdated());
+                    oldBean.setWhen(eventBean.getWhen());
+                    oldBean.setWho(eventBean.getWho());
+                    oldBean.setRecurrence(eventBean.getRecurrence());
+                    oldBean.setSelfUrl(eventBean.getSelfurl());
+                    oldBean.setEditurl(eventBean.getEditurl());
+                    oldBean.setOriginalevent(eventBean.getOriginalevent());
+                    oldBean.setEventstatus(eventBean.getEventstatus());
+
+                    localUpdate(oldBean);
+                }
+
+            } catch (IOException e) {
+                cancel(true);
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            CallerRefresh();
+            if (dialog != null && dialog.isShowing())
+                dialog.dismiss();
+            Log.e(Common.TAG, "****** onPostExecute ********");
+        }
+
+    }
+
+    private class googleUpdate extends AsyncTask<Void, Void, Void> {
+        private ProgressDialog dialog;
+        EventEntry event;
+
+        @Override
+        protected void onPreExecute() {
+            // 변경사항을 먼저 저장한다.
+            localUpdate(oldBean);
+
+            //dialog = ProgressDialog.show(this, "", "Add event...", true);
+            Log.e(Common.TAG, "****** onPreExecute ********");
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Log.e(Common.TAG, "****** doInBackground ********");
+
+            try {
+                if ("".equals(oldBean.getEtag())) {
+                    cancel(true);
+                }
+
+                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
+                event = gu.updateEvent(oldBean);
+
+                if (!"".equals(event.getEditLink())) {
+                    ScheduleBean eventBean = new ScheduleBean(event);
+
+                    // 변경된 내용을 구글 캘린더에 반영한 후에 결과정보를 로컬에 다시 반영한다.
+                    oldBean.setTitle(eventBean.getSchedule_title());
+                    oldBean.setDate(eventBean.getSchedule_date());
+                    oldBean.setContents(eventBean.getSchedule_contents());
+                    oldBean.setGID(eventBean.getGID());
+                    oldBean.setEtag(eventBean.getEtag());
+                    oldBean.setPublished(eventBean.getPublished());
+                    oldBean.setUpdated(eventBean.getUpdated());
+                    oldBean.setWhen(eventBean.getWhen());
+                    oldBean.setWho(eventBean.getWho());
+                    oldBean.setRecurrence(eventBean.getRecurrence());
+                    oldBean.setSelfUrl(eventBean.getSelfurl());
+                    oldBean.setEditurl(eventBean.getEditurl());
+                    oldBean.setOriginalevent(eventBean.getOriginalevent());
+                    oldBean.setEventstatus(eventBean.getEventstatus());
+
+                    localUpdate(oldBean);
+                }
+
+            } catch (IOException e) {
+                cancel(true);
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+
+            CallerRefresh();
+
+            if (dialog != null && dialog.isShowing()) {
+                dialog.dismiss();
+            }
+            Log.e(Common.TAG, "****** onPostExecute ********");
+        }
+
+    }
+
+    private class googleDelete extends AsyncTask<Void, Void, Void> {
+        private ProgressDialog dialog;
+
+        @Override
+        protected void onPreExecute() {
+            //dialog = ProgressDialog.show(mContext, "", "Delete event from google...", true);
+
+            localDelete(oldBean.getId());
+
+            Log.e(Common.TAG, "****** onPreExecute ********");
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Log.e(Common.TAG, "****** doInBackground ********");
+            try {
+
+                if ("".equals(oldBean.getEtag())) {
+                    cancel(true);
+                }
+
+                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
+                gu.deleteEvent(oldBean);
+            } catch (IOException e) {
+                cancel(true);
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+
+            CallerRefresh();
+            if (dialog != null && dialog.isShowing()) {
+                dialog.dismiss();
+            }
+            Log.e(Common.TAG, "****** onPostExecute ********");
+        }
+
+    }
+
+    private class googleImport extends AsyncTask<Void, Void, Void> {
+        private ProgressDialog dialog;
+        List<EventEntry> events;
+
+        @Override
+        protected void onPreExecute() {
+            dialog = ProgressDialog.show(mContext, "", "구글캘린더에서 일정을 가져오고 있습니다...", true);
+
+            Log.e(Common.TAG, "****** onPreExecute ********");
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Log.e(Common.TAG, "****** doInBackground ********");
+
+            try {
+                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
+                String url = Prefs.getSyncCalendar(mContext);
+                events = gu.getEvents(url);
+
+            } catch (IOException e) {
+                cancel(true);
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+
+            doImport(events);
+
+            CallerRefresh();
+
+            dialog.dismiss();
+
+            Log.e(Common.TAG, "****** onPostExecute ********");
+        }
+
+    }
+
+    private class googleMakeCalendar extends AsyncTask<Void, Void, Void> {
+        private ProgressDialog dialog;
+
+        @Override
+        protected void onPreExecute() {
+            //dialog = ProgressDialog.show(mContext, "일정생성!", "구글캘린더에 음력일정을 생성하고 있습니다...", true);
+
+            dialog = new ProgressDialog(mContext);
+
+            dialog.setTitle("일정생성!");
+            dialog.setMessage("구글캘린더에 음력일정을 생성하고 있습니다...");
+            dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            dialog.setMax(2100);
+            dialog.show();
+
+            Log.e(Common.TAG, "****** onPreExecute ********");
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Log.e(Common.TAG, "****** doInBackground ********");
+
+            try {
+                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
+                String url = Prefs.getSyncCalendar(mContext);
+                gu.batchAddEvents(url, dialog);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                cancel(true);
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+
+            CallerRefresh();
+
+            dialog.dismiss();
+
+            Log.e(Common.TAG, "****** onPostExecute ********");
+        }
+
+    }
+
+    private class googleMakeBiblePlan extends AsyncTask<Void, Void, Void> {
+        private ProgressDialog dialog;
+
+        @Override
+        protected void onPreExecute() {
+            //dialog = ProgressDialog.show(mContext, "일정생성!", "구글캘린더에 음력일정을 생성하고 있습니다...", true);
+
+            dialog = new ProgressDialog(mContext);
+            dialog.setTitle("일정생성!");
+            dialog.setMessage("구글캘린더에 맥체인성경읽기 일정을 생성하고 있습니다...");
+            dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            dialog.setCancelable(true);
+            dialog.setMax(366);
+            dialog.show();
+
+            Log.e(Common.TAG, "****** onPreExecute ********");
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Log.e(Common.TAG, "****** doInBackground ********");
+
+            try {
+
+                String[] PlanList = mContext.getResources().getStringArray(R.array.array_bibleplan);
+
+                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
+                String url = Prefs.getSyncCalendar(mContext);
+                gu.batchBiblePlan(url, dialog, PlanList);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                cancel(true);
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+
+            CallerRefresh();
+
+            dialog.dismiss();
+
+            Log.e(Common.TAG, "****** onPostExecute ********");
+        }
+
+    }
+
+    /*
+     * Local Task
+     */
+    public Long localInsert(ScheduleBean scheduleBean) {
+
+        Long newId;
+
+        db.beginTransaction();
+        if (1 == scheduleBean.getDday_displayyn()) {
+            // 기존에 상단에 표시하도록 되어있던 D-day정보는 목록표시로 변경한다.
+            db.execSQL("update schedule set dday_displayyn = 0 where dday_displayyn = 1");
+        }
+
+        newId = db.insert(Schedule.SCHEDULE_TABLE_NAME, null, new ScheduleContentValues(scheduleBean).value);
+
+        db.setTransactionSuccessful();
+        db.endTransaction();
+
+        Log.d("DaoImpl-insert", "succ.");
+
+        return newId;
+
+    }
+
+    public int localUpdate(ScheduleBean scheduleBean) {
+
+        WhereClause whereClause = new WhereClause(true);
+
+        //whereClause.addParam(Schedule._ID);
+        whereClause.put(Schedule._ID, scheduleBean.getId());
+        whereClause.put(Schedule.UPDATED, scheduleBean.getUpdated(), "<=");
+
+        db.beginTransaction();
+        if (1 == scheduleBean.getDday_displayyn()) {
+            // 기존에 상단에 표시하도록 되어있던 D-day정보는 목록표시로 변경한다.
+            db.execSQL("update schedule set dday_displayyn = 0 where dday_displayyn = 1");
+        }
+
+        int result = db.update(Schedule.SCHEDULE_TABLE_NAME, new ScheduleContentValues(scheduleBean).value, whereClause.getClause(), whereClause.getParam());
+
+        db.setTransactionSuccessful();
+        db.endTransaction();
+
+        return result;
+
+    }
+
+    public void localDelete(Long id) {
         String sql = "DELETE FROM " + Schedule.SCHEDULE_TABLE_NAME + " WHERE " + Schedule._ID + "=" + id;
+        Log.e(Common.TAG, "DELETE SQL=" + sql);
         getWritableDatabase().execSQL(sql);
     }
 
@@ -82,174 +592,56 @@ public class ScheduleDaoImpl extends AbstractDao {
         getWritableDatabase().execSQL(sql);
     }
 
-    public void insert(List<EventEntry> events) {
-        for (int i = 0; i < events.size(); i++) {
-            insert(events.get(i));
-        }
-    }
+    /*
+     * Query
+     */
+    public Cursor query(Long id) {
 
-    public void insert(EventEntry event) {
+        StringBuilder query;
+        query = new StringBuilder();
 
-        ScheduleBean scheduleBean = new ScheduleBean();
+        query.append("SELECT " + Schedule._ID);
+        query.append("    ," + Schedule.SCHEDULE_DATE);
+        query.append("    ," + Schedule.SCHEDULE_TITLE);
+        query.append("    ,case when " + Schedule.SCHEDULE_REPEAT + " = 9 then " + Schedule.ALARM_DATE);
+        query.append("    else " + Schedule.SCHEDULE_CONTENTS + " end " + Schedule.SCHEDULE_CONTENTS);
+        query.append("    ," + Schedule.SCHEDULE_REPEAT);
+        query.append("    ," + Schedule.SCHEDULE_CHECK);
+        query.append("    ," + Schedule.ALARM_LUNASOLAR);
+        query.append("    ," + Schedule.ALARM_DATE);
+        query.append("    ," + Schedule.ALARM_TIME);
+        query.append("    ," + Schedule.ALARM_DAYS);
+        query.append("    ," + Schedule.ALARM_DAY);
+        query.append("    ," + Schedule.DDAY_ALARMYN);
+        query.append("    ," + Schedule.DDAY_ALARMDAY);
+        query.append("    ," + Schedule.DDAY_ALARMSIGN);
+        query.append("    ," + Schedule.DDAY_DISPLAYYN);
+        query.append("    ," + Schedule.GID);
+        query.append("    ," + Schedule.ANNIVERSARY);
+        query.append("    ," + Schedule.LUNARYN);
+        query.append("    ," + Schedule.SCHEDULE_LDATE);
+        query.append("    ," + Schedule.ALARM_DETAILINFO);
+        query.append("    ," + Schedule.DDAY_DETAILINFO);
+        query.append("    ," + Schedule.SCHEDULE_TYPE);
+        query.append("    ," + Schedule.BIBLE_BOOK);
+        query.append("    ," + Schedule.BIBLE_CHAPTER);
+        query.append("    ," + Schedule.ETAG);
+        query.append("    ," + Schedule.PUBLISHED);
+        query.append("    ," + Schedule.UPDATED);
+        query.append("    ," + Schedule.WHEN);
+        query.append("    ," + Schedule.WHO);
+        query.append("    ," + Schedule.RECURRENCE);
+        query.append("    ," + Schedule.SELFURL);
+        query.append("    ," + Schedule.EDITURL);
+        query.append("    ," + Schedule.ORIGINALEVENT);
+        query.append("    ," + Schedule.EVENTSTATUS);
+        query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME);
+        query.append(" WHERE 1 = 1 ");
+        query.append(" AND " + Schedule._ID + " = " + id.toString());
 
-        scheduleBean.setTitle(event.title);
-        scheduleBean.setDate(event.getStartDate());
-        scheduleBean.setContents(event.content);
-        scheduleBean.setGID(event.uid.value);
+        Log.d("DaoImpl-query", query.toString());
 
-        //TODO: 업데이트 날자를 비교해서 업데이트 대상에 따라 처리.
-
-        insert(scheduleBean);
-    }
-
-    public void insert(ScheduleBean scheduleBean) {
-        ContentValues val = new ContentValues();
-        WhereClause whereClause = new WhereClause();
-
-        whereClause.put(Schedule.GID, scheduleBean.getGID());
-
-        int gCnt = 0;
-
-        val.put(Schedule.SCHEDULE_DATE, scheduleBean.getDate());
-
-        val.put(Schedule.SCHEDULE_LDATE, scheduleBean.getLDate());
-        val.put(Schedule.LUNARYN, scheduleBean.getLunarYN() == true ? "Y" : "N");
-        val.put(Schedule.ANNIVERSARY, scheduleBean.getAnniversary() == true ? "Y" : "N");
-
-        val.put(Schedule.SCHEDULE_TITLE, scheduleBean.getTitle());
-        val.put(Schedule.SCHEDULE_CONTENTS, scheduleBean.getContents());
-        val.put(Schedule.SCHEDULE_REPEAT, scheduleBean.getRepeat());
-
-        val.put(Schedule.ALARM_LUNASOLAR, scheduleBean.getLunaSolar());
-
-        switch (scheduleBean.getRepeat()) {
-            case 5:
-                // 매년주기 알람인경우 년도를 빼고 월과 일만 저장한다.
-                String alarmdate = scheduleBean.getAlarmDate();
-                if (alarmdate.length() > 5)
-                    alarmdate = alarmdate.substring(5);
-                val.put(Schedule.ALARM_DATE, alarmdate);
-                break;
-            default:
-                val.put(Schedule.ALARM_DATE, scheduleBean.getAlarmDate());
-        }
-
-        val.put(Schedule.ALARM_TIME, scheduleBean.getAlarmTime());
-        val.put(Schedule.ALARM_DAYS, scheduleBean.getAlarmDays());
-        val.put(Schedule.ALARM_DAY, scheduleBean.getAlarmDay());
-
-        val.put(Schedule.DDAY_ALARMYN, scheduleBean.getDday_alarmyn());
-        val.put(Schedule.DDAY_ALARMDAY, scheduleBean.getDday_alarmday());
-        val.put(Schedule.DDAY_ALARMSIGN, scheduleBean.getDday_alarmsign());
-        val.put(Schedule.DDAY_DISPLAYYN, scheduleBean.getDday_displayyn());
-        val.put(Schedule.GID, scheduleBean.getGID());
-
-        Log.d("DaoImpl-insert", "val=" + val.toString());
-
-        if ("".equals(scheduleBean.getGID())) {
-            gCnt = 0;
-        } else {
-
-            String sql = "SELECT _id FROM " + Schedule.SCHEDULE_TABLE_NAME + " WHERE " + whereClause;
-
-            Cursor c = getReadableDatabase().rawQuery(sql, null);
-
-            Log.d("DaoImpl-insert", "sql=" + sql);
-
-            if (c.moveToNext()) {
-
-                gCnt = c.getCount();
-                scheduleBean.setId(c.getInt(Schedule.COL_ID));
-                val.put(Schedule._ID, c.getString(Schedule.COL_ID));
-            }
-            c.close();
-        }
-        if (gCnt > 0) {
-            // db = getWritableDatabase();
-
-            // int cnt = db.update(Schedule.SCHEDULE_TABLE_NAME, val, whereClause.toString(), null);
-
-            // Log.d("DaoImpl-update", "update count is " + cnt);
-
-            // db.close();
-
-            update(scheduleBean);
-
-        } else if (gCnt == 0) {
-
-            // db = getWritableDatabase();
-
-            db.beginTransaction();
-            if (1 == scheduleBean.getDday_displayyn()) {
-                // 기존에 상단에 표시하도록 되어있던 D-day정보는 목록표시로 변경한다.
-                db.execSQL("update schedule set dday_displayyn = 0 where dday_displayyn = 1");
-            }
-
-            db.insert(Schedule.SCHEDULE_TABLE_NAME, null, val);
-
-            db.setTransactionSuccessful();
-            db.endTransaction();
-
-            Log.d("DaoImpl-insert", "succ.");
-        }
-
-        //getWritableDatabase().insert(Schedule.SCHEDULE_TABLE_NAME, null, val);
-    }
-
-    public void update(ScheduleBean scheduleBean) {
-
-        String[] args = new String[] { scheduleBean.getId() + "" };
-        ContentValues val = new ContentValues();
-
-        val.put(Schedule._ID, scheduleBean.getId());
-        val.put(Schedule.SCHEDULE_DATE, scheduleBean.getDate());
-
-        val.put(Schedule.SCHEDULE_LDATE, scheduleBean.getLDate());
-        val.put(Schedule.LUNARYN, scheduleBean.getLunarYN() == true ? "Y" : "N");
-        val.put(Schedule.ANNIVERSARY, scheduleBean.getAnniversary() == true ? "Y" : "N");
-
-        val.put(Schedule.SCHEDULE_TITLE, scheduleBean.getTitle());
-        val.put(Schedule.SCHEDULE_CONTENTS, scheduleBean.getContents());
-        val.put(Schedule.SCHEDULE_REPEAT, scheduleBean.getRepeat());
-        val.put(Schedule.SCHEDULE_CHECK, scheduleBean.getCheck());
-
-        val.put(Schedule.ALARM_LUNASOLAR, scheduleBean.getLunaSolar());
-
-        switch (scheduleBean.getRepeat()) {
-            case 5:
-                // 매년주기 알람인경우 년도를 빼고 월과 일만 저장한다.
-                String alarmdate = scheduleBean.getAlarmDate();
-                if (alarmdate.length() > 5)
-                    alarmdate = alarmdate.substring(5);
-                val.put(Schedule.ALARM_DATE, alarmdate);
-                break;
-            default:
-                val.put(Schedule.ALARM_DATE, scheduleBean.getAlarmDate());
-        }
-
-        val.put(Schedule.ALARM_TIME, scheduleBean.getAlarmTime());
-        val.put(Schedule.ALARM_DAYS, scheduleBean.getAlarmDays());
-        val.put(Schedule.ALARM_DAY, scheduleBean.getAlarmDay());
-
-        val.put(Schedule.DDAY_ALARMYN, scheduleBean.getDday_alarmyn());
-        val.put(Schedule.DDAY_ALARMDAY, scheduleBean.getDday_alarmday());
-        val.put(Schedule.DDAY_ALARMSIGN, scheduleBean.getDday_alarmsign());
-        val.put(Schedule.DDAY_DISPLAYYN, scheduleBean.getDday_displayyn());
-
-        Log.d("DaoImpl-update", val.toString());
-
-        // db = getWritableDatabase();
-
-        db.beginTransaction();
-        if (1 == scheduleBean.getDday_displayyn()) {
-            // 기존에 상단에 표시하도록 되어있던 D-day정보는 목록표시로 변경한다.
-            db.execSQL("update schedule set dday_displayyn = 0 where dday_displayyn = 1");
-        }
-
-        db.update(Schedule.SCHEDULE_TABLE_NAME, val, Schedule._ID + "=?", args);
-
-        db.setTransactionSuccessful();
-        db.endTransaction();
+        return getReadableDatabase().rawQuery(query.toString(), null);
 
     }
 
@@ -257,18 +649,6 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         String sday = date.substring(5);
         String lday = lDay.substring(4, 6) + "-" + lDay.substring(6);
-
-        /*
-        String selection = Schedule.SCHEDULE_DATE + " = ? ";
-        String selectionArgs[] = new String[] { date };
-        String groupBy = null;
-        String having = null;
-        String orderBy = "_id desc";
-
-        // db = getReadableDatabase();
-
-        return db.query(Schedule.SCHEDULE_TABLE_NAME, mColumns, selection, selectionArgs, groupBy, having, orderBy);
-        */
 
         StringBuffer query = new StringBuffer();
 
@@ -383,14 +763,43 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     public Cursor queryAll() {
 
-        StringBuffer query = new StringBuffer();
-
-        query.append("SELECT   ");
-        query.append(" _id,schedule_date,schedule_title,schedule_contents,schedule_repeat,schedule_check,alarm_lunasolar,alarm_date,alarm_time,alarm_days,alarm_day,dday_alarmyn,dday_alarmday,dday_alarmsign,dday_displayyn,gid,anniversary,lunaryn,schedule_ldate ");
-        query.append("FROM  schedule ");
-        query.append("WHERE schedule_date > '1900-01-01' ");
-
-        query.append("  AND schedule_repeat not in ('F','P', '9') ");
+        StringBuffer query = new StringBuffer("SELECT " + Schedule._ID);
+        query.append("   ," + Schedule.SCHEDULE_DATE);
+        query.append("   ," + Schedule.SCHEDULE_TITLE);
+        query.append("   ," + Schedule.SCHEDULE_CONTENTS);
+        query.append("   ," + Schedule.SCHEDULE_REPEAT);
+        query.append("   ," + Schedule.SCHEDULE_CHECK);
+        query.append("   ," + Schedule.ALARM_LUNASOLAR);
+        query.append("   ," + Schedule.ALARM_DATE);
+        query.append("   ," + Schedule.ALARM_TIME);
+        query.append("   ," + Schedule.ALARM_DAYS);
+        query.append("   ," + Schedule.ALARM_DAY);
+        query.append("   ," + Schedule.DDAY_ALARMYN);
+        query.append("   ," + Schedule.DDAY_ALARMDAY);
+        query.append("   ," + Schedule.DDAY_ALARMSIGN);
+        query.append("   ," + Schedule.DDAY_DISPLAYYN);
+        query.append("   ," + Schedule.GID);
+        query.append("   ," + Schedule.ANNIVERSARY);
+        query.append("   ," + Schedule.LUNARYN);
+        query.append("   ," + Schedule.SCHEDULE_LDATE);
+        query.append("   ," + Schedule.ALARM_DETAILINFO);
+        query.append("   ," + Schedule.DDAY_DETAILINFO);
+        query.append("   ," + Schedule.SCHEDULE_TYPE);
+        query.append("   ," + Schedule.BIBLE_BOOK);
+        query.append("   ," + Schedule.BIBLE_CHAPTER);
+        query.append("   ," + Schedule.ETAG);
+        query.append("   ," + Schedule.PUBLISHED);
+        query.append("   ," + Schedule.UPDATED);
+        query.append("   ," + Schedule.WHEN);
+        query.append("   ," + Schedule.WHO);
+        query.append("   ," + Schedule.RECURRENCE);
+        query.append("   ," + Schedule.SELFURL);
+        query.append("   ," + Schedule.EDITURL);
+        query.append("   ," + Schedule.ORIGINALEVENT);
+        query.append("   ," + Schedule.EVENTSTATUS);
+        query.append(" FROM  schedule ");
+        query.append(" WHERE schedule_date > '1900-01-01' ");
+        query.append("   AND schedule_repeat not in ('F','P', '9') ");
         /*
                 if (Prefs.getBplan(mContext) && (Prefs.getBplanFamily(mContext) || Prefs.getBplanPersonal(mContext))) {
                     query.append("  AND schedule_repeat not in ( '9') ");
@@ -399,44 +808,68 @@ public class ScheduleDaoImpl extends AbstractDao {
                     query.append("  AND schedule_repeat not in ('F','P', '9') ");
                 }
         */
+
+        Log.d(Common.TAG, "Query All=" + query.toString());
         return getReadableDatabase().rawQuery(query.toString(), null);
 
     }
 
+    /*
+     * Data Manger Query
+     */
     public boolean export(Cursor cursor) {
 
         String path = "/sdcard/";
         Calendar c = Calendar.getInstance();
         c.setFirstDayOfWeek(Calendar.SUNDAY);
-        String datetime = Common.fmtDateTime(c);
+        //String datetime = Common.fmtDateTime(c);
         File file = new File(path + "lunarcalendar.auto.bak");
         try {
             FileOutputStream fos = new FileOutputStream(file);
 
             StringBuffer buf = new StringBuffer();
 
-            buf.append("schedule_date||schedule_title||schedule_contents||schedule_repeat||schedule_check||alarm_lunasolar||alarm_date||alarm_time||alarm_days||alarm_day||dday_alarmyn||dday_alarmday||dday_alarmsign||dday_displayyn||gid||anniversary||lunaryn||schedule_ldate").append("\n");
+            buf.append("\t" + Schedule.SCHEDULE_DATE);
+            buf.append("\t" + Schedule.SCHEDULE_TITLE);
+            buf.append("\t" + Schedule.SCHEDULE_CONTENTS);
+            buf.append("\t" + Schedule.SCHEDULE_REPEAT);
+            buf.append("\t" + Schedule.SCHEDULE_CHECK);
+            buf.append("\t" + Schedule.ALARM_LUNASOLAR);
+            buf.append("\t" + Schedule.ALARM_DATE);
+            buf.append("\t" + Schedule.ALARM_TIME);
+            buf.append("\t" + Schedule.ALARM_DAYS);
+            buf.append("\t" + Schedule.ALARM_DAY);
+            buf.append("\t" + Schedule.DDAY_ALARMYN);
+            buf.append("\t" + Schedule.DDAY_ALARMDAY);
+            buf.append("\t" + Schedule.DDAY_ALARMSIGN);
+            buf.append("\t" + Schedule.DDAY_DISPLAYYN);
+            buf.append("\t" + Schedule.GID);
+            buf.append("\t" + Schedule.ANNIVERSARY);
+            buf.append("\t" + Schedule.LUNARYN);
+            buf.append("\t" + Schedule.SCHEDULE_LDATE);
+            buf.append("\t" + Schedule.ALARM_DETAILINFO);
+            buf.append("\t" + Schedule.DDAY_DETAILINFO);
+            buf.append("\t" + Schedule.SCHEDULE_TYPE);
+            buf.append("\t" + Schedule.BIBLE_BOOK);
+            buf.append("\t" + Schedule.BIBLE_CHAPTER);
+            buf.append("\t" + Schedule.ETAG);
+            buf.append("\t" + Schedule.PUBLISHED);
+            buf.append("\t" + Schedule.UPDATED);
+            buf.append("\t" + Schedule.WHEN);
+            buf.append("\t" + Schedule.WHO);
+            buf.append("\t" + Schedule.RECURRENCE);
+            buf.append("\t" + Schedule.SELFURL);
+            buf.append("\t" + Schedule.EDITURL);
+            buf.append("\t" + Schedule.ORIGINALEVENT);
+            buf.append("\t" + Schedule.EVENTSTATUS);
+            buf.append("\n");
 
             while (cursor.moveToNext()) {
 
-                buf.append(cursor.getString(Schedule.COL_SCHEDULE_DATE)).append("||");
-                buf.append(cursor.getString(Schedule.COL_SCHEDULE_TITLE)).append("||");
-                buf.append(cursor.getString(Schedule.COL_SCHEDULE_CONTENTS)).append("||");
-                buf.append(cursor.getString(Schedule.COL_SCHEDULE_REPEAT)).append("||");
-                buf.append(cursor.getString(Schedule.COL_SCHEDULE_CHECK)).append("||");
-                buf.append(cursor.getString(Schedule.COL_ALARM_LUNASOLAR)).append("||");
-                buf.append(cursor.getString(Schedule.COL_ALARM_DATE)).append("||");
-                buf.append(cursor.getString(Schedule.COL_ALARM_TIME)).append("||");
-                buf.append(cursor.getString(Schedule.COL_ALARM_DAYS)).append("||");
-                buf.append(cursor.getString(Schedule.COL_ALARM_DAY)).append("||");
-                buf.append(cursor.getString(Schedule.COL_DDAY_ALARMYN)).append("||");
-                buf.append(cursor.getString(Schedule.COL_DDAY_ALARMDAY)).append("||");
-                buf.append(cursor.getString(Schedule.COL_DDAY_ALARMSIGN)).append("||");
-                buf.append(cursor.getString(Schedule.COL_DDAY_DISPLAYYN)).append("||");
-                buf.append(cursor.getString(Schedule.COL_GID)).append("||");
-                buf.append(cursor.getString(Schedule.COL_ANNIVERSARY)).append("||");
-                buf.append(cursor.getString(Schedule.COL_LUNARYN)).append("||");
-                buf.append(cursor.getString(Schedule.COL_SCHEDULE_LDATE)).append("\n");
+                for (int col = 0; col < cursor.getColumnCount(); col++) {
+                    buf.append(cursor.getString(col)).append("||");
+                }
+                buf.append("\n");
 
             }
 
@@ -451,7 +884,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         }
     }
 
-    public boolean exportdata(Cursor cursor) {
+    public boolean exportdata(Cursor cursor, ProgressDialog pd) {
 
         String path = android.os.Environment.getExternalStorageDirectory().toString() + "/";
 
@@ -459,42 +892,92 @@ public class ScheduleDaoImpl extends AbstractDao {
         c.setFirstDayOfWeek(Calendar.SUNDAY);
         String datetime = Common.fmtDateTime(c);
         File file = new File(path + "lunarcalendar.backup");
+
+        pd.setMax(cursor.getCount() + 10);
+
         if (file.exists()) {
-            file.delete();
+            Log.d(Common.TAG, "########    exists    #######");
+
+            //file.delete();
+            if (file.renameTo(new File(path + "lunarcalendar.backup." + datetime))) {
+                Log.d(Common.TAG, "########    rename succ    #######");
+                file = new File(path + "lunarcalendar.backup");
+            } else {
+                Log.d(Common.TAG, "########    rename fail    #######");
+                file = new File(path + "lunarcalendar." + datetime + ".backup");
+
+                if (file.exists()) {
+                    Log.d(Common.TAG, "########    reopen    #######");
+                    Log.i("Export", "File Exists..." + file.getPath() + file.getName());
+                    return false;
+                }
+            }
         }
+
+        Log.d(Common.TAG, "########    file job end.    #######");
+
+        pd.setProgress(10);
+
         try {
             FileOutputStream fos = new FileOutputStream(file);
 
-            StringBuffer buf = new StringBuffer();
-
-            buf.append("schedule_date\tschedule_title\tschedule_contents\tschedule_repeat\tschedule_check\talarm_lunasolar\talarm_date\talarm_time\talarm_days\talarm_day\tdday_alarmyn\tdday_alarmday\tdday_alarmsign\tdday_displayyn\tgid\tanniversary\tlunaryn\tschedule_ldate").append("\n\r");
+            StringBuffer buf = new StringBuffer(Schedule._ID);
+            buf.append("\t" + Schedule.SCHEDULE_DATE);
+            buf.append("\t" + Schedule.SCHEDULE_TITLE);
+            buf.append("\t" + Schedule.SCHEDULE_CONTENTS);
+            buf.append("\t" + Schedule.SCHEDULE_REPEAT);
+            buf.append("\t" + Schedule.SCHEDULE_CHECK);
+            buf.append("\t" + Schedule.ALARM_LUNASOLAR);
+            buf.append("\t" + Schedule.ALARM_DATE);
+            buf.append("\t" + Schedule.ALARM_TIME);
+            buf.append("\t" + Schedule.ALARM_DAYS);
+            buf.append("\t" + Schedule.ALARM_DAY);
+            buf.append("\t" + Schedule.DDAY_ALARMYN);
+            buf.append("\t" + Schedule.DDAY_ALARMDAY);
+            buf.append("\t" + Schedule.DDAY_ALARMSIGN);
+            buf.append("\t" + Schedule.DDAY_DISPLAYYN);
+            buf.append("\t" + Schedule.GID);
+            buf.append("\t" + Schedule.ANNIVERSARY);
+            buf.append("\t" + Schedule.LUNARYN);
+            buf.append("\t" + Schedule.SCHEDULE_LDATE);
+            buf.append("\t" + Schedule.ALARM_DETAILINFO);
+            buf.append("\t" + Schedule.DDAY_DETAILINFO);
+            buf.append("\t" + Schedule.SCHEDULE_TYPE);
+            buf.append("\t" + Schedule.BIBLE_BOOK);
+            buf.append("\t" + Schedule.BIBLE_CHAPTER);
+            buf.append("\t" + Schedule.ETAG);
+            buf.append("\t" + Schedule.PUBLISHED);
+            buf.append("\t" + Schedule.UPDATED);
+            buf.append("\t" + Schedule.WHEN);
+            buf.append("\t" + Schedule.WHO);
+            buf.append("\t" + Schedule.RECURRENCE);
+            buf.append("\t" + Schedule.SELFURL);
+            buf.append("\t" + Schedule.EDITURL);
+            buf.append("\t" + Schedule.ORIGINALEVENT);
+            buf.append("\t" + Schedule.EVENTSTATUS);
+            buf.append("\n\r");
 
             while (cursor.moveToNext()) {
 
-                buf.append(cursor.getString(Schedule.COL_SCHEDULE_DATE)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_SCHEDULE_TITLE)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_SCHEDULE_CONTENTS)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_SCHEDULE_REPEAT)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_SCHEDULE_CHECK)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_ALARM_LUNASOLAR)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_ALARM_DATE)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_ALARM_TIME)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_ALARM_DAYS)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_ALARM_DAY)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_DDAY_ALARMYN)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_DDAY_ALARMDAY)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_DDAY_ALARMSIGN)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_DDAY_DISPLAYYN)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_GID)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_ANNIVERSARY)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_LUNARYN)).append("\t");
-                buf.append(cursor.getString(Schedule.COL_SCHEDULE_LDATE)).append("\n\r");
+                Log.d(Common.TAG, "########    move next    #######");
 
+                pd.setProgress(cursor.getPosition() + 10);
+
+                for (int col = 0; col < cursor.getColumnCount(); col++) {
+                    Log.d(Common.TAG, "########    col=" + col + "    #######");
+                    buf.append(cursor.getString(col)).append("\t");
+                }
+                buf.append("\n\r");
             }
 
+            Log.d(Common.TAG, "########    write start    #######");
             fos.write(buf.toString().getBytes());
 
+            Log.d(Common.TAG, "########    write end    #######");
+
             fos.close();
+
+            Log.d(Common.TAG, "########    fos close    #######");
 
             return true;
         } catch (Exception e) {
@@ -509,7 +992,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         String path = android.os.Environment.getExternalStorageDirectory().toString() + "/";
         Calendar c = Calendar.getInstance();
         c.setFirstDayOfWeek(Calendar.SUNDAY);
-        String datetime = Common.fmtDateTime(c);
+        //String datetime = Common.fmtDateTime(c);
         File file = new File(path + "lunarcalendar.backup");
 
         if (!file.exists()) {
@@ -544,33 +1027,18 @@ public class ScheduleDaoImpl extends AbstractDao {
 
                 String data[] = CheckData[row].toString().split("\t");
                 Log.d("DaoImpl-import", "data=" + data.length);
-                if (data.length != 18)
-                    continue;
 
                 val = new ContentValues();
 
-                val.put(Schedule.SCHEDULE_DATE, "null".equals(data[0]) ? "" : data[0]);
-                val.put(Schedule.SCHEDULE_TITLE, "null".equals(data[1]) ? "" : data[1]);
-                val.put(Schedule.SCHEDULE_CONTENTS, "null".equals(data[2]) ? "" : data[2]);
-                val.put(Schedule.SCHEDULE_REPEAT, "null".equals(data[3]) ? "" : data[3]);
-                val.put(Schedule.SCHEDULE_CHECK, "null".equals(data[4]) ? "" : data[4]);
-                val.put(Schedule.ALARM_LUNASOLAR, "null".equals(data[5]) ? "" : data[5]);
-                val.put(Schedule.ALARM_DATE, "null".equals(data[6]) ? "" : data[6]);
-                val.put(Schedule.ALARM_TIME, "null".equals(data[7]) ? "" : data[7]);
-                val.put(Schedule.ALARM_DAYS, "null".equals(data[8]) ? "" : data[8]);
-                val.put(Schedule.ALARM_DAY, "null".equals(data[9]) ? "" : data[9]);
-                val.put(Schedule.DDAY_ALARMYN, "null".equals(data[10]) ? "" : data[10]);
-                val.put(Schedule.DDAY_ALARMDAY, "null".equals(data[11]) ? "" : data[11]);
-                val.put(Schedule.DDAY_ALARMSIGN, "null".equals(data[12]) ? "" : data[12]);
-                val.put(Schedule.DDAY_DISPLAYYN, "null".equals(data[13]) ? "" : data[13]);
-                val.put(Schedule.GID, "null".equals(data[14]) ? "" : data[14]);
-                val.put(Schedule.ANNIVERSARY, "null".equals(data[15]) ? "" : data[15]);
-                val.put(Schedule.LUNARYN, "null".equals(data[16]) ? "" : data[16]);
-                val.put(Schedule.SCHEDULE_LDATE, "null".equals(data[17]) ? "" : data[17]);
+                for (int col = 0; col < data.length; col++) {
+                    val.put(Constants.mColumns[col], "null".equals(data[col]) ? "" : data[col]);
+                }
 
-                if (!queryExists(data[0], data[1])) {
+                if (!queryExists(data[Schedule.COL_SCHEDULE_DATE], data[Schedule.COL_SCHEDULE_TITLE], data[Schedule.COL_ETAG])) {
 
                     Log.d("DaoImpl-import", "val=" + val.toString());
+
+                    val.remove(Schedule._ID);
 
                     db.insert(Schedule.SCHEDULE_TABLE_NAME, null, val);
                 }
@@ -610,24 +1078,12 @@ public class ScheduleDaoImpl extends AbstractDao {
             }
 
             val = new ContentValues();
-            val.put("schedule_date", cursor.getString(Schedule.COL_SCHEDULE_DATE));
-            val.put("schedule_title", cursor.getString(Schedule.COL_SCHEDULE_TITLE));
-            val.put("schedule_contents", cursor.getString(Schedule.COL_SCHEDULE_CONTENTS));
-            val.put("schedule_repeat", cursor.getString(Schedule.COL_SCHEDULE_REPEAT));
-            val.put("schedule_check", cursor.getString(Schedule.COL_SCHEDULE_CHECK));
-            val.put("alarm_lunasolar", cursor.getString(Schedule.COL_ALARM_LUNASOLAR));
-            val.put("alarm_date", cursor.getString(Schedule.COL_ALARM_DATE));
-            val.put("alarm_time", cursor.getString(Schedule.COL_ALARM_TIME));
-            val.put("alarm_days", cursor.getString(Schedule.COL_ALARM_DAYS));
-            val.put("alarm_day", cursor.getString(Schedule.COL_ALARM_DAY));
-            val.put("dday_alarmyn", cursor.getString(Schedule.COL_DDAY_ALARMYN));
-            val.put("dday_alarmday", cursor.getString(Schedule.COL_DDAY_ALARMDAY));
-            val.put("dday_alarmsign", cursor.getString(Schedule.COL_DDAY_ALARMSIGN));
-            val.put("dday_displayyn", cursor.getString(Schedule.COL_DDAY_DISPLAYYN));
-            val.put("gid", cursor.getString(Schedule.COL_GID));
-            val.put("anniversary", cursor.getString(Schedule.COL_ANNIVERSARY));
-            val.put("lunaryn", cursor.getString(Schedule.COL_LUNARYN));
-            val.put("schedule_ldate", cursor.getString(Schedule.COL_SCHEDULE_LDATE));
+
+            for (int col = 0; col < cursor.getColumnCount(); col++) {
+                val.put(Constants.mColumns[col], cursor.getString(col));
+            }
+
+            val.remove(Schedule._ID);
 
             db.insert("schedule", null, val);
 
@@ -673,7 +1129,7 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     }
 
-    public boolean queryExists(String date, String title) {
+    public boolean queryExists(String date, String title, String etag) {
 
         StringBuffer query = new StringBuffer();
 
@@ -681,6 +1137,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append(" from schedule ");
         query.append(" where schedule_date = '" + date + "' ");
         query.append(" and schedule_title = '" + title + "' ");
+        query.append(" or etag = '" + etag + "' ");
 
         Log.d("DaoImpl-queryExists", "query=" + query.toString());
 
@@ -699,14 +1156,14 @@ public class ScheduleDaoImpl extends AbstractDao {
         StringBuffer query = new StringBuffer();
 
         String sDate[] = Common.tokenFn(month + "-01", "-");
-        String lStart = Common.fmtDate(lunar2solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1));
+        //String lStart = Common.fmtDate(lunar2solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1));
         Calendar c = Calendar.getInstance();
         c.setFirstDayOfWeek(Calendar.SUNDAY);
         c.set(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1);
         c.add(Calendar.DAY_OF_MONTH, -1);
-        int lastDay = c.get(Calendar.DAY_OF_MONTH);
-        String lEnd = Common.fmtDate(lunar2solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), lastDay));
-        boolean isChange = (lStart.substring(5).compareTo(lEnd.substring(5)) > 0);
+        //int lastDay = c.get(Calendar.DAY_OF_MONTH);
+        //String lEnd = Common.fmtDate(lunar2solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), lastDay));
+        //boolean isChange = (lStart.substring(5).compareTo(lEnd.substring(5)) > 0);
 
         // 양력일정
         query.append("SELECT  ");
@@ -972,85 +1429,7 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     }
 
-    public Cursor query(Long id) {
-
-        StringBuilder query;
-        query = new StringBuilder();
-
-        query.append("SELECT " + Schedule._ID);
-        query.append("    ," + Schedule.SCHEDULE_DATE);
-        query.append("    ," + Schedule.SCHEDULE_TITLE);
-        query.append("    ,case when schedule_repeat = 9 then " + Schedule.ALARM_DATE);
-        query.append("    else " + Schedule.SCHEDULE_CONTENTS + " end " + Schedule.SCHEDULE_CONTENTS);
-        query.append("    ," + Schedule.SCHEDULE_REPEAT);
-        query.append("    ," + Schedule.SCHEDULE_CHECK);
-        query.append("    ," + Schedule.ALARM_LUNASOLAR);
-        query.append("    ," + Schedule.ALARM_DATE);
-        query.append("    ," + Schedule.ALARM_TIME);
-        query.append("    ," + Schedule.ALARM_DAYS);
-        query.append("    ," + Schedule.ALARM_DAY);
-        query.append("    ," + Schedule.DDAY_ALARMYN);
-        query.append("    ," + Schedule.DDAY_ALARMDAY);
-        query.append("    ," + Schedule.DDAY_ALARMSIGN);
-        query.append("    ," + Schedule.DDAY_DISPLAYYN);
-        query.append("    ," + Schedule.GID);
-        query.append("    ," + Schedule.ANNIVERSARY);
-        query.append("    ," + Schedule.LUNARYN);
-        query.append("    ," + Schedule.SCHEDULE_LDATE);
-        query.append("    ," + Schedule.ALARM_DETAILINFO);
-        query.append("    ," + Schedule.DDAY_DETAILINFO);
-        query.append("    ," + Schedule.SCHEDULE_TYPE);
-        query.append("    ," + Schedule.BIBLE_BOOK);
-        query.append("    ," + Schedule.BIBLE_CHAPTER);
-        query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME);
-        query.append(" WHERE 1 = 1 ");
-        query.append(" AND " + Schedule._ID + " = " + id.toString());
-
-        Log.d("DaoImpl-query", query.toString());
-
-        return getReadableDatabase().rawQuery(query.toString(), null);
-
-    }
-
-    public Cursor queryGCalendar(Long id) {
-
-        StringBuilder query;
-        query = new StringBuilder();
-
-        query.append("SELECT " + Schedule._ID);
-        query.append("    ," + Schedule.SCHEDULE_DATE);
-        query.append("    ," + Schedule.SCHEDULE_TITLE);
-        query.append("    ,case when schedule_repeat = 9 then " + Schedule.ALARM_DATE);
-        query.append("    else " + Schedule.SCHEDULE_CONTENTS + " end " + Schedule.SCHEDULE_CONTENTS);
-        query.append("    ," + Schedule.SCHEDULE_REPEAT);
-        query.append("    ," + Schedule.SCHEDULE_CHECK);
-        query.append("    ," + Schedule.ALARM_LUNASOLAR);
-        query.append("    ," + Schedule.ALARM_DATE);
-        query.append("    ," + Schedule.ALARM_TIME);
-        query.append("    ," + Schedule.ALARM_DAYS);
-        query.append("    ," + Schedule.ALARM_DAY);
-        query.append("    ," + Schedule.DDAY_ALARMYN);
-        query.append("    ," + Schedule.DDAY_ALARMDAY);
-        query.append("    ," + Schedule.DDAY_ALARMSIGN);
-        query.append("    ," + Schedule.DDAY_DISPLAYYN);
-        query.append("    ,strftime('%Y'," + Schedule.SCHEDULE_DATE + ",'localtime') year ");
-        query.append("    ,case when schedule_repeat = 9 ");
-        query.append("    then strftime('%m','1900-'||" + Schedule.ALARM_DATE + ",'localtime')  ");
-        query.append("    else strftime('%m'," + Schedule.SCHEDULE_DATE + ",'localtime') end month ");
-        query.append("    ,case when schedule_repeat = 9 ");
-        query.append("    then strftime('%d','1900-'||" + Schedule.ALARM_DATE + ",'localtime')  ");
-        query.append("    else strftime('%d'," + Schedule.SCHEDULE_DATE + ",'localtime') end day ");
-        query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME);
-        query.append(" WHERE 1 = 1 ");
-        query.append(" AND " + Schedule._ID + " = " + id.toString());
-
-        Log.d("DaoImpl-query", query.toString());
-
-        return getReadableDatabase().rawQuery(query.toString(), null);
-
-    }
-
-    public Cursor queryGroup(String range, String date) {
+    public Cursor queryGroup(String range, String date, boolean isSearch, int operator, String keyword1, String keyword2) {
 
         StringBuilder query;
         query = new StringBuilder();
@@ -1060,13 +1439,14 @@ public class ScheduleDaoImpl extends AbstractDao {
             Calendar c = Calendar.getInstance();
             c.setFirstDayOfWeek(Calendar.SUNDAY);
             baseDate = Common.fmtDate(c);
-        } else if (baseDate.length() < 10)
+        } else if (baseDate.length() < 10) {
             baseDate += "-01";
+        }
 
         query.append("SELECT " + Schedule._ID);
         query.append("    ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 THEN '" + mContext.getResources().getString(R.string.anniversary_label) + "'");
         query.append("    when  " + Schedule.SCHEDULE_REPEAT + " in ('F','P') THEN " + " ' B-Plan ' ");
-        query.append("    when  " + Schedule.SCHEDULE_REPEAT + " < 9 and dday_alarmyn = 1 THEN " + Schedule.SCHEDULE_DATE + "||'\n'||strftime('%Y-%m-%d', DATE(schedule_date, dday_alarmsign || dday_alarmday ||' DAY', 'LOCALTIME'), 'localtime') ");
+        query.append("    when  " + Schedule.SCHEDULE_REPEAT + " < 9 and " + Schedule.DDAY_ALARMYN + " = 1 THEN " + Schedule.SCHEDULE_DATE + "||'\n'||strftime('%Y-%m-%d', DATE(" + Schedule.SCHEDULE_DATE + ", dday_alarmsign || dday_alarmday ||' DAY', 'LOCALTIME'), 'localtime') ");
         query.append("    ELSE " + Schedule.SCHEDULE_DATE + " END " + Schedule.SCHEDULE_DATE);
         query.append("    ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " IN ('F','P','9') THEN " + Schedule.SCHEDULE_TITLE + "||'('||" + Schedule.ALARM_DATE + "||')'");
         query.append("    when  " + Schedule.SCHEDULE_REPEAT + " < 9 and dday_alarmyn = 1 THEN ");
@@ -1321,11 +1701,29 @@ public class ScheduleDaoImpl extends AbstractDao {
                     query.append("and schedule_date > '1900-01-01' ");
                 }
             } else {
+
                 if (!Prefs.getAnniversary(this.mContext)) {
                     // 시스템 기념일
                     query.append("and schedule_repeat < 8 ");
                     query.append("and schedule_date > '1900-01-01' ");
                 }
+            }
+        } else if (isSearch) {
+
+            query.append("and (schedule_title||ifnull(schedule_contents,'') like '%" + keyword1 + "%')");
+
+            if (!"".equals(keyword2)) {
+
+                if (0 == operator || 2 == operator)//and
+                    query.append(" and ");
+                else if (1 == operator)//or
+                    query.append(" or ");
+
+                query.append(" (schedule_title||ifnull(schedule_contents,'') ");
+                if (2 == operator)
+                    query.append(" not ");
+                query.append(" like '%" + keyword2 + "%')");
+
             }
         } else {
             if (!Prefs.getAnniversary(this.mContext)) {
@@ -1377,10 +1775,9 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         return getReadableDatabase().rawQuery(query.toString(), selectionArgs);
 
-        //return db.query(Schedule.SCHEDULE_DAYS_JOIN_TABLE, columns, selection, selectionArgs, groupBy, having, orderBy);
-
     }
 
+    @Override
     public void close() {
         if (db != null) {
             db.close();
@@ -1388,6 +1785,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         super.close();
     }
 
+    @Override
     public void onDestroy() {
         close();
         super.onDestroy();

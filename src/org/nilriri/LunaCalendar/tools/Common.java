@@ -1,20 +1,14 @@
 package org.nilriri.LunaCalendar.tools;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.TimeZone;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.nilriri.LunaCalendar.widget.AppWidgetProvider1x1;
 import org.nilriri.LunaCalendar.widget.AppWidgetProvider2x2;
 import org.nilriri.LunaCalendar.widget.WidgetService;
@@ -24,7 +18,6 @@ import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.location.Location;
 import android.location.LocationManager;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -33,9 +26,10 @@ import android.os.Message;
 import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Audio.AudioColumns;
-import android.telephony.TelephonyManager;
-import android.util.FloatMath;
+import android.text.format.DateFormat;
+import android.text.format.Time;
 import android.util.Log;
+import android.util.TimeFormatException;
 
 import com.google.api.client.util.DateTime;
 
@@ -56,6 +50,32 @@ public class Common extends Activity {
     public static final String ACTION_REFRESH_START = "org.nilriri.LunarCalendar.REFRESH_START";
     public static final String ACTION_REFRESH_FINISH = "org.nilriri.LunarCalendar.REFRESH_FINISH";
     public static final String ACTION_UPDATE = "org.nilriri.LunarCalendar.UPDATE";
+
+    public static String formatTime3339(String value) {
+        Time t = new Time();
+        try {
+            if (t.parse3339(value)) {
+                Log.d("~~~~~~~~~~~~~~~", "parse ok");
+                return t.format3339(false);
+            } else {
+                Log.d("~~~~~~~~~~~~~~~", "parse error =" + value);
+                return Common.getTime3339Format(false);
+            }
+        } catch (TimeFormatException e) {
+            e.printStackTrace();
+            return Common.getTime3339Format(false);
+        }
+    }
+
+    public static String getTime3339Format() {
+        return getTime3339Format(false);
+    }
+
+    public static String getTime3339Format(boolean allDay) {
+        Time t = new Time(Time.TIMEZONE_UTC);
+        t.setToNow();
+        return t.format3339(allDay);
+    }
 
     public static void sendServiceAlarmStart(Context context) {
         Intent intent = new Intent(context, WidgetService.class);
@@ -105,19 +125,16 @@ public class Common extends Activity {
     }
 
     public static DateTime toDateTime(String date) {
-        Calendar c = Calendar.getInstance();
+        return toDateTime(date, false);
+    }
 
-        String value = date.replace("-", "");
+    public static DateTime toDateTime(String date, boolean allDay) {
+        DateTime result = new DateTime(new Date());
 
-        int year = Integer.parseInt(value.substring(0, 4));
-        int month = Integer.parseInt(value.substring(4, 6)) - 1;
-        int day = Integer.parseInt(value.substring(6, 8));
+        result = DateTime.parseRfc3339(date);
 
-        c.set(Calendar.YEAR, year);
-        c.set(Calendar.MONTH, month);
-        c.set(Calendar.DAY_OF_MONTH, day);
+        return result;
 
-        return new DateTime(c.getTime());
     }
 
     public static String fmtDate(String date) {
@@ -184,7 +201,7 @@ public class Common extends Activity {
     
     Intent intent = new Intent();   
     intent.setAction(Intent.ACTION_PICK);   
-    // FTP URL (Starts with ftp://, sftp:// or ftps:// followed by hostname and port).   
+    // FTP SELFURL (Starts with ftp://, sftp:// or ftps:// followed by hostname and port).   
     Uri ftpUri = Uri.parse("ftp://yourftpserver.com");   
     intent.setDataAndType(ftpUri, "vnd.android.cursor.dir/lysesoft.andftp.uri");   
     // FTP credentials (optional)   
@@ -210,11 +227,12 @@ public class Common extends Activity {
      
      */
 
+    /*
     private double[] getGPS() {
         LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         List<String> providers = lm.getProviders(true);
 
-        /* Loop over the array backwards, and if you get an accurate location, then break out the loop*/
+        // Loop over the array backwards, and if you get an accurate location, then break out the loop
         Location l = null;
 
         for (int i = providers.size() - 1; i >= 0; i--) {
@@ -230,6 +248,7 @@ public class Common extends Activity {
         }
         return gps;
     }
+    */
 
     public boolean locactionServiceAvaiable() {
         LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -241,18 +260,23 @@ public class Common extends Activity {
             return false;
     }
 
+    /*
     //uses-permission android:name="android.permission.READ_PHONE_STATE"
     private String getMyPhoneNumber() {
         TelephonyManager mTelephonyMgr;
         mTelephonyMgr = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         return mTelephonyMgr.getLine1Number();
     }
+    */
 
+    /*
     private String getMy10DigitPhoneNumber() {
         String s = getMyPhoneNumber();
         return s.substring(2);
     }
+    */
 
+    /*
     private double gps2m(float lat_a, float lng_a, float lat_b, float lng_b) {
         float pk = (float) (180 / 3.14169);
 
@@ -268,6 +292,7 @@ public class Common extends Activity {
 
         return 6366000 * tt;
     }
+    */
 
     public static boolean isSdPresent() {
         return android.os.Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED);
@@ -301,7 +326,7 @@ public class Common extends Activity {
 
     public static String[] tokenFn(String str, String token) {
         StringTokenizer st = null;
-        String toStr[] = null;
+        String toStr[] = new String[0];
         int tokenCount = 0;
         int index = 0;
         int len = 0;
@@ -318,7 +343,7 @@ public class Common extends Activity {
                 toStr[i] = st.nextToken();
 
         } catch (Exception e) {
-            toStr = null;
+            toStr = new String[0];
         }
         return toStr;
     }
@@ -365,6 +390,7 @@ public class Common extends Activity {
       
       
      */
+    /*
     public void postData() {
         // Create a new HttpClient and Post Header   
         HttpClient httpclient = new DefaultHttpClient();
@@ -386,5 +412,6 @@ public class Common extends Activity {
             // TODO Auto-generated catch block   
         }
     }
+    */
 
 }

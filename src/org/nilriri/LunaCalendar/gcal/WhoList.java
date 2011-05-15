@@ -16,14 +16,32 @@
 
 package org.nilriri.LunaCalendar.gcal;
 
-import com.google.api.client.util.Key;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Yaniv Inbar
  */
-public class GUID {
+public class WhoList {
 
-    @Key("@value")
-    public String value;
+    private List<Who> list;
+
+    public WhoList() {
+        list = new ArrayList<Who>();
+    }
+
+    public void add(String email, String rel, String name) {
+        Who who = new Who();
+
+        who.email = email;
+        who.rel = rel;
+        who.valueString = name;
+
+        list.add(who);
+    }
+    
+    public List<Who> getList(){
+        return list;
+    }
 
 }

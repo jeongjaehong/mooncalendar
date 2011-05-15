@@ -19,9 +19,9 @@ package org.nilriri.LunaCalendar.schedule;
 import java.util.Calendar;
 
 import org.nilriri.LunaCalendar.R;
+import org.nilriri.LunaCalendar.RefreshManager;
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
-import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.lunar2solar;
@@ -31,7 +31,6 @@ import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -51,7 +50,7 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemSelectedListener;
 
-public class ScheduleEditor extends Activity implements OnClickListener, OnTouchListener {
+public class ScheduleEditor extends Activity implements OnClickListener, OnTouchListener, RefreshManager {
 
     static final int TIME_DIALOG_ID = 0;
     static final int DATE_DIALOG_ID = 1;
@@ -93,7 +92,7 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
 
         ArrayAdapter<CharSequence> adapter;
 
-        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+        //dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
 
         mSchedule_date = (EditText) findViewById(R.id.schedule_date);
         mSchedule_ldate = (EditText) findViewById(R.id.schedule_ldate);
@@ -260,7 +259,7 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
         public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
             scheduleBean.setLunaSolar(pos);
 
-            switch (scheduleBean.getRepeat()) {
+            switch (scheduleBean.getSchedule_repeat()) {
                 case 4:
                     if (pos == 0) { //양력
                         mAlarm_DayofMonth.setText(scheduleBean.getDisplayAlarmDay());
@@ -268,7 +267,7 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
                         mLunaAlarm_day.setVisibility(View.GONE);
                         mAlarm_DayofMonth.setVisibility(View.VISIBLE);
                     } else {//음력
-                        mLunaAlarm_day.setSelection(scheduleBean.getAlarmDay() - 1);
+                        mLunaAlarm_day.setSelection(scheduleBean.getAlarm_day() - 1);
 
                         mAlarm_DayofMonth.setVisibility(View.GONE);
                         mLunaAlarm_day.setVisibility(View.VISIBLE);
@@ -325,8 +324,8 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
                 break;
             case 4: // 매달:음/양, 날짜, 시간 +-.dd.hh.mm
                 mAlarm_lunasolar.setVisibility(View.VISIBLE);
-                mAlarm_DayofMonth.setVisibility(scheduleBean.getLunaSolar() == 0 ? View.VISIBLE : View.GONE);
-                mLunaAlarm_day.setVisibility(scheduleBean.getLunaSolar() == 1 ? View.VISIBLE : View.GONE);
+                mAlarm_DayofMonth.setVisibility(scheduleBean.getAlarm_lunasolar() == 0 ? View.VISIBLE : View.GONE);
+                mLunaAlarm_day.setVisibility(scheduleBean.getAlarm_lunasolar() == 1 ? View.VISIBLE : View.GONE);
                 mAlarm_time.setVisibility(View.VISIBLE);
                 break;
             case 5: // 매년:음/양, 날짜, 시간  +-.mm.dd.hh.mm
@@ -346,25 +345,25 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
 
         mSchedule_date.setText(scheduleBean.getDisplayDate());
         mSchedule_ldate.setText(Common.fmtDate(lunar2solar.s2l(scheduleBean.getYear(), scheduleBean.getMonth(), scheduleBean.getDay())));
-        mLunaryn.setChecked(scheduleBean.getLunarYN());
+        mLunaryn.setChecked(scheduleBean.getLunaryn());
         mAnniversary.setChecked(scheduleBean.getAnniversary());
 
-        mSchedule_title.setText(scheduleBean.getTitle());
-        mSchedule_conents.setText(scheduleBean.getContents());
+        mSchedule_title.setText(scheduleBean.getSchedule_title());
+        mSchedule_conents.setText(scheduleBean.getSchedule_contents());
 
-        if (scheduleBean.getRepeat() >= mSchedule_repeat.getCount()) {
+        if (scheduleBean.getSchedule_repeat() >= mSchedule_repeat.getCount()) {
             mSchedule_repeat.setSelection(0);
         } else {
-            mSchedule_repeat.setSelection(scheduleBean.getRepeat());
+            mSchedule_repeat.setSelection(scheduleBean.getSchedule_repeat());
         }
 
-        mAlarm_lunasolar.setSelection(scheduleBean.getLunaSolar());
+        mAlarm_lunasolar.setSelection(scheduleBean.getAlarm_lunasolar());
         mAlarm_DayofMonth.setText(scheduleBean.getDisplayAlarmDay());
         mAlarm_repeatday.setText(scheduleBean.getDisplayAlarmDay());
         mAlarm_date.setText(scheduleBean.getDisplayAlarmDate());
         mAlarm_time.setText(scheduleBean.getDisplayAlarmTime());
-        mAlarm_days.setSelection(scheduleBean.getAlarmDays());
-        mLunaAlarm_day.setSelection(scheduleBean.getAlarmDay() - 1);
+        mAlarm_days.setSelection(scheduleBean.getAlarm_days());
+        mLunaAlarm_day.setSelection(scheduleBean.getAlarm_day() - 1);
 
         mSpecialday_alarmyn.setSelection(scheduleBean.getDday_alarmyn());
         mSpecial_alarmday.setText(scheduleBean.getDisplayDday_alarmday());
@@ -383,7 +382,7 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
                 break;
             case R.id.alarm_date:
                 // 양력일때만 날짜입력박스를 띄운다.
-                if (scheduleBean.getLunaSolar() == 0) {
+                if (scheduleBean.getAlarm_lunasolar() == 0) {
                     activecontrol = R.id.alarm_date;
                     showDialog(DATE_DIALOG_ID);
                 } else {
@@ -418,7 +417,7 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
                 }
             case DATE_DIALOG_ID:
                 if (activecontrol == R.id.alarm_day) {
-                    return new DatePickerDialog(this, mDateSetListener, scheduleBean.getAlarmYear(), scheduleBean.getAlarmMonth() - 1, scheduleBean.getAlarmDay());
+                    return new DatePickerDialog(this, mDateSetListener, scheduleBean.getAlarmYear(), scheduleBean.getAlarmMonth() - 1, scheduleBean.getAlarm_day());
                 } else if (activecontrol == R.id.alarm_date) {
                     return new DatePickerDialog(this, mDateSetListener, scheduleBean.getAlarmYear(), scheduleBean.getAlarmMonth() - 1, scheduleBean.getAlarmDayofMonth());
                 } else {
@@ -438,7 +437,7 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
                 break;
             case DATE_DIALOG_ID:
                 if (activecontrol == R.id.alarm_day) {
-                    ((DatePickerDialog) dialog).updateDate(scheduleBean.getAlarmYear(), scheduleBean.getAlarmMonth() - 1, scheduleBean.getAlarmDay());
+                    ((DatePickerDialog) dialog).updateDate(scheduleBean.getAlarmYear(), scheduleBean.getAlarmMonth() - 1, scheduleBean.getAlarm_day());
                 } else if (activecontrol == R.id.alarm_date) {
                     ((DatePickerDialog) dialog).updateDate(scheduleBean.getAlarmYear(), scheduleBean.getAlarmMonth() - 1, scheduleBean.getAlarmDayofMonth());
                 } else {
@@ -498,18 +497,14 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
     };
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (dao != null) {
-            dao.close();
-        }
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
 
+        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+
         initScheduleEditor();
+
+        mSchedule_title.requestFocus();
     }
 
     /**
@@ -523,44 +518,19 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
         if (id > 0 && dao != null) {
             this.setTitle(getResources().getString(R.string.schedule_modify_label));
 
-            Cursor cursor = dao.query(id);
+            scheduleBean = new ScheduleBean(dao.query(id));
+            Log.d(Common.TAG, "initScheduleEditor scheduleBean=" + scheduleBean.toString());
 
-            if (cursor.moveToNext()) {
-                scheduleBean.setId(cursor.getInt(Schedule.COL_ID));
-                scheduleBean.setDate(cursor.getString(Schedule.COL_SCHEDULE_DATE));
-
-                scheduleBean.setLDate(cursor.getString(Schedule.COL_SCHEDULE_LDATE));
-                scheduleBean.setLunarYN("Y".equals(cursor.getString(Schedule.COL_LUNARYN)));
-                scheduleBean.setAnniversary("Y".equals(cursor.getString(Schedule.COL_ANNIVERSARY)));
-
-                scheduleBean.setTitle(cursor.getString(Schedule.COL_SCHEDULE_TITLE));
-                scheduleBean.setContents(cursor.getString(Schedule.COL_SCHEDULE_CONTENTS));
-                scheduleBean.setRepeat(cursor.getInt(Schedule.COL_SCHEDULE_REPEAT));
-
-                scheduleBean.setScheduleCheck(cursor.getString(Schedule.COL_SCHEDULE_CHECK));
-                scheduleBean.setLunaSolar(cursor.getInt(Schedule.COL_ALARM_LUNASOLAR));
-                scheduleBean.setAlarmDate(cursor.getString(Schedule.COL_ALARM_DATE));
-                scheduleBean.setAlarmTime(cursor.getString(Schedule.COL_ALARM_TIME));
-                scheduleBean.setAlarmDays(cursor.getInt(Schedule.COL_ALARM_DAYS));
-                scheduleBean.setAlarmDay(cursor.getInt(Schedule.COL_ALARM_DAY));
-
-                scheduleBean.setDday_alarmyn(cursor.getInt(Schedule.COL_DDAY_ALARMYN));
-                scheduleBean.setDday_alarmday(cursor.getInt(Schedule.COL_DDAY_ALARMDAY));
-                scheduleBean.setDday_alarmsign(cursor.getString(Schedule.COL_DDAY_ALARMSIGN));
-                scheduleBean.setDday_displayyn(cursor.getInt(Schedule.COL_DDAY_DISPLAYYN));
-
-            }
-            cursor.close();
         } else {
             this.setTitle(getResources().getString(R.string.schedule_add_label));
 
             Calendar c = (Calendar) data.get("STODAY");
 
-            scheduleBean.setId(0);
+            scheduleBean.setId(new Long(0));
             scheduleBean.setDate(c);
         }
 
-        ChangeViewOfRepeatMethod(scheduleBean.getRepeat());
+        ChangeViewOfRepeatMethod(scheduleBean.getSchedule_repeat());
 
         updateDisplay();
     }
@@ -569,24 +539,15 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
     protected void onPause() {
         super.onPause();
 
-        scheduleBean.setDate(scheduleBean.getDate());
-
+        scheduleBean.setDate(scheduleBean.getSchedule_date());
         scheduleBean.setLDate(this.mSchedule_ldate.getText().toString());
         scheduleBean.setLunarYN(mLunaryn.isChecked());
         scheduleBean.setAnniversary(mAnniversary.isChecked());
-
         scheduleBean.setTitle(mSchedule_title.getText());
         scheduleBean.setContents(mSchedule_conents.getText());
         scheduleBean.setRepeat(mSchedule_repeat.getSelectedItemPosition());
-
         scheduleBean.setLunaSolar(mAlarm_lunasolar.getSelectedItemPosition());
-
-        Log.e("XXXX", "msg=" + mAlarm_date.getText().toString());
-        Log.e("XXXX", "msg=" + mAlarm_date.getText().toString());
-        Log.e("XXXX", "msg=" + mAlarm_date.getText().toString());
-
         scheduleBean.setAlarmDate(mAlarm_date.getText().toString());
-
         scheduleBean.setAlarmDays(mAlarm_days.getSelectedItemPosition());
 
         if (this.mSchedule_repeat.getSelectedItemPosition() == 6) {
@@ -600,18 +561,14 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
         scheduleBean.setDday_alarmday(this.mSpecial_alarmday.getText().toString());
 
         if (scheduleBean.getId() > 0) {
-
             scheduleBean.setScheduleCheck("1900-01-01");
-            dao.update(scheduleBean);
+            scheduleBean.setUpdated(Common.getTime3339Format());
 
+            dao.syncUpdate(scheduleBean, this);
         } else {
-            if (!"".equals(scheduleBean.getTitle().trim())) {
-                dao.insert(scheduleBean);
+            if (!"".equals(scheduleBean.getSchedule_title().trim())) {
+                dao.syncInsert(scheduleBean, this);
             }
-        }
-
-        if (dao != null) {
-            dao.close();
         }
 
     }
@@ -653,7 +610,7 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case MENU_ITEM_DELSCHEDULE: {
-                dao.delete(new Long(scheduleBean.getId()));
+                dao.syncDelete(scheduleBean.getId(), null);
 
                 this.finish();
 
@@ -708,6 +665,15 @@ public class ScheduleEditor extends Activity implements OnClickListener, OnTouch
         }
 
         return true;
+    }
+
+    public void refresh() {
+        if (dao != null) {
+            dao.close();
+        }
+
+        // TODO Auto-generated method stub
+
     }
 
 }

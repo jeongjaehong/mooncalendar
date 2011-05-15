@@ -1,5 +1,7 @@
 package org.nilriri.LunaCalendar.dao;
 
+import org.nilriri.LunaCalendar.tools.Common;
+
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -15,30 +17,23 @@ public class ExternalStorage extends SQLiteOpenHelper implements StorageSelector
         super(context, name, factory, version);
 
         mContext = context;
-
-        Log.d("onCreate", "EXTERNAL_DB_NAME=" + Constants.EXTERNAL_DB_NAME);
+        Log.d(Common.TAG, "EXTERNAL_DB_NAME=" + Constants.EXTERNAL_DB_NAME);
 
         db = SQLiteDatabase.openOrCreateDatabase(Constants.EXTERNAL_DB_NAME, factory);
-
-        Log.d("ExternalStorage", "db.getVersion()=" + db.getVersion());
+        Log.d(Common.TAG, "db.getVersion()=" + db.getVersion());
 
         if (Constants.EXTERNAL_DB_VERSION != db.getVersion()) {
-
             switch (db.getVersion()) {
                 case 0:
                     onCreate(db);
                     break;
                 default:
-
                     onUpgrade(db, db.getVersion(), Constants.EXTERNAL_DB_VERSION);
                     break;
             }
-
             db.setVersion(Constants.EXTERNAL_DB_VERSION);
         }
-
         db = getWritableDatabase();
-
     }
 
     public SQLiteDatabase getReadableDatabase() {
@@ -51,11 +46,13 @@ public class ExternalStorage extends SQLiteOpenHelper implements StorageSelector
     }
 
     public SQLiteDatabase getWritableDatabase() {
-        Log.d("けけけけ", "Location=ExternalStorage.getWritableDatabase");
+        Log.d(Common.TAG, "Location=ExternalStorage.getWritableDatabase");
         if (db == null) {
             db = SQLiteDatabase.openDatabase(Constants.EXTERNAL_DB_NAME, mFactory, SQLiteDatabase.OPEN_READWRITE);
         } else if (db.isReadOnly()) {
             close();
+            db = SQLiteDatabase.openDatabase(Constants.EXTERNAL_DB_NAME, mFactory, SQLiteDatabase.OPEN_READWRITE);
+        } else if (!db.isOpen()) {
             db = SQLiteDatabase.openDatabase(Constants.EXTERNAL_DB_NAME, mFactory, SQLiteDatabase.OPEN_READWRITE);
         }
         return db;
@@ -76,9 +73,7 @@ public class ExternalStorage extends SQLiteOpenHelper implements StorageSelector
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
         new DaoCreator().onUpgrade(this.mContext, db, oldVersion, newVersion);
-
     }
 
     public Context getContext() {
@@ -86,13 +81,10 @@ public class ExternalStorage extends SQLiteOpenHelper implements StorageSelector
     }
 
     public void onDestroy() {
-
         if (db != null) {
             db.close();
         }
-
         super.close();
-
     }
 
 }

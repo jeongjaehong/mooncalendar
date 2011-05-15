@@ -51,13 +51,21 @@ public class DaoCreator {
         query.append("    ," + Schedule.ANNIVERSARY + " VARCHAR ");
         query.append("    ," + Schedule.LUNARYN + " VARCHAR ");
         query.append("    ," + Schedule.SCHEDULE_LDATE + " VARCHAR ");
-
         query.append("    ," + Schedule.ALARM_DETAILINFO + " VARCHAR ");
         query.append("    ," + Schedule.DDAY_DETAILINFO + " VARCHAR ");
         query.append("    ," + Schedule.SCHEDULE_TYPE + " VARCHAR ");
         query.append("    ," + Schedule.BIBLE_BOOK + " INTEGER ");
         query.append("    ," + Schedule.BIBLE_CHAPTER + " INTEGER ");
-
+        query.append("    ," + Schedule.ETAG + " VARCHAR ");
+        query.append("    ," + Schedule.PUBLISHED + " VARCHAR ");
+        query.append("    ," + Schedule.UPDATED + " VARCHAR ");
+        query.append("    ," + Schedule.WHEN + " VARCHAR ");
+        query.append("    ," + Schedule.WHO + " VARCHAR ");
+        query.append("    ," + Schedule.RECURRENCE + " VARCHAR ");
+        query.append("    ," + Schedule.SELFURL + " VARCHAR ");
+        query.append("    ," + Schedule.EDITURL + " VARCHAR ");
+        query.append("    ," + Schedule.ORIGINALEVENT + " VARCHAR ");
+        query.append("    ," + Schedule.EVENTSTATUS + " VARCHAR ");
         query.append("    ) ");
         db.execSQL(query.toString());
 
@@ -110,7 +118,7 @@ public class DaoCreator {
     }
 
     public void onInsertBiblePlan(Context context, SQLiteDatabase db) {
-
+/*
         db.beginTransaction();
 
         ArrayList<String[]> PlanList = new ArrayList<String[]>();
@@ -140,6 +148,7 @@ public class DaoCreator {
 
         db.setTransactionSuccessful();
         db.endTransaction();
+*/        
     }
 
     public void onDeleteBiblePlan(Context context, SQLiteDatabase db) {
@@ -168,6 +177,32 @@ public class DaoCreator {
             db.execSQL("alter table schedule add alarm_detailinfo varchar");
             db.execSQL("alter table schedule add dday_detailinfo varchar");
             db.execSQL("alter table schedule add schedule_type varchar");
+        } catch (Exception e) {
+
+        }
+    }
+
+    public void onAlterTable4(SQLiteDatabase db) {
+        try {
+            StringBuffer query = null;
+
+            query = new StringBuffer("ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD (");
+
+            query.append(Schedule.ETAG + " VARCHAR, ");
+            query.append(Schedule.PUBLISHED + " VARCHAR, ");
+            query.append(Schedule.UPDATED + " VARCHAR, ");
+            query.append(Schedule.WHEN + " VARCHAR, ");
+            query.append(Schedule.WHO + " VARCHAR, ");
+            query.append(Schedule.RECURRENCE + " VARCHAR, ");
+            query.append(Schedule.ORIGINALEVENT + " VARCHAR, ");
+            query.append(Schedule.EVENTSTATUS + " VARCHAR, ");
+            query.append(Schedule.EDITURL + " VARCHAR, ");
+            query.append(Schedule.SELFURL + " VARCHAR ");
+            
+            query.append(")");
+            
+            db.execSQL(query.toString());
+            
         } catch (Exception e) {
 
         }
@@ -304,14 +339,30 @@ public class DaoCreator {
             case 9:
                 onAlterTable(db);
                 break;
+            case 10:
+            case 11:
+            case 12:
+            case 13:
             case 14:
                 onAlterTable2(db);
                 onInsertAnniversary(context, db);
                 break;
+            case 15:
             case 16:
+            case 17:
+            case 18:
+            case 19:
+            case 20:
+            case 21:
+            case 22:
+            case 23:
+            case 24:
+            case 25:
+            case 26:
                 onInsertAnniversary(context, db);
                 break;
             case 27:
+                // 맥체인 성경읽기 계획표를 추가하기 위한 컬럼추가.
                 try {
                     db.execSQL(" ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD COLUMN " + Schedule.BIBLE_BOOK + " INTEGER ");
                     db.execSQL(" ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD COLUMN " + Schedule.BIBLE_CHAPTER + " INTEGER ");
@@ -320,16 +371,14 @@ public class DaoCreator {
                 }
                 //onInsertBiblePlan(context, db);
                 break;
+            case 28:
             case 29:
-                onAlterTable3(db);
-                onDeleteBiblePlan(context, db);
-                break;
             case 30:
-                onAlterTable3(db);
-                onDeleteBiblePlan(context, db);
-                break;
             case 31:
+            case 32:
                 onAlterTable3(db);
+                //google gdata sync를 위한 etag컬럼 추가.
+                onAlterTable4(db);
                 onDeleteBiblePlan(context, db);
                 break;
         }

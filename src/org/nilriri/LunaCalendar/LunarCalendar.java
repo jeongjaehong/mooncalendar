@@ -1,12 +1,11 @@
 package org.nilriri.LunaCalendar;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
 import org.nilriri.LunaCalendar.alarm.AlarmService_Service;
-import org.nilriri.LunaCalendar.dao.DAOUtil;
-import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.gcal.EventEntry;
 import org.nilriri.LunaCalendar.gcal.GoogleUtil;
@@ -19,17 +18,23 @@ import org.nilriri.LunaCalendar.tools.DataManager;
 import org.nilriri.LunaCalendar.tools.OldEvent;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.Rotate3dAnimation;
+import org.nilriri.LunaCalendar.tools.SearchData;
 
 import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Rect;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -52,7 +57,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
-public class LunarCalendar extends Activity {
+public class LunarCalendar extends Activity implements RefreshManager {
 
     static final int DATE_DIALOG_ID = 1;
 
@@ -70,6 +75,9 @@ public class LunarCalendar extends Activity {
     public static final int MENU_ITEM_DELSCHEDULE = Menu.FIRST + 8;
     public static final int MENU_ITEM_BACKUP = Menu.FIRST + 9;
     public static final int MENU_ITEM_RESTORE = Menu.FIRST + 10;
+    public static final int MENU_ITEM_MAKECAL = Menu.FIRST + 11;
+    public static final int MENU_ITEM_ONLINECAL = Menu.FIRST + 12;
+    public static final int MENU_ITEM_SEARCH = Menu.FIRST + 13;
 
     // date and time
     public int mYear;
@@ -77,6 +85,7 @@ public class LunarCalendar extends Activity {
     public int mDay;
     public ListView mListView;
     private int mAddMonthOffset = 0;
+    public List<EventEntry> todayEvents = new ArrayList<EventEntry>();
 
     public ScheduleDaoImpl dao = null;
 
@@ -206,7 +215,6 @@ public class LunarCalendar extends Activity {
                 try {
 
                     if ("B-Plan".equals(c.getString(1))) {
-
                         intent.setAction("org.nilriri.webbibles.VIEW");
                         intent.setType("vnd.org.nilriri/web-bible");
 
@@ -222,7 +230,7 @@ public class LunarCalendar extends Activity {
 
                     startActivity(intent);
                 } catch (Exception e) {
-                    Toast.makeText(getBaseContext(), "온라인성경 앱일 설치되어있지 않거나 최신버젼이 아닙니다.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getBaseContext(), "온라인성경 앱이 설치되어있지 않거나 최신버젼이 아닙니다.", Toast.LENGTH_LONG).show();
 
                 }
             }
@@ -246,29 +254,25 @@ public class LunarCalendar extends Activity {
         c.add(Calendar.MONTH, 1);
         c.add(Calendar.DAY_OF_MONTH, -1);
 
-        //Log.d("AddMonth", "mDay=" + mDay + ",max=" + c.get(Calendar.DAY_OF_MONTH));
-
         if (mDay < 1 || mDay > c.get(Calendar.DAY_OF_MONTH)) {
             mDay = 1;
             lunarCalendarView.setSelX(c.get(Calendar.DAY_OF_WEEK) - 1);
             lunarCalendarView.setSelY(2);
-            //updateDisplay();
         }
 
         c.set(mYear, mMonth, mDay);
         c.add(Calendar.MONTH, offset);
-
         mYear = c.get(Calendar.YEAR);
         mMonth = c.get(Calendar.MONTH);
         mDay = c.get(Calendar.DAY_OF_MONTH);
-
-        //updateDisplay();
 
         lunarCalendarView.loadSchduleExistsInfo();
 
         // 달이 바뀔때는 화면전체를 다시 그린다.
         lunarCalendarView.invalidate();
 
+        // 날짜가 바뀌면 다시 조회하기 위해서 초기화한다.
+        todayEvents.clear();
     }
 
     @Override
@@ -282,76 +286,135 @@ public class LunarCalendar extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (dao != null) {
-            dao.close();
-        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
-        // Music.play(this, android.R.raw.);
 
-        /*
-        String uri = "geo:"+ -122.084095 + "," + 37.422006;   
-        startActivity(new Intent(android.content.Intent.ACTION_VIEW, Uri.parse(uri)));   
-          
-        // You can also choose to place a point like so:   
-        String uris = "geo:"+ 37.422006 + "," + -122.084095 + "?q=my+street+address";   
-        startActivity(new Intent(android.content.Intent.ACTION_VIEW, Uri.parse(uris)));           
-        */
-
-        /*
-        
-        Intent intent = new Intent();   
-        intent.setAction(Intent.ACTION_PICK);   
-        Uri startDir = Uri.fromFile(new File("/sdcard"));   
-        // Files and directories   
-        intent.setDataAndType(startDir, "vnd.android.cursor.dir/lysesoft.andexplorer.file");   
-        // Optional filtering on file extension.   
-        intent.putExtra("browser_filter_extension_whitelist", "*.png,*.txt,*.mp3");   
-        // Title   
-        intent.putExtra("explorer_title", "Select a file");   
-        // Optional colors   
-        intent.putExtra("browser_title_background_color", "440000AA");   
-        intent.putExtra("browser_title_foreground_color", "FFFFFFFF");   
-        intent.putExtra("browser_list_background_color", "66000000");   
-        // Optional font scale   
-        intent.putExtra("browser_list_fontscale", "120%");   
-        // Optional 0=simple list, 1 = list with filename and size, 2 = list with filename, size and date.   
-        intent.putExtra("browser_list_layout", "2");   
-        startActivityForResult(intent, 0);
-        */
-
-        if (Prefs.getAlarmCheck(this)) {
+        if (Prefs.getAlarmCheck(this)) {// 알람생성
             long firstTime = SystemClock.elapsedRealtime();
 
-            // ScheduleBean the alarm!
             AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
             am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, 1000 * 60 * 5, mAlarmSender);
-
-            // Tell the user about what we did.
-            // Toast.makeText(this, "알람이 설정되었습니다.", Toast.LENGTH_LONG).show();           
-
-        } else {
-            // And cancel the alarm.
+        } else {// 알람해제
             AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
             am.cancel(mAlarmSender);
-
-            // Tell the user about what we did.
-            // Toast.makeText(this, "알람이 해재되었습니다.", Toast.LENGTH_LONG).show();
         }
-        //화면으로 복귀할때 새로 등록되거나 삭제된 일정정보를 화면에 갱신한다.
 
+        //화면으로 복귀할때 새로 등록되거나 삭제된 일정정보를 화면에 갱신한다.
         lunarCalendarView.loadSchduleExistsInfo();
 
         updateDisplay();
     }
 
     public void updateDisplay() {
-
         lunarCalendarView.setSelection(lunarCalendarView.getSelX(), lunarCalendarView.getSelY());
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see android.app.Activity#onCreateDialog(int)
+     * 날짜 선택 대화상자 생성및 표시.
+     */
+
+    private class ShowOnlineCalendar extends AsyncTask<Void, Void, Void> {
+        private ProgressDialog dialog;
+        private AlertDialog.Builder builder;
+
+        @Override
+        protected void onPreExecute() {
+            dialog = ProgressDialog.show(LunarCalendar.this, "", "구글캘린더에서 일정을 가져오고 있습니다...", true);
+            Log.e(Common.TAG, "****** onPreExecute ********");
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Log.e(Common.TAG, "****** doInBackground ********");
+
+            try {
+                String url = Prefs.getOnlineCalendar(LunarCalendar.this);
+
+                Calendar c = Calendar.getInstance();
+                c.set(mYear, mMonth, mDay);
+                c.add(Calendar.DAY_OF_MONTH, -1);
+
+                StringBuilder where = new StringBuilder("?start-min=");
+                where.append(Common.fmtDate(c));
+                where.append("&start-max=");
+                c.add(Calendar.DAY_OF_MONTH, 2);
+                where.append(Common.fmtDate(c));
+                url += where.toString();
+                Log.d(Common.TAG, "url=" + url);
+
+                if (todayEvents.size() <= 0) {
+                    GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(LunarCalendar.this));
+                    todayEvents = gu.getEvents(url);
+                    if (todayEvents.size() <= 0) {
+                        cancel(true);
+                    }
+                }
+
+                String names[] = new String[todayEvents.size()];
+                final String index[] = new String[todayEvents.size()];
+
+                for (int i = 0; i < todayEvents.size(); i++) {
+                    names[i] = todayEvents.get(i).getStartDate().substring(5, 10) + " : " + todayEvents.get(i).title;
+                    index[i] = todayEvents.get(i).content;
+                }
+
+                builder = new AlertDialog.Builder(LunarCalendar.this);
+                builder.setTitle("확인할 일정을 선택하십시오.");
+                builder.setItems(names, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+
+                        try {
+
+                            if (index[which].indexOf("bindex:") >= 0) {
+
+                                String bindex = index[which].replace("bindex:", "");
+                                String data[] = Common.tokenFn(bindex, ",");
+
+                                Intent intent = new Intent();
+                                intent.setAction("org.nilriri.webbibles.VIEW");
+                                intent.setType("vnd.org.nilriri/web-bible");
+
+                                intent.putExtra("VERSION", 0);
+                                intent.putExtra("VERSION2", 0);
+                                intent.putExtra("BOOK", Integer.parseInt(data[0]));
+                                intent.putExtra("CHAPTER", Integer.parseInt(data[1]));
+                                intent.putExtra("VERSE", 0);
+
+                                startActivity(intent);
+                            } else {
+                                Toast.makeText(LunarCalendar.this, index[which], Toast.LENGTH_LONG).show();
+                            }
+
+                        } catch (Exception e) {
+                            Toast.makeText(LunarCalendar.this, "온라인성경 앱이 설치되어있지 않거나 최신버젼이 아닙니다.", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+
+            } catch (IOException e) {
+                cancel(true);
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            dialog.dismiss();
+
+            if (todayEvents.size() > 0) {
+                builder.show();
+            } else {
+                Toast.makeText(LunarCalendar.this, "구독하는 달력에 등록된 일정이 없습니다.", Toast.LENGTH_LONG).show();
+            }
+
+            Log.e(Common.TAG, "****** onPostExecute ********");
+        }
     }
 
     @Override
@@ -373,7 +436,6 @@ public class LunarCalendar extends Activity {
     }
 
     private DatePickerDialog.OnDateSetListener mDateSetListener = new DatePickerDialog.OnDateSetListener() {
-
         public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
             mYear = year;
             mMonth = monthOfYear;
@@ -384,39 +446,40 @@ public class LunarCalendar extends Activity {
         }
     };
 
+    /*
+     * (non-Javadoc)
+     * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
+     * 옵션메뉴 생성.
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
 
-        // This is our one standard application action -- inserting a
-        // new note into the list.
-        MenuItem item1 = menu.add(0, MENU_ITEM_ADDSCHEDULE, 0, R.string.schedule_add_label);
-        item1.setIcon(android.R.drawable.ic_menu_add);
+        MenuItem itemAdd = menu.add(0, MENU_ITEM_ADDSCHEDULE, 0, R.string.schedule_add_label);
+        itemAdd.setIcon(android.R.drawable.ic_menu_add);
 
-        MenuItem item2 = menu.add(0, MENU_ITEM_ALLSCHEDULE, 0, R.string.schedule_alllist_label);
-        item2.setIcon(android.R.drawable.ic_menu_agenda);
+        MenuItem itemAllList = menu.add(0, MENU_ITEM_ALLSCHEDULE, 0, R.string.schedule_alllist_label);
+        itemAllList.setIcon(android.R.drawable.ic_menu_agenda);
 
-        // Generate any additional actions that can be performed on the
-        // overall list.  In a normal install, there are no additional
-        // actions found here, but this allows other applications to extend
-        // our menu with their own actions.
-        //Intent intent = new Intent(null, getIntent().getData());
-        //intent.addCategory(Intent.CATEGORY_ALTERNATIVE);
-        //menu.addIntentOptions(Menu.CATEGORY_ALTERNATIVE, 0, 0, new ComponentName(this, Keypad.class), null, intent, 0, null);
+        if (!"".equals(Prefs.getSyncCalendar(this))) {
+            MenuItem itemImport = menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_menu);
+            itemImport.setIcon(android.R.drawable.ic_popup_sync);
+        }
 
-        //if (Prefs.getGCalendarSync(this)) {
-        MenuItem item3 = menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_menu);
-        item3.setIcon(android.R.drawable.ic_menu_rotate);
-        //}
+        MenuItem itemBackup = menu.add(0, MENU_ITEM_BACKUP, 0, R.string.backup_label);
+        itemBackup.setIcon(android.R.drawable.ic_menu_save);
 
-        MenuItem item5 = menu.add(0, MENU_ITEM_BACKUP, 0, R.string.backup_label);
-        item5.setIcon(android.R.drawable.ic_menu_save);
+        MenuItem itemRestore = menu.add(0, MENU_ITEM_RESTORE, 0, R.string.restore_label);
+        itemRestore.setIcon(android.R.drawable.ic_menu_upload);
 
-        MenuItem item6 = menu.add(0, MENU_ITEM_RESTORE, 0, R.string.restore_label);
-        item6.setIcon(android.R.drawable.ic_menu_upload);
+        MenuItem itemLunarEvent = menu.add(0, MENU_ITEM_MAKECAL, 0, R.string.makecal_label);
+        itemLunarEvent.setIcon(android.R.drawable.ic_menu_my_calendar);
 
-        MenuItem item4 = menu.add(0, MENU_ITEM_ABOUT, 0, R.string.about_label);
-        item4.setIcon(android.R.drawable.ic_menu_help);
+        MenuItem itemSearch = menu.add(0, MENU_ITEM_SEARCH, 0, R.string.eventsearch_label);
+        itemSearch.setIcon(android.R.drawable.ic_menu_search);
+
+        MenuItem itemAbout = menu.add(0, MENU_ITEM_ABOUT, 0, R.string.about_label);
+        itemAbout.setIcon(android.R.drawable.ic_menu_help);
 
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
@@ -430,20 +493,14 @@ public class LunarCalendar extends Activity {
             case MENU_ITEM_ALLSCHEDULE: {
                 Intent intent = new Intent();
                 intent.setClass(this, ScheduleList.class);
-
                 final Calendar c = Calendar.getInstance();
                 c.set(mYear, mMonth, mDay);
                 intent.putExtra("org.nilriri.gscheduler.workday", c);
-
                 intent.putExtra("ScheduleRange", "ALL");
-
                 startActivity(intent);
-
                 return true;
             }
-
             case MENU_ITEM_ADDSCHEDULE: {
-
                 Intent intent = new Intent();
                 intent.setClass(this, ScheduleEditor.class);
 
@@ -452,39 +509,36 @@ public class LunarCalendar extends Activity {
                 c.set(mYear, mMonth, mDay);
                 intent.putExtra("STODAY", c);
                 startActivity(intent);
-
                 return true;
             }
             case MENU_ITEM_GCALIMPORT: {
-
-                Calendar c = Calendar.getInstance();
-                c.setFirstDayOfWeek(Calendar.SUNDAY);
-
-                c.set(this.mYear, this.mMonth, this.mDay);
-
-                new ImportEvent().execute();
-
-                //AddMonth(0);
-
+                if ("".equals(Prefs.getAuthToken(this)) || Prefs.getAuthToken(this) == null) {
+                    Toast.makeText(getBaseContext(), "Google 계정을 설정하십시오.", Toast.LENGTH_LONG).show();
+                    startActivity(new Intent(this, Prefs.class));
+                } else {
+                    dao.syncImport(this);
+                }
                 return true;
-
             }
             case MENU_ITEM_BACKUP: {
-
                 DataManager.StartBackup(LunarCalendar.this);
-
                 return true;
-
+            }
+            case MENU_ITEM_MAKECAL: {
+                dao.batchMakeCalendar(this);
+                return true;
+            }
+            case MENU_ITEM_SEARCH: {
+                Intent intent = new Intent();
+                intent.setClass(this, SearchData.class);
+                startActivity(intent);
+                return true;
             }
             case MENU_ITEM_RESTORE: {
-
                 DataManager.StartRestore(LunarCalendar.this);
-
                 this.AddMonth(0);
                 this.updateDisplay();
-
                 return true;
-
             }
             case R.id.settings: {
                 startActivity(new Intent(this, Prefs.class));
@@ -492,82 +546,20 @@ public class LunarCalendar extends Activity {
             }
             case MENU_ITEM_ABOUT: {
                 startActivity(new Intent(this, About.class));
-                //startActivity(new Intent(this, ContactSelector.class));
                 return true;
             }
         }
-
         return super.onOptionsItemSelected(item);
     }
 
-    private class ImportEvent extends AsyncTask<Void, Void, Void> {
-        private ProgressDialog dialog;
-
-        @Override
-        protected void onPreExecute() {
-            dialog = ProgressDialog.show(LunarCalendar.this, "", "Importing event from google...", true);
-
-            Log.e(Common.TAG, "****** onPreExecute ********");
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            Log.e(Common.TAG, "****** doInBackground ********");
-
-            GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(getBaseContext()));
-
-            try {
-                List<EventEntry> events = gu.getEvents(Prefs.getSyncCalendar(getBaseContext()));
-
-                dao.insert(events);
-
-            } catch (IOException e) {
-                cancel(true);
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void result) {
-            dialog.dismiss();
-
-            AddMonth(0);
-
-            Log.e(Common.TAG, "****** onPostExecute ********");
-        }
-
-    }
-
-    @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        super.onPrepareOptionsMenu(menu);
-
-        final boolean haveItems = true;//this.lunaCalendarView.getBaseline() > 0;
-
-        // If there are any notes in the list (which implies that one of
-        // them is selected), then we need to generate the actions that
-        // can be performed on the current selection.  This will be a combination
-        // of our own specific actions along with any extensions that can be
-        // found.
-        if (haveItems) {
-            // 
-            // ... is followed by whatever other actions are available...
-
-            // Give a shortcut to the edit action.
-
-        } else {
-            menu.removeGroup(Menu.CATEGORY_ALTERNATIVE);
-        }
-
-        return true;
-    }
-
+    /*
+    * (non-Javadoc)
+    * @see android.app.Activity#onCreateContextMenu(android.view.ContextMenu, android.view.View, android.view.ContextMenu.ContextMenuInfo)
+    * 팝업메뉴 생성.
+    */
     @Override
     public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 
-        // Setup the menu header        
         menu.setHeaderTitle(getResources().getString(R.string.app_name));
 
         menu.add(0, MENU_ITEM_ADDSCHEDULE, 0, R.string.add_schedule);
@@ -589,11 +581,12 @@ public class LunarCalendar extends Activity {
             // 사용자가 등록한 일정일경우 삭제메뉴 표시
             Cursor cursor = (Cursor) this.mListView.getItemAtPosition(info.position);
             if (cursor != null && "Schedule".equals(cursor.getString(1))) {
-                // For some reason the requested item isn't available, do nothing
                 menu.add(0, MENU_ITEM_DELSCHEDULE, 0, R.string.schedule_delete_label);
             }
 
         }
+
+        menu.add(0, MENU_ITEM_ONLINECAL, 0, R.string.onlinecalendar_label);
 
     }
 
@@ -660,23 +653,28 @@ public class LunarCalendar extends Activity {
                     return false;
                 }
 
-                dao.delete(info.id);
+                dao.syncDelete(info.id, this);
 
-                this.AddMonth(0); // refresh;
                 return true;
             }
+            case MENU_ITEM_ONLINECAL: {
+                new ShowOnlineCalendar().execute();
+
+                return true;
+            }
+
         }
 
         return false;
     }
 
+    /*
+     * 화면 전화 효과 설정.
+     */
     private void applyRotation(int position, float start, float end) {
-        // Find the center of the container
         final float centerX = mContainer.getWidth() / 2.0f;
         final float centerY = mContainer.getHeight() / 2.0f;
 
-        // Create a new 3D rotation with the supplied parameter
-        // The animation listener is used to trigger the next animation
         final Rotate3dAnimation rotation = new Rotate3dAnimation(start, end, centerX, centerY, 310.0f, true);
         rotation.setDuration(500);
         rotation.setFillAfter(true);
@@ -718,27 +716,26 @@ public class LunarCalendar extends Activity {
             Rotate3dAnimation rotation;
 
             if (mPosition < 0) {
-                //lunarCalendarView.setVisibility(View.GONE);
-                //lunarCalendarView.setVisibility(View.VISIBLE);
-
-                //lunarCalendarView.requestFocus();
-
                 rotation = new Rotate3dAnimation(180, 360, centerX, centerY, 310.0f, false);
             } else {
-                //lunarCalendarView.setVisibility(View.GONE);
-                //lunarCalendarView.setVisibility(View.VISIBLE);
-
-                //lunarCalendarView.requestFocus();
-
                 rotation = new Rotate3dAnimation(180, 0, centerX, centerY, 310.0f, false);
             }
-
             rotation.setDuration(500);
             rotation.setFillAfter(true);
             rotation.setInterpolator(new DecelerateInterpolator());
 
             mContainer.startAnimation(rotation);
         }
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.nilriri.LunaCalendar.RefreshManager#refresh()
+     * 싱크 작업 종료후 화면 리프레쉬.
+     */
+    public void refresh() {
+        Log.e(Common.TAG, "****** refresh ********");
+        this.AddMonth(0);
     }
 
 }

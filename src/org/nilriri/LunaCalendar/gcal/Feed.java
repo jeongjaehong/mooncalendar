@@ -17,17 +17,12 @@ package org.nilriri.LunaCalendar.gcal;
 import java.io.IOException;
 import java.util.List;
 
-import android.util.Log;
-
 import com.google.api.client.googleapis.xml.atom.GoogleAtom;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.util.Key;
 
-/**
- * @author Yaniv Inbar
- */
 public abstract class Feed {
 
     @Key("link")
