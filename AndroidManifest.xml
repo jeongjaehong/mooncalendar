@@ -2,7 +2,7 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="org.nilriri.LunaCalendar" android:installLocation="auto"
-	android:versionName="3.6.3" android:versionCode="115">
+	android:versionCode="120" android:versionName="3.6.6">
 
 	<meta-data android:name="PublisherId" android:value="PE08TRFN03" />
 	<meta-data android:name="SlotID" android:value="PE08TRFN03" />
@@ -84,6 +84,11 @@
 		<activity android:name=".tools.AppInfo" android:label="@string/app_name">
 		</activity>
 
+		<activity android:name=".tools.LunarDatePicker"
+			android:screenOrientation="user" android:configChanges="keyboardHidden|orientation"
+			 android:theme="@android:style/Theme.Dialog">
+		</activity>
+
 		<receiver android:name=".widget.AppWidgetProvider1x1"
 			android:label="@string/widget_label_1x1">
 			<intent-filter>
@@ -124,7 +129,7 @@
 		-->
 	</application>
 
-	<uses-sdk android:targetSdkVersion="8" android:minSdkVersion="7" />
+	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="8" />
 
 	<uses-permission android:name="android.permission.GET_ACCOUNTS" />
 	<uses-permission android:name="android.permission.USE_CREDENTIALS" />
@@ -134,6 +139,7 @@
 	<uses-permission android:name="android.permission.WRITE_CALENDAR"></uses-permission>
 	<uses-permission android:name="android.permission.READ_CALENDAR"></uses-permission>
 	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
+	<uses-permission android:name="android.permission.WRITE_SETTINGS"></uses-permission>
 
 	<!--
 		<uses-permission
@@ -157,6 +163,5 @@
 	-->
 
 
-<uses-permission android:name="android.permission.WRITE_SETTINGS"></uses-permission>
 
 </manifest>

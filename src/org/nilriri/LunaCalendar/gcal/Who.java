@@ -16,11 +16,8 @@
 
 package org.nilriri.LunaCalendar.gcal;
 
-import java.util.Date;
-
 import org.nilriri.LunaCalendar.tools.Common;
 
-import com.google.api.client.util.DateTime;
 import com.google.api.client.util.Key;
 
 public class Who {

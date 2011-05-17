@@ -12,9 +12,9 @@ public abstract class AbstractDao {
 
     public AbstractDao(Context context, CursorFactory factory, boolean sdcarduse) {
         if (sdcarduse && Common.isSdPresent()) {
-            daoIf = new ExternalStorage(context, Constants.DATABASE_NAME, factory, Constants.DATABASE_VERSION);
+            daoIf = new ExternalStorage(context, Constants.getExternalDatabaseName(), factory, Constants.DATABASE_VERSION);
         } else {
-            daoIf = new InternalStorage(context, Constants.DATABASE_NAME, factory, Constants.DATABASE_VERSION);
+            daoIf = new InternalStorage(context, Constants.getDatabaseName(), factory, Constants.DATABASE_VERSION);
         }
     }
 

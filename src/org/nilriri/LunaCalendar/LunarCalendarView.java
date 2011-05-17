@@ -24,7 +24,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -129,8 +128,6 @@ public class LunarCalendarView extends View {
         while (cursor2.moveToNext()) {
             String date[] = Common.tokenFn(cursor2.getString(0), "-");
 
-            Log.d("DaoImpl-queryExistsSchedule2", "ldate=" + cursor2.getString(0));
-
             boolean isChange = (queryMonth.substring(0, 7).compareTo(cursor2.getString(0).substring(0, 7)) > 0);
             String sDay = "";
             if (!isChange) {
@@ -139,9 +136,7 @@ public class LunarCalendarView extends View {
             } else {
                 sDay = lunar2solar.l2s(date[0], date[1], date[2]);
             }
-            Log.d("DaoImpl-queryExistsSchedule2", "sDay=" + sDay);
             int day = Integer.parseInt(sDay.substring(6));
-            Log.d("DaoImpl-queryExistsSchedule2", "sDay=" + sDay.substring(6));
             mScheduleMap.put(day, 1);
         }
         cursor2.close();
@@ -196,7 +191,6 @@ public class LunarCalendarView extends View {
             ldaysource.append(",").append(lDay.substring(0, 6)).append(ilday > 9 ? "" + ilday : "0" + ilday);
 
         }
-        //Log.d("loadSchduleExistsInfo", "ldaysource=" + ldaysource);
 
         mLunadays = Common.tokenFn(ldaysource.toString(), ",");
 
@@ -205,11 +199,9 @@ public class LunarCalendarView extends View {
         mAnniversaryMap = new HashMap<Integer, Integer>();
         while (cursor.moveToNext()) {
             int day = cursor.getInt(0);
-            Log.d("loadSchduleExistsInfo", "Luna day=" + day);
             //음력날짜인 경우는 양력날짜로 변환하여 저장한다.
             if (day > 31) {
                 String lday = (day > 999 ? "" + day : "0" + day);
-                //Log.d("loadSchduleExistsInfo", "lday=" + lday);
                 for (int i = 1; i < mLunadays.length; i++) {
                     if (mLunadays[i].substring(4).equals(lday)) {
                         if (mAnniversaryMap.containsKey(i)) {
@@ -232,7 +224,6 @@ public class LunarCalendarView extends View {
                 }
             }
         }
-        Log.d("loadSchduleExistsInfo", "mAnniversaryMap=" + mAnniversaryMap.toString());
         cursor.close();
 
         // 타이틀에 찍을 년,월 정보를 조합한다.
@@ -247,9 +238,6 @@ public class LunarCalendarView extends View {
         int num2 = lyear % 12;
 
         String gapja = ARRAY_SIPGAN[num] + ARRAY_SIPEJIJI[num2] + getResources().getString(R.string.year_label);
-
-        //Log.d("mGAPJA", "mGAPJA=" + mGAPJA);
-        //Log.d("mGAPJA", "gapja=" + gapja);
 
         if (!mGAPJA.equals(gapja)) {
             mGAPJA = gapja;
@@ -287,7 +275,6 @@ public class LunarCalendarView extends View {
     @Override
     protected Parcelable onSaveInstanceState() {
         Parcelable p = super.onSaveInstanceState();
-        //Log.d(TAG, "onSaveInstanceState");
         Bundle bundle = new Bundle();
         bundle.putInt(SELX, getSelX());
         bundle.putInt(SELY, getSelY());
@@ -297,7 +284,6 @@ public class LunarCalendarView extends View {
 
     @Override
     protected void onRestoreInstanceState(Parcelable state) {
-        //Log.d(TAG, "onRestoreInstanceState");
         Bundle bundle = (Bundle) state;
 
         setSelection(bundle.getInt(SELX), bundle.getInt(SELY));
@@ -311,15 +297,12 @@ public class LunarCalendarView extends View {
         setTileWidth(w / 7f);
         setTileHeight(h / 8f);
         getRect(getSelX(), getSelY(), selRect);
-        //Log.d(TAG, "onSizeChanged: tileWidth " + getTileWidth() + ", tileHeight " + getTileHeight());
         super.onSizeChanged(w, h, oldw, oldh);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
 
-        //Log.i(TAG, "onDraw canvas=" + canvas.getClipBounds().toString());
-        // Draw the background...
         Paint background = new Paint();
         background.setColor(getResources().getColor(R.color.cal_background));
         canvas.drawRect(0, 0, getWidth(), getHeight(), background);
@@ -939,22 +922,22 @@ public class LunarCalendarView extends View {
         setSelY(Math.min(Math.max(y, 0), 8));
 
         if (y >= 2 && y <= 7) {
-            
+
             int newDay = (getSelY() - 2) * 7 + (getSelX() + 1) - (7 - (8 - dayofweek));
-            
-            if ( lunarCalendar.mDay != newDay ) {
+
+            if (lunarCalendar.mDay != newDay) {
                 lunarCalendar.todayEvents.clear();
             }
-            
-            lunarCalendar.mDay = newDay; 
+
+            lunarCalendar.mDay = newDay;
 
             getRect(getSelX(), getSelY(), selRect);
 
             Cursor cursor = lunarCalendar.dao.query(Common.fmtDate(lunarCalendar.mYear, lunarCalendar.mMonth + 1, lunarCalendar.mDay), this.getLunaday(lunarCalendar.mDay));
             SimpleCursorAdapter adapter = new EfficientAdapter(getContext(), R.layout.shcedule_item, cursor, new String[] { Schedule.SCHEDULE_TYPE, Schedule.SCHEDULE_TITLE }, new int[] { R.id.schedule_date, R.id.schedule_title });
 
-            lunarCalendar.mListView.setAdapter(adapter);            
-            
+            lunarCalendar.mListView.setAdapter(adapter);
+
             invalidate();
         }
 

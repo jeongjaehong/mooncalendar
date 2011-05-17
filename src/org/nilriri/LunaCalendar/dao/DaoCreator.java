@@ -1,17 +1,19 @@
 package org.nilriri.LunaCalendar.dao;
 
-import java.util.ArrayList;
-
 import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
+import android.widget.Toast;
 
 public class DaoCreator {
+    private Context mContext;
 
     public void onCreate(Context context, SQLiteDatabase db) {
+
+        mContext = context;
 
         onCreateSchedule(db);
 
@@ -21,155 +23,118 @@ public class DaoCreator {
 
         onInsertAnniversary(context, db);
 
-        //onInsertBiblePlan(context, db);
     }
 
     public void onCreateSchedule(SQLiteDatabase db) {
-
-        //Log.d("onCreate", "CurrentVersion=" + db.getVersion());
-
-        StringBuffer query = null;
-
-        query = new StringBuffer();
-        query.append("CREATE TABLE " + Schedule.SCHEDULE_TABLE_NAME + " (");
-        query.append("    " + Schedule._ID + " INTEGER PRIMARY KEY AUTOINCREMENT ");
-        query.append("    ," + Schedule.SCHEDULE_DATE + " TEXT NOT NULL");
-        query.append("    ," + Schedule.SCHEDULE_TITLE + " TEXT ");
-        query.append("    ," + Schedule.SCHEDULE_CONTENTS + " TEXT ");
-        query.append("    ," + Schedule.SCHEDULE_REPEAT + " INTEGER ");
-        query.append("    ," + Schedule.SCHEDULE_CHECK + " VARCHAR NOT NULL DEFAULT N ");
-        query.append("    ," + Schedule.ALARM_LUNASOLAR + " INTEGER ");
-        query.append("    ," + Schedule.ALARM_DATE + " VARCHR ");
-        query.append("    ," + Schedule.ALARM_TIME + " VARCHR ");
-        query.append("    ," + Schedule.ALARM_DAYS + " INTEGER ");
-        query.append("    ," + Schedule.ALARM_DAY + " INTEGER ");
-        query.append("    ," + Schedule.DDAY_ALARMYN + " INTEGER ");
-        query.append("    ," + Schedule.DDAY_ALARMDAY + " INTEGER ");
-        query.append("    ," + Schedule.DDAY_ALARMSIGN + " VARCHAR ");
-        query.append("    ," + Schedule.DDAY_DISPLAYYN + " INTEGER ");
-        query.append("    ," + Schedule.GID + " VARCHAR ");
-        query.append("    ," + Schedule.ANNIVERSARY + " VARCHAR ");
-        query.append("    ," + Schedule.LUNARYN + " VARCHAR ");
-        query.append("    ," + Schedule.SCHEDULE_LDATE + " VARCHAR ");
-        query.append("    ," + Schedule.ALARM_DETAILINFO + " VARCHAR ");
-        query.append("    ," + Schedule.DDAY_DETAILINFO + " VARCHAR ");
-        query.append("    ," + Schedule.SCHEDULE_TYPE + " VARCHAR ");
-        query.append("    ," + Schedule.BIBLE_BOOK + " INTEGER ");
-        query.append("    ," + Schedule.BIBLE_CHAPTER + " INTEGER ");
-        query.append("    ," + Schedule.ETAG + " VARCHAR ");
-        query.append("    ," + Schedule.PUBLISHED + " VARCHAR ");
-        query.append("    ," + Schedule.UPDATED + " VARCHAR ");
-        query.append("    ," + Schedule.WHEN + " VARCHAR ");
-        query.append("    ," + Schedule.WHO + " VARCHAR ");
-        query.append("    ," + Schedule.RECURRENCE + " VARCHAR ");
-        query.append("    ," + Schedule.SELFURL + " VARCHAR ");
-        query.append("    ," + Schedule.EDITURL + " VARCHAR ");
-        query.append("    ," + Schedule.ORIGINALEVENT + " VARCHAR ");
-        query.append("    ," + Schedule.EVENTSTATUS + " VARCHAR ");
-        query.append("    ) ");
-        db.execSQL(query.toString());
-
-        //Log.d("onCreate", "Create....schedule Database");
-
+        try {
+            StringBuffer query = null;
+            query = new StringBuffer();
+            query.append("CREATE TABLE " + Schedule.SCHEDULE_TABLE_NAME + " (");
+            query.append("    " + Schedule._ID + " INTEGER PRIMARY KEY AUTOINCREMENT ");
+            query.append("    ," + Schedule.SCHEDULE_DATE + " TEXT NOT NULL");
+            query.append("    ," + Schedule.SCHEDULE_TITLE + " TEXT ");
+            query.append("    ," + Schedule.SCHEDULE_CONTENTS + " TEXT ");
+            query.append("    ," + Schedule.SCHEDULE_REPEAT + " INTEGER ");
+            query.append("    ," + Schedule.SCHEDULE_CHECK + " VARCHAR NOT NULL DEFAULT N ");
+            query.append("    ," + Schedule.ALARM_LUNASOLAR + " INTEGER ");
+            query.append("    ," + Schedule.ALARM_DATE + " VARCHR ");
+            query.append("    ," + Schedule.ALARM_TIME + " VARCHR ");
+            query.append("    ," + Schedule.ALARM_DAYS + " INTEGER ");
+            query.append("    ," + Schedule.ALARM_DAY + " INTEGER ");
+            query.append("    ," + Schedule.DDAY_ALARMYN + " INTEGER ");
+            query.append("    ," + Schedule.DDAY_ALARMDAY + " INTEGER ");
+            query.append("    ," + Schedule.DDAY_ALARMSIGN + " VARCHAR ");
+            query.append("    ," + Schedule.DDAY_DISPLAYYN + " INTEGER ");
+            query.append("    ," + Schedule.GID + " VARCHAR ");
+            query.append("    ," + Schedule.ANNIVERSARY + " VARCHAR ");
+            query.append("    ," + Schedule.LUNARYN + " VARCHAR ");
+            query.append("    ," + Schedule.SCHEDULE_LDATE + " VARCHAR ");
+            query.append("    ," + Schedule.ALARM_DETAILINFO + " VARCHAR ");
+            query.append("    ," + Schedule.DDAY_DETAILINFO + " VARCHAR ");
+            query.append("    ," + Schedule.SCHEDULE_TYPE + " VARCHAR ");
+            query.append("    ," + Schedule.BIBLE_BOOK + " INTEGER ");
+            query.append("    ," + Schedule.BIBLE_CHAPTER + " INTEGER ");
+            query.append("    ," + Schedule.ETAG + " VARCHAR ");
+            query.append("    ," + Schedule.PUBLISHED + " VARCHAR ");
+            query.append("    ," + Schedule.UPDATED + " VARCHAR ");
+            query.append("    ," + Schedule.WHEN + " VARCHAR ");
+            query.append("    ," + Schedule.WHO + " VARCHAR ");
+            query.append("    ," + Schedule.RECURRENCE + " VARCHAR ");
+            query.append("    ," + Schedule.SELFURL + " VARCHAR ");
+            query.append("    ," + Schedule.EDITURL + " VARCHAR ");
+            query.append("    ," + Schedule.ORIGINALEVENT + " VARCHAR ");
+            query.append("    ," + Schedule.EVENTSTATUS + " VARCHAR ");
+            query.append("    ) ");
+            db.execSQL(query.toString());
+        } catch (Exception e) {
+            Log.e("onCreate", e.getMessage(), e);
+        }
     }
 
     public void onCreateDays(SQLiteDatabase db) {
+        try {
+            db.execSQL(" DROP TABLE IF EXISTS days ");
+            db.execSQL(" CREATE TABLE days ( days integer, dayname varchar) ");
 
-        //Log.d("onCreate", "CurrentVersion=" + db.getVersion());
+            db.beginTransaction();
 
-        StringBuffer query = null;
+            db.execSQL(" insert into days values (1, 'Sun') ");
+            db.execSQL(" insert into days values (2, 'Mon') ");
+            db.execSQL(" insert into days values (3, 'Thu') ");
+            db.execSQL(" insert into days values (4, 'Wed') ");
+            db.execSQL(" insert into days values (5, 'Thu') ");
+            db.execSQL(" insert into days values (6, 'Fri') ");
+            db.execSQL(" insert into days values (7, 'Sat') ");
 
-        query = new StringBuffer();
-        query.append(" DROP TABLE IF EXISTS days ");
-        db.execSQL(query.toString());
+            db.setTransactionSuccessful();
 
-        db.execSQL(" CREATE TABLE days ( days integer, dayname varchar) ");
-
-        db.beginTransaction();
-
-        db.execSQL(" insert into days values (1, 'Sun') ");
-        db.execSQL(" insert into days values (2, 'Mon') ");
-        db.execSQL(" insert into days values (3, 'Thu') ");
-        db.execSQL(" insert into days values (4, 'Wed') ");
-        db.execSQL(" insert into days values (5, 'Thu') ");
-        db.execSQL(" insert into days values (6, 'Fri') ");
-        db.execSQL(" insert into days values (7, 'Sat') ");
-
-        db.setTransactionSuccessful();
-
-        db.endTransaction();
-
-        //Log.d("onCreate", "Create....days Database");
-
+            db.endTransaction();
+        } catch (Exception e) {
+            Log.e("onCreate", e.getMessage(), e);
+        }
     }
 
     public void onInsertAnniversary(Context context, SQLiteDatabase db) {
+        try {
+            db.beginTransaction();
 
-        db.beginTransaction();
+            String Anniversary[] = context.getResources().getStringArray(R.array.array_anniversary);
 
-        String Anniversary[] = context.getResources().getStringArray(R.array.array_anniversary);
-
-        db.execSQL("delete from schedule where schedule_date = '1900-01-01' and schedule_repeat = 9 and alarm_time = '00:00'");
-        for (int i = 0; i < Anniversary.length; i++) {
-            db.execSQL(Anniversary[i]);
-        }
-        db.setTransactionSuccessful();
-        db.endTransaction();
-    }
-
-    public void onInsertBiblePlan(Context context, SQLiteDatabase db) {
-/*
-        db.beginTransaction();
-
-        ArrayList<String[]> PlanList = new ArrayList<String[]>();
-
-        PlanList.add(context.getResources().getStringArray(R.array.array_bibleplan01));
-        PlanList.add(context.getResources().getStringArray(R.array.array_bibleplan02));
-        PlanList.add(context.getResources().getStringArray(R.array.array_bibleplan03));
-        PlanList.add(context.getResources().getStringArray(R.array.array_bibleplan04));
-        PlanList.add(context.getResources().getStringArray(R.array.array_bibleplan05));
-        PlanList.add(context.getResources().getStringArray(R.array.array_bibleplan06));
-        PlanList.add(context.getResources().getStringArray(R.array.array_bibleplan07));
-        PlanList.add(context.getResources().getStringArray(R.array.array_bibleplan08));
-        PlanList.add(context.getResources().getStringArray(R.array.array_bibleplan09));
-        PlanList.add(context.getResources().getStringArray(R.array.array_bibleplan10));
-        PlanList.add(context.getResources().getStringArray(R.array.array_bibleplan11));
-        PlanList.add(context.getResources().getStringArray(R.array.array_bibleplan12));
-
-        db.execSQL("delete from schedule where schedule_date = '1900-01-01' and schedule_repeat = 8 and alarm_time = '00:00'");
-        for (int i = 0; i < PlanList.size(); i++) {
-            String BiblePlan[] = (String[]) PlanList.get(i);
-
-            for (int j = 0; j < BiblePlan.length; j++) {
-
-                db.execSQL(BiblePlan[j]);
+            db.execSQL("delete from schedule where schedule_date = '1900-01-01' and schedule_repeat = 9 and alarm_time = '00:00'");
+            for (int i = 0; i < Anniversary.length; i++) {
+                db.execSQL(Anniversary[i]);
             }
+            db.setTransactionSuccessful();
+            db.endTransaction();
+        } catch (Exception e) {
+            Log.e("onCreate", e.getMessage(), e);
         }
-
-        db.setTransactionSuccessful();
-        db.endTransaction();
-*/        
     }
 
     public void onDeleteBiblePlan(Context context, SQLiteDatabase db) {
         try {
             db.execSQL("delete from schedule where schedule_date = '1900-01-01' and schedule_repeat = 8 and alarm_time = '00:00'");
         } catch (Exception e) {
-
+            Log.e("onCreate", e.getMessage(), e);
         }
     }
 
     public void onAlterTable(SQLiteDatabase db) {
-
-        db.execSQL("alter table schedule add gid varchar");
-
+        try {
+            db.execSQL("alter table schedule add gid varchar");
+        } catch (Exception e) {
+            Log.e("onCreate", e.getMessage(), e);
+        }
     }
 
     public void onAlterTable2(SQLiteDatabase db) {
-
-        db.execSQL("alter table schedule add anniversary varchar");
-        db.execSQL("alter table schedule add lunaryn varchar");
-        db.execSQL("alter table schedule add schedule_ldate varchar");
+        try {
+            db.execSQL("alter table schedule add anniversary varchar");
+            db.execSQL("alter table schedule add lunaryn varchar");
+            db.execSQL("alter table schedule add schedule_ldate varchar");
+        } catch (Exception e) {
+            Log.e("onCreate", e.getMessage(), e);
+        }
     }
 
     public void onAlterTable3(SQLiteDatabase db) {
@@ -178,58 +143,51 @@ public class DaoCreator {
             db.execSQL("alter table schedule add dday_detailinfo varchar");
             db.execSQL("alter table schedule add schedule_type varchar");
         } catch (Exception e) {
-
+            Log.e("onCreate", e.getMessage(), e);
         }
     }
 
     public void onAlterTable4(SQLiteDatabase db) {
         try {
-            StringBuffer query = null;
-
-            query = new StringBuffer("ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD (");
-
-            query.append(Schedule.ETAG + " VARCHAR, ");
-            query.append(Schedule.PUBLISHED + " VARCHAR, ");
-            query.append(Schedule.UPDATED + " VARCHAR, ");
-            query.append(Schedule.WHEN + " VARCHAR, ");
-            query.append(Schedule.WHO + " VARCHAR, ");
-            query.append(Schedule.RECURRENCE + " VARCHAR, ");
-            query.append(Schedule.ORIGINALEVENT + " VARCHAR, ");
-            query.append(Schedule.EVENTSTATUS + " VARCHAR, ");
-            query.append(Schedule.EDITURL + " VARCHAR, ");
-            query.append(Schedule.SELFURL + " VARCHAR ");
-            
-            query.append(")");
-            
-            db.execSQL(query.toString());
-            
+            db.execSQL("ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD " + Schedule.ETAG + " VARCHAR ");
+            db.execSQL("ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD " + Schedule.PUBLISHED + " VARCHAR ");
+            db.execSQL("ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD " + Schedule.UPDATED + " VARCHAR ");
+            db.execSQL("ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD " + Schedule.WHEN + " VARCHAR ");
+            db.execSQL("ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD " + Schedule.WHO + " VARCHAR ");
+            db.execSQL("ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD " + Schedule.RECURRENCE + " VARCHAR ");
+            db.execSQL("ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD " + Schedule.ORIGINALEVENT + " VARCHAR ");
+            db.execSQL("ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD " + Schedule.EVENTSTATUS + " VARCHAR ");
+            db.execSQL("ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD " + Schedule.EDITURL + " VARCHAR ");
+            db.execSQL("ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD " + Schedule.SELFURL + " VARCHAR ");
         } catch (Exception e) {
-
+            Log.e("onCreate", e.getMessage(), e);
         }
     }
 
     public void onCreateIndex(SQLiteDatabase db) {
+        try {
+            StringBuffer query = null;
 
-        StringBuffer query = null;
+            query = new StringBuffer();
+            query.append("CREATE INDEX idx_ddaydisplayyn ON schedule (dday_displayyn ASC) ");
+            db.execSQL(query.toString());
 
-        query = new StringBuffer();
-        query.append("CREATE INDEX idx_ddaydisplayyn ON schedule (dday_displayyn ASC) ");
-        db.execSQL(query.toString());
+            query = new StringBuffer();
+            query.append("CREATE  INDEX idx_scheduledate ON schedule (schedule_date ASC) ");
+            db.execSQL(query.toString());
 
-        query = new StringBuffer();
-        query.append("CREATE  INDEX idx_scheduledate ON schedule (schedule_date ASC) ");
-        db.execSQL(query.toString());
-
-        query = new StringBuffer();
-        query.append("CREATE  INDEX idx_alarm_01 ON schedule (schedule_repeat ASC, schedule_check ASC, alarm_date ASC, alarm_time ASC) ");
-        db.execSQL(query.toString());
-
-        //Log.d("onCreate", "Create....Index");
+            query = new StringBuffer();
+            query.append("CREATE  INDEX idx_alarm_01 ON schedule (schedule_repeat ASC, schedule_check ASC, alarm_date ASC, alarm_time ASC) ");
+            db.execSQL(query.toString());
+        } catch (Exception e) {
+            Log.e("onCreate", e.getMessage(), e);
+        }
     }
 
     public void onUpgrade(Context context, SQLiteDatabase db, int oldVersion, int newVersion) {
+        mContext = context;
 
-        Log.d("onUpgrade_Schedule", "oldVersion=" + oldVersion + ",newVersion=" + newVersion);
+        Toast.makeText(mContext, "DataBase Upgrading...", Toast.LENGTH_LONG).show();
 
         StringBuffer query = new StringBuffer();
         switch (newVersion) {
@@ -367,7 +325,7 @@ public class DaoCreator {
                     db.execSQL(" ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD COLUMN " + Schedule.BIBLE_BOOK + " INTEGER ");
                     db.execSQL(" ALTER TABLE " + Schedule.SCHEDULE_TABLE_NAME + " ADD COLUMN " + Schedule.BIBLE_CHAPTER + " INTEGER ");
                 } catch (Exception e) {
-                    Log.d("onUpgrade", e.getMessage());
+                    Log.e("onCreate", e.getMessage(), e);
                 }
                 //onInsertBiblePlan(context, db);
                 break;
@@ -376,6 +334,7 @@ public class DaoCreator {
             case 30:
             case 31:
             case 32:
+            case 33:
                 onAlterTable3(db);
                 //google gdata sync를 위한 etag컬럼 추가.
                 onAlterTable4(db);

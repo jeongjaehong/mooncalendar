@@ -18,10 +18,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.nilriri.LunaCalendar.tools.Common;
-
-import android.util.Log;
-
 import com.google.api.client.googleapis.xml.atom.AtomPatchRelativeToOriginalContent;
 import com.google.api.client.googleapis.xml.atom.GoogleAtom;
 import com.google.api.client.http.HttpRequest;
@@ -61,76 +57,29 @@ public class Entry implements Cloneable {
 
     public int executeDelete(HttpTransport transport) throws IOException {
         HttpRequest request = transport.buildDeleteRequest();
-
-        /*
-        if ("".equals(this.etag) || this.etag == null) {
-            // guid가 같은 모든 이벤트를 update한다.            
-            request.headers.ifNoneMatch = "";
-        } else {
-            request.headers.ifMatch = this.etag.trim();//.replace("\"", "");
-            //request.headers.etag = this.etag.trim();//.replace("\"", "");
-        }
-        */
-
         if ("".equals(getEditLink()) || getEditLink() == null) {
             return 0;
         }
-
         request.headers.ifMatch = this.etag;
         request.setUrl(getEditLink());
-
-        /*        
-                AtomContent content = new AtomContent();
-                content.namespaceDictionary = Util.DICTIONARY;
-                content.entry = this;
-                request.content = content;
-        */
-
-        Log.d(Common.TAG, "executeDelete request.content=" + request.content);
-        Log.d(Common.TAG, "executeDelete request.url=" + request.url);
-        Log.d(Common.TAG, "executeUpdate request.header=" + request.headers);
-        Log.d(Common.TAG, "executeDelete ETAG=" + this.etag);
-
-        //request.execute().ignore();
-        HttpResponse response = RedirectHandler.execute(request);//.ignore();
-
-        //412 Precondition Failed
-
-        if (response.statusCode == 412) {
-            Log.d(Common.TAG, "412 executeDelete=" + response.parseAsString());
-            Log.d(Common.TAG, "412 executeDelete=" + response.headers);
-        } else if (response.statusCode == 403) {
-            Log.d(Common.TAG, "403 executeDelete=" + response.parseAsString());
-            Log.d(Common.TAG, "403 executeDelete=" + response.headers);
-        }
-
-        return response.statusCode;
-
+        return RedirectHandler.execute(request).statusCode;
     }
 
     public Entry executeInsert(HttpTransport transport, CalendarUrl url) throws IOException {
-
         HttpRequest request = transport.buildPostRequest();
-
         request.url = url;
         AtomContent content = new AtomContent();
         content.namespaceDictionary = Util.DICTIONARY;
         content.entry = this;
         request.content = content;
 
-        Log.d(Common.TAG, "executeInsert request.content=" + request.content);
-        Log.d(Common.TAG, "executeInsert request.url=" + request.url);
-
         HttpResponse response = RedirectHandler.execute(request);
-
-        Log.d(Common.TAG, "statusCode=" + response.statusCode);
 
         // HTTP 리턴코드가 200 OK.일 경우 Google UID를 UPDATE한다.
         // HTTP 리턴코드가 201 CREATED.일 경우 Google UID를 UPDATE한다.
         if (200 == response.statusCode || 201 == response.statusCode) {
             return response.parseAs(getClass());
         } else {
-            Log.d(Common.TAG, "res=" + response.parseAsString());
             return this;
         }
     }
@@ -139,26 +88,17 @@ public class Entry implements Cloneable {
         url.fields = GoogleAtom.getFieldsFor(entryClass);
         HttpRequest request = transport.buildGetRequest();
         request.url = url;
-
-        HttpResponse response = RedirectHandler.execute(request);
-        //Log.d("~~~~~~~~~~~~~~~~", "response.toString()=" + response.parseAsString());
-
-        return response.parseAs(entryClass);
-
-        // return RedirectHandler.execute(request).parseAs(feedClass);
+        return RedirectHandler.execute(request).parseAs(entryClass);
     }
 
     public Entry executePatchRelativeToOriginal(HttpTransport transport, Entry original) throws IOException {
         HttpRequest request = transport.buildPatchRequest();
         request.setUrl(getEditLink());
-
         AtomPatchRelativeToOriginalContent content = new AtomPatchRelativeToOriginalContent();
         content.namespaceDictionary = Util.DICTIONARY;
         content.originalEntry = original;
         content.patchedEntry = this;
-
         request.content = content;
-
         return RedirectHandler.execute(request).parseAs(getClass());
     }
 
@@ -166,9 +106,7 @@ public class Entry implements Cloneable {
         String link = Link.find(links, "edit");
         if ("".equals(link) || link == null) {
             link = (this.id == null ? "" :this.id);
-            //link = Link.find(links, "self");
         }
-
         return link;
     }
 

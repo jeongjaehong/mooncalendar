@@ -10,7 +10,7 @@
 	<CheckBoxPreference android:key="alarmcheck"
 		android:title="@string/alarm_title" android:summary="@string/alarm_summary"
 		android:defaultValue="true" />
-		
+
 
 	<CheckBoxPreference android:key="useanimation"
 		android:title="@string/animation_title" android:summary="@string/animation_summary"
@@ -46,7 +46,8 @@
 		<ListPreference android:key="syncmethod" android:title="Sync 방법"
 			android:summary="Sync 방법을 선택하십시오." android:dialogTitle="Sync 방법"
 			android:entries="@array/entries_syncmethod_preference"
-			android:entryValues="@array/entryvalues_syncmethod_preference" />
+			android:entryValues="@array/entryvalues_syncmethod_preference"
+			android:defaultValue="stop" />
 
 
 	</PreferenceCategory>

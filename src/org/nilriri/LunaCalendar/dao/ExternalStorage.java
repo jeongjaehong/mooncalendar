@@ -1,12 +1,9 @@
 package org.nilriri.LunaCalendar.dao;
 
-import org.nilriri.LunaCalendar.tools.Common;
-
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteDatabase.CursorFactory;
-import android.util.Log;
 
 public class ExternalStorage extends SQLiteOpenHelper implements StorageSelector {
     private Context mContext;
@@ -17,43 +14,39 @@ public class ExternalStorage extends SQLiteOpenHelper implements StorageSelector
         super(context, name, factory, version);
 
         mContext = context;
-        Log.d(Common.TAG, "EXTERNAL_DB_NAME=" + Constants.EXTERNAL_DB_NAME);
+        db = SQLiteDatabase.openOrCreateDatabase(Constants.getExternalDatabaseName(), factory);
 
-        db = SQLiteDatabase.openOrCreateDatabase(Constants.EXTERNAL_DB_NAME, factory);
-        Log.d(Common.TAG, "db.getVersion()=" + db.getVersion());
-
-        if (Constants.EXTERNAL_DB_VERSION != db.getVersion()) {
+        if (Constants.DATABASE_VERSION != db.getVersion()) {
             switch (db.getVersion()) {
                 case 0:
                     onCreate(db);
                     break;
                 default:
-                    onUpgrade(db, db.getVersion(), Constants.EXTERNAL_DB_VERSION);
+                    onUpgrade(db, db.getVersion(), Constants.DATABASE_VERSION);
                     break;
             }
-            db.setVersion(Constants.EXTERNAL_DB_VERSION);
+            db.setVersion(Constants.DATABASE_VERSION);
         }
         db = getWritableDatabase();
     }
 
     public SQLiteDatabase getReadableDatabase() {
         if (db == null) {
-            db = SQLiteDatabase.openDatabase(Constants.EXTERNAL_DB_NAME, mFactory, SQLiteDatabase.OPEN_READONLY);
+            db = SQLiteDatabase.openDatabase(Constants.getExternalDatabaseName(), mFactory, SQLiteDatabase.OPEN_READONLY);
         } else if (!db.isOpen()) {
-            db = SQLiteDatabase.openDatabase(Constants.EXTERNAL_DB_NAME, mFactory, SQLiteDatabase.OPEN_READONLY);
+            db = SQLiteDatabase.openDatabase(Constants.getExternalDatabaseName(), mFactory, SQLiteDatabase.OPEN_READONLY);
         }
         return db;
     }
 
     public SQLiteDatabase getWritableDatabase() {
-        Log.d(Common.TAG, "Location=ExternalStorage.getWritableDatabase");
         if (db == null) {
-            db = SQLiteDatabase.openDatabase(Constants.EXTERNAL_DB_NAME, mFactory, SQLiteDatabase.OPEN_READWRITE);
+            db = SQLiteDatabase.openDatabase(Constants.getExternalDatabaseName(), mFactory, SQLiteDatabase.OPEN_READWRITE);
         } else if (db.isReadOnly()) {
             close();
-            db = SQLiteDatabase.openDatabase(Constants.EXTERNAL_DB_NAME, mFactory, SQLiteDatabase.OPEN_READWRITE);
+            db = SQLiteDatabase.openDatabase(Constants.getExternalDatabaseName(), mFactory, SQLiteDatabase.OPEN_READWRITE);
         } else if (!db.isOpen()) {
-            db = SQLiteDatabase.openDatabase(Constants.EXTERNAL_DB_NAME, mFactory, SQLiteDatabase.OPEN_READWRITE);
+            db = SQLiteDatabase.openDatabase(Constants.getExternalDatabaseName(), mFactory, SQLiteDatabase.OPEN_READWRITE);
         }
         return db;
     }

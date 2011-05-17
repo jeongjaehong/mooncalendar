@@ -22,7 +22,6 @@ import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 import org.nilriri.LunaCalendar.tools.Common;
 
 import android.database.Cursor;
-import android.util.Log;
 
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpResponse;
@@ -111,22 +110,8 @@ public class EventEntry extends Entry {
     }
 
     public EventEntry executeUpdate(HttpTransport transport) throws IOException {
-
-        //url.fields = GoogleAtom.getFieldsFor(getClass());
-
         HttpRequest request = transport.buildPutRequest();
 
-        /*
-        if ("".equals(this.etag) || this.etag == null) {
-            // guid가 같은 모든 이벤트를 update한다.            
-            request.headers.ifNoneMatch = "";
-        } else {
-            request.headers.ifMatch = this.etag;//.replace("\"", "");
-            request.headers.etag = this.etag;
-        }
-
-        */
-        //this.id = "http://www.google.com/calendar/feeds/zin.jeong%40gmail.com/private/full/29r3kpvpbc3g33m48tk3l79fi8";//this.getEditLink();
         request.headers.ifMatch = this.etag;
         request.headers.put("id", this.id);
         request.url = new CalendarUrl(getEditLink());
@@ -136,30 +121,14 @@ public class EventEntry extends Entry {
         content.entry = this;
         request.content = content;
 
-        AtomContent c = (AtomContent) request.content;
-
-        EventEntry e = (EventEntry) c.entry;
-
-        Log.d(Common.TAG, "\n\n\n\n99999999999999 ID=" + e.id);
-
-        //Log.d(Common.TAG, "executeUpdate ID=" + this.id);
-        Log.d(Common.TAG, "executeUpdate request.content=" + request.content);
-        Log.d(Common.TAG, "executeUpdate request.url=" + request.url);
-        Log.d(Common.TAG, "executeUpdate request.header=" + request.headers);
-        Log.d(Common.TAG, "executeUpdate ETAG=" + this.etag);
-
         HttpResponse response = RedirectHandler.execute(request);
-
-        Log.d(Common.TAG, "statusCode=" + response.statusCode);
 
         // HTTP 리턴코드가 201 CREATED.일 경우 Google UID를 UPDATE한다.
         if (200 == response.statusCode || 201 == response.statusCode) {
             return response.parseAs(getClass());
         } else {
-            Log.d(Common.TAG, "res=" + response.parseAsString());
             return this;
         }
-
     }
 
     public static EventEntry executeGetOriginalEntry(HttpTransport transport, CalendarUrl url) throws IOException {

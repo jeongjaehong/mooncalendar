@@ -1,24 +1,13 @@
-/**
- * 
- */
 package org.nilriri.LunaCalendar.dao;
 
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 
 import android.content.ContentValues;
-import android.util.Log;
 
-/**
- * @author nilriri
- *
- */
 public class ScheduleContentValues {
 
     public ContentValues value = new ContentValues();
 
-    /**
-     * 
-     */
     public ScheduleContentValues(ScheduleBean scheduleBean) {
 
         value.put(Schedule.SCHEDULE_DATE, scheduleBean.getSchedule_date());
@@ -60,9 +49,5 @@ public class ScheduleContentValues {
         value.put(Schedule.EDITURL, scheduleBean.getEditurl());
         value.put(Schedule.ORIGINALEVENT, scheduleBean.getOriginalevent());
         value.put(Schedule.EVENTSTATUS, scheduleBean.getEventstatus());
-
-        Log.d("ScheduleContentValues", "value=" + value.toString());
-
     }
-
 }
