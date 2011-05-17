@@ -1,5 +1,6 @@
 package org.nilriri.LunaCalendar.dao;
 
+import android.os.Environment;
 import android.provider.BaseColumns;
 
 /**
@@ -7,10 +8,8 @@ import android.provider.BaseColumns;
  */
 public final class Constants {
 
-    public static final String DATABASE_NAME = "lunacalendar.sqlite";
-    public static final String EXTERNAL_DB_NAME = "/sdcard/lunacalendar.sqlite";
-    public static final int DATABASE_VERSION = 32;
-    public static final int EXTERNAL_DB_VERSION = 32;
+    private static final String DATABASE_NAME = "lunacalendar.sqlite";
+    public static final int DATABASE_VERSION = 33;
 
     public static final String DEFAULT_SORT_ORDER = "_id DESC";
 
@@ -53,6 +52,14 @@ public final class Constants {
 
     // This class cannot be instantiated
     private Constants() {
+    }
+
+    public static String getDatabaseName() {
+        return DATABASE_NAME;
+    }
+
+    public static String getExternalDatabaseName() {
+        return Environment.getExternalStorageDirectory() + "/" + DATABASE_NAME;
     }
 
     /**
@@ -99,7 +106,7 @@ public final class Constants {
         public static final String EDITURL = "editurl";
         public static final String ORIGINALEVENT = "originalevent";
         public static final String EVENTSTATUS = "eventstatus";
-        
+
         public static final String SCHEDULE_MMDD = "schedule_mmdd";
 
         public static final int COL_ID = 0;

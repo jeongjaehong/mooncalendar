@@ -2,7 +2,6 @@ package org.nilriri.LunaCalendar.dao;
 
 import java.util.Calendar;
 import java.util.StringTokenizer;
-import java.util.TimeZone;
 
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 import org.nilriri.LunaCalendar.gcal.EventEntry;
@@ -11,7 +10,6 @@ import org.nilriri.LunaCalendar.tools.Common;
 
 import android.database.Cursor;
 import android.text.Editable;
-import android.util.Log;
 
 import com.google.api.client.util.DateTime;
 
@@ -170,9 +168,6 @@ public class ScheduleBean {
 
         }
         cursor.close();
-
-        Log.d("**********", "cursor2bean=" + this.toString());
-
     }
 
     public ScheduleBean(EventEntry event) {
@@ -191,9 +186,6 @@ public class ScheduleBean {
         this.setEditurl(event.getEditLink());
         this.setOriginalevent(event.originalEvent.parseAsString());
         this.setEventstatus(event.eventStatus.getValue());
-
-        Log.d("@@@@@@@@@@@@@", "event2bean=" + this.toString());
-
     }
 
     public String getSchedule_title() {
@@ -229,8 +221,12 @@ public class ScheduleBean {
         return this.schedule_date == null ? "" : this.schedule_date;
     }
 
-    public DateTime getWhenDate() {
-        return Common.toDateTime(getSchedule_date(), true);
+    public DateTime getWhenStartDate() {
+        return Common.toDateTime(getSchedule_date());
+    }
+
+    public DateTime getWhenEndDate() {
+       return Common.toDateTime(getSchedule_date(), 1);
     }
 
     public When getWhenObject() {
@@ -240,13 +236,14 @@ public class ScheduleBean {
             // 일정정보가 없으면...
             if ("".equals(getWhen())) {
                 When when = new When();
-                when.startTime = getWhenDate();
-                when.endTime = getWhenDate();
+                when.startTime = getWhenStartDate();
+                when.endTime = getWhenEndDate();
                 return when;
             } else {
                 return new When(getWhen());
             }
         } else {
+            //반복일정이 있을때는 <gd:when>태그는 사용하지 않는다..
             return new When();
         }
 
@@ -334,8 +331,8 @@ public class ScheduleBean {
         if ("".equals(this.getRecurrence())) {
             // 날짜가 바뀌면 When정보도 갱신한다.
             When when = new When(getWhen());
-            when.startTime = DateTime.parseRfc3339(date);
-            when.endTime = DateTime.parseRfc3339(date);
+            when.startTime = Common.toDateTime(date);
+            when.endTime = Common.toDateTime(date, 1);
             setWhen(when.parseAsString());
         }else{
             //TODO: 반복일정일 경우 반복일정 정보를 갱신한다.
@@ -344,8 +341,8 @@ public class ScheduleBean {
             
             // 1회성 일정으로 강제 변경한다.
             When when = new When(getWhen());
-            when.startTime = DateTime.parseRfc3339(date);
-            when.endTime = DateTime.parseRfc3339(date);
+            when.startTime = Common.toDateTime(date);
+            when.endTime = Common.toDateTime(date, 1);
             setWhen(when.parseAsString());
         }
 

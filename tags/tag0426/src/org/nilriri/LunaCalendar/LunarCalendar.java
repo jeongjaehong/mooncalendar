@@ -32,9 +32,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Rect;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -133,19 +130,12 @@ public class LunarCalendar extends Activity implements RefreshManager {
                         oldEvent.set(event.getX(), event.getY());
                         break;
                     case MotionEvent.ACTION_UP:
-                        //Log.d(TAG, "oldEvent():" + oldEvent.toString());
-                        //Log.d(TAG, "upEvent():" + event.toString());
 
                         if (getExpandRect(lunarCalendarView.mPrevMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
                             AddMonth(-1);
-                        } /*else if (getExpandRect(lunarCalendarView.mPrevYearR, 20).contains((int) event.getX(), (int) event.getY())) {
-                            // Toast.makeText(getBaseContext(), lunarCalendarView.mPrevYearR.toString() + ":" + event.getX() + "," + (int) event.getY(), Toast.LENGTH_LONG).show();
-                            AddMonth(-12);
-                          }*/else if (getExpandRect(lunarCalendarView.mNextMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
+                        } else if (getExpandRect(lunarCalendarView.mNextMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
                             AddMonth(1);
-                        } /*else if (getExpandRect(lunarCalendarView.mNextYearR, 20).contains((int) event.getX(), (int) event.getY())) {
-                            AddMonth(12);
-                          } */else if (lunarCalendarView.titleRect.contains((int) event.getX(), (int) event.getY())) {
+                        } else if (lunarCalendarView.titleRect.contains((int) event.getX(), (int) event.getY())) {
                             showDialog(LunarCalendar.DATE_DIALOG_ID);
                         } else {
                             if (event.getX() - oldEvent.getX() > 50) {//Right
@@ -163,12 +153,8 @@ public class LunarCalendar extends Activity implements RefreshManager {
                                     AddMonth(1);
                                 }
                             } else if (event.getY() - oldEvent.getY() > 50) {
-                                //applyRotation(-1, 0, 180);
-                                //AddMonth(-12);
                                 mAddMonthOffset = -12;
                             } else if (event.getY() - oldEvent.getY() < -50) {
-                                //applyRotation(1, 360, 180);
-                                //AddMonth(12);
                                 mAddMonthOffset = 12;
                             } else {
                                 lunarCalendarView.setSelection((int) (event.getX() / lunarCalendarView.getTileWidth()), (int) (event.getY() / lunarCalendarView.getTileHeight()));
@@ -189,7 +175,6 @@ public class LunarCalendar extends Activity implements RefreshManager {
 
         mListView = (ListView) findViewById(R.id.ContentsListView);
 
-        // Inform the list we provide context menus for items
         mListView.setOnCreateContextMenuListener(this);
         mListView.setOnItemClickListener(new ScheduleOnItemClickListener());
 
@@ -246,33 +231,35 @@ public class LunarCalendar extends Activity implements RefreshManager {
     public void AddMonth(int offset) {
         // 달이 바뀌면서 기존에 선택된 영역이 새로 바뀐달에서는 날짜 영역이 아닌경우 에러가 발생함.
         // TODO: 새로운 달의 날짜범위를 넘어가면 1일이나 마지막 날짜로 변환.
-        //Log.d("XXXXXXXXXXXX", "AddMonth=" + mMonth + "." + mDay);
+        try {
+            final Calendar c = Calendar.getInstance();
+            c.setFirstDayOfWeek(Calendar.SUNDAY);
+            c.set(mYear, mMonth, 1);
+            c.add(Calendar.MONTH, 1);
+            c.add(Calendar.DAY_OF_MONTH, -1);
 
-        final Calendar c = Calendar.getInstance();
-        c.setFirstDayOfWeek(Calendar.SUNDAY);
-        c.set(mYear, mMonth, 1);
-        c.add(Calendar.MONTH, 1);
-        c.add(Calendar.DAY_OF_MONTH, -1);
+            if (mDay < 1 || mDay > c.get(Calendar.DAY_OF_MONTH)) {
+                mDay = 1;
+                lunarCalendarView.setSelX(c.get(Calendar.DAY_OF_WEEK) - 1);
+                lunarCalendarView.setSelY(2);
+            }
 
-        if (mDay < 1 || mDay > c.get(Calendar.DAY_OF_MONTH)) {
-            mDay = 1;
-            lunarCalendarView.setSelX(c.get(Calendar.DAY_OF_WEEK) - 1);
-            lunarCalendarView.setSelY(2);
+            c.set(mYear, mMonth, mDay);
+            c.add(Calendar.MONTH, offset);
+            mYear = c.get(Calendar.YEAR);
+            mMonth = c.get(Calendar.MONTH);
+            mDay = c.get(Calendar.DAY_OF_MONTH);
+
+            lunarCalendarView.loadSchduleExistsInfo();
+
+            // 달이 바뀔때는 화면전체를 다시 그린다.
+            lunarCalendarView.invalidate();
+
+            // 날짜가 바뀌면 다시 조회하기 위해서 초기화한다.
+            todayEvents.clear();
+        } catch (Exception e) {
+            Log.e(Common.TAG, e.getMessage(), e);
         }
-
-        c.set(mYear, mMonth, mDay);
-        c.add(Calendar.MONTH, offset);
-        mYear = c.get(Calendar.YEAR);
-        mMonth = c.get(Calendar.MONTH);
-        mDay = c.get(Calendar.DAY_OF_MONTH);
-
-        lunarCalendarView.loadSchduleExistsInfo();
-
-        // 달이 바뀔때는 화면전체를 다시 그린다.
-        lunarCalendarView.invalidate();
-
-        // 날짜가 바뀌면 다시 조회하기 위해서 초기화한다.
-        todayEvents.clear();
     }
 
     @Override
@@ -291,6 +278,11 @@ public class LunarCalendar extends Activity implements RefreshManager {
     @Override
     protected void onResume() {
         super.onResume();
+
+        // 설정화면에서 sd카드 사용여부를 변경하면 dao를 지정한 위치의 db로 다시 연결한다.
+        if (dao.mSdcarduse != Prefs.getSDCardUse(this)) {
+            dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+        }
 
         if (Prefs.getAlarmCheck(this)) {// 알람생성
             long firstTime = SystemClock.elapsedRealtime();
@@ -325,12 +317,10 @@ public class LunarCalendar extends Activity implements RefreshManager {
         @Override
         protected void onPreExecute() {
             dialog = ProgressDialog.show(LunarCalendar.this, "", "구글캘린더에서 일정을 가져오고 있습니다...", true);
-            Log.e(Common.TAG, "****** onPreExecute ********");
         }
 
         @Override
         protected Void doInBackground(Void... params) {
-            Log.e(Common.TAG, "****** doInBackground ********");
 
             try {
                 String url = Prefs.getOnlineCalendar(LunarCalendar.this);
@@ -345,7 +335,6 @@ public class LunarCalendar extends Activity implements RefreshManager {
                 c.add(Calendar.DAY_OF_MONTH, 2);
                 where.append(Common.fmtDate(c));
                 url += where.toString();
-                Log.d(Common.TAG, "url=" + url);
 
                 if (todayEvents.size() <= 0) {
                     GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(LunarCalendar.this));
@@ -413,7 +402,6 @@ public class LunarCalendar extends Activity implements RefreshManager {
                 Toast.makeText(LunarCalendar.this, "구독하는 달력에 등록된 일정이 없습니다.", Toast.LENGTH_LONG).show();
             }
 
-            Log.e(Common.TAG, "****** onPostExecute ********");
         }
     }
 
@@ -445,6 +433,25 @@ public class LunarCalendar extends Activity implements RefreshManager {
             updateDisplay();
         }
     };
+
+    public void onCreateLunarEvents() {
+
+        String names[] = new String[] { "달력 신규생성", Prefs.getSyncCalendarName(LunarCalendar.this) };
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(LunarCalendar.this);
+        builder.setTitle("음력일정을 생성할 달력을 선택하십시오.");
+        builder.setItems(names, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+
+                try {
+                    dao.batchMakeCalendar(LunarCalendar.this, (which == 0));
+                } catch (Exception e) {
+                    Toast.makeText(LunarCalendar.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        }).show();
+
+    }
 
     /*
      * (non-Javadoc)
@@ -525,7 +532,8 @@ public class LunarCalendar extends Activity implements RefreshManager {
                 return true;
             }
             case MENU_ITEM_MAKECAL: {
-                dao.batchMakeCalendar(this);
+                //dao.batchMakeCalendar(this);
+                onCreateLunarEvents();
                 return true;
             }
             case MENU_ITEM_SEARCH: {
@@ -568,8 +576,6 @@ public class LunarCalendar extends Activity implements RefreshManager {
         menu.add(0, MENU_ITEM_MONTHSCHEDULE, 0, R.string.schedule_monthlist_label);
 
         if (view.equals(this.mListView)) {
-            //Toast.makeText(getBaseContext(),"Selected id is " + this.mListView.getItemIdAtPosition(position) , Toast.LENGTH_LONG).show();
-
             AdapterView.AdapterContextMenuInfo info;
             try {
                 info = (AdapterView.AdapterContextMenuInfo) menuInfo;
@@ -583,9 +589,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
             if (cursor != null && "Schedule".equals(cursor.getString(1))) {
                 menu.add(0, MENU_ITEM_DELSCHEDULE, 0, R.string.schedule_delete_label);
             }
-
         }
-
         menu.add(0, MENU_ITEM_ONLINECAL, 0, R.string.onlinecalendar_label);
 
     }
@@ -639,9 +643,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
                 final Calendar c = Calendar.getInstance();
                 c.set(mYear, mMonth, mDay);
                 intent.putExtra("STODAY", c);
-
                 startActivity(intent);
-
                 return true;
             }
             case MENU_ITEM_DELSCHEDULE: {
@@ -652,19 +654,18 @@ public class LunarCalendar extends Activity implements RefreshManager {
                     Log.e("LunarCalendar", "bad menuInfo", e);
                     return false;
                 }
-
                 dao.syncDelete(info.id, this);
-
                 return true;
             }
             case MENU_ITEM_ONLINECAL: {
-                new ShowOnlineCalendar().execute();
-
+                if (!"".equals(Prefs.getOnlineCalendar(LunarCalendar.this))) {
+                    new ShowOnlineCalendar().execute();
+                } else {
+                    Toast.makeText(getBaseContext(), "설정화면에서 온라인 구독 달력을 지정하십시오.", Toast.LENGTH_LONG).show();
+                }
                 return true;
             }
-
         }
-
         return false;
     }
 
@@ -734,7 +735,6 @@ public class LunarCalendar extends Activity implements RefreshManager {
      * 싱크 작업 종료후 화면 리프레쉬.
      */
     public void refresh() {
-        Log.e(Common.TAG, "****** refresh ********");
         this.AddMonth(0);
     }
 

@@ -1,6 +1,5 @@
 package org.nilriri.LunaCalendar.tools;
 
-import android.util.Log;
 
 public class WhereClause {
 
@@ -36,14 +35,10 @@ public class WhereClause {
         } else {
             putValue(key, value, op);
         }
-
     }
 
     private void putValue(String key, Object value, String op) {
         if (value == null || "".equals(value)) {
-            //this.putNull(key);
-            Log.d("WhereClause", "***********  skip condition *************=>" + key);
-
         } else {
             if (useParam) {
                 addParam(value + "");

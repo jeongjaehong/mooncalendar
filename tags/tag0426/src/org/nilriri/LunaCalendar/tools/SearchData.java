@@ -8,7 +8,6 @@ import org.nilriri.LunaCalendar.schedule.ScheduleList;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -19,8 +18,6 @@ import android.widget.Spinner;
 import android.widget.AdapterView.OnItemClickListener;
 
 public class SearchData extends Activity implements OnClickListener {
-
-    private static final String TAG = "SearchData";
 
     private static final String SEARCH_KEYWORD1 = "search_keyword1";
     private static final String SEARCH_KEYWORD2 = "search_keyword2";
@@ -78,41 +75,29 @@ public class SearchData extends Activity implements OnClickListener {
     }
 
     public class listOnItemClickListener implements OnItemClickListener {
-
         public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
-
             if (pos < 0)
                 return;
-
-            Log.e(TAG, "onItemSelected====" + id);
-
         }
-
     }
 
     public void onClick(View view) {
-
         switch (view.getId()) {
             case R.id.btn_search:
                 Intent intent = new Intent();
 
                 intent.setClass(this, ScheduleList.class);
                 final Calendar c = Calendar.getInstance();
-                
-              
-                
+
                 intent.putExtra("org.nilriri.gscheduler.workday", c);
                 intent.putExtra("ScheduleRange", "ALL");
-                
-                intent.putExtra("isSearch", true); 
+                intent.putExtra("isSearch", true);
                 intent.putExtra("operator", spin_operator.getSelectedItemPosition());
                 intent.putExtra("keyword1", search_keyword1.getText().toString().trim());
                 intent.putExtra("keyword2", search_keyword2.getText().toString().trim());
-                
+
                 startActivity(intent);
-
                 break;
-
         }
     }
 

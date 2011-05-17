@@ -17,11 +17,21 @@ package org.nilriri.LunaCalendar.gcal;
 import java.io.IOException;
 
 import com.google.api.client.http.HttpTransport;
+import com.google.api.client.util.Key;
 
 /**
  * @author Yaniv Inbar
  */
 public class CalendarEntry extends Entry {
+
+    @Key("gCal:hidden")
+    public AtomValue hidden = new AtomValue("false");
+
+    @Key("gCal:selected")
+    public AtomValue selected = new AtomValue("true");
+
+    @Key("gCal:timezone")
+    public AtomValue timezone = new AtomValue("Asia/Seoul");
 
     public String getEventFeedLink() {
         return Link.find(links, "http://schemas.google.com/gCal/2005#eventFeed");

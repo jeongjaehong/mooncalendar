@@ -1,13 +1,9 @@
 package org.nilriri.LunaCalendar.tools;
 
-import java.io.File;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.TimeZone;
 
 import org.nilriri.LunaCalendar.widget.AppWidgetProvider1x1;
 import org.nilriri.LunaCalendar.widget.AppWidgetProvider2x2;
@@ -15,20 +11,13 @@ import org.nilriri.LunaCalendar.widget.WidgetService;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.location.LocationManager;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
-import android.provider.MediaStore;
-import android.provider.MediaStore.Audio.AudioColumns;
-import android.text.format.DateFormat;
 import android.text.format.Time;
-import android.util.Log;
 import android.util.TimeFormatException;
 
 import com.google.api.client.util.DateTime;
@@ -55,10 +44,8 @@ public class Common extends Activity {
         Time t = new Time();
         try {
             if (t.parse3339(value)) {
-                Log.d("~~~~~~~~~~~~~~~", "parse ok");
                 return t.format3339(false);
             } else {
-                Log.d("~~~~~~~~~~~~~~~", "parse error =" + value);
                 return Common.getTime3339Format(false);
             }
         } catch (TimeFormatException e) {
@@ -125,16 +112,28 @@ public class Common extends Activity {
     }
 
     public static DateTime toDateTime(String date) {
-        return toDateTime(date, false);
-    }
-
-    public static DateTime toDateTime(String date, boolean allDay) {
         DateTime result = new DateTime(new Date());
 
         result = DateTime.parseRfc3339(date);
 
         return result;
 
+    }
+
+    public static DateTime toDateTime(String startDate, int day) {
+        Calendar nowCal = Calendar.getInstance();
+
+        nowCal.setTime(new Date(DateTime.parseRfc3339(startDate).value));
+
+        nowCal.add(Calendar.DAY_OF_MONTH, day);
+
+        return DateTime.parseRfc3339(Common.fmtDate(nowCal));
+
+    }
+
+    public static String fmtDate() {
+        Calendar c = Calendar.getInstance();
+        return fmtDate(c);
     }
 
     public static String fmtDate(String date) {
@@ -195,61 +194,6 @@ public class Common extends Activity {
         v.vibrate(pattern, 5);
     }
 
-    /*
-
-    private static final int DOWNLOAD_FILES_REQUEST = 1;   
-    
-    Intent intent = new Intent();   
-    intent.setAction(Intent.ACTION_PICK);   
-    // FTP SELFURL (Starts with ftp://, sftp:// or ftps:// followed by hostname and port).   
-    Uri ftpUri = Uri.parse("ftp://yourftpserver.com");   
-    intent.setDataAndType(ftpUri, "vnd.android.cursor.dir/lysesoft.andftp.uri");   
-    // FTP credentials (optional)   
-    intent.putExtra("ftp_username", "anonymous");   
-    intent.putExtra("ftp_password", "something@somewhere.com");   
-    //intent.putExtra("ftp_keyfile", "/sdcard/dsakey.txt");   
-    //intent.putExtra("ftp_keypass", "optionalkeypassword");   
-    // FTP settings (optional)   
-    intent.putExtra("ftp_pasv", "true");   
-    //intent.putExtra("ftp_resume", "true");   
-    //intent.putExtra("ftp_encoding", "UTF8");   
-    // Download   
-    intent.putExtra("command_type", "download");   
-    // Activity title   
-    intent.putExtra("progress_title", "Downloading files ...");   
-    // Remote files to download.   
-    intent.putExtra("remote_file1", "/remotefolder/subfolder/file1.zip");   
-    intent.putExtra("remote_file2", "/remotefolder/subfolder/file2.zip");   
-    // Target local folder where files will be downloaded.   
-    intent.putExtra("local_folder", "/sdcard/localfolder");            
-    startActivityForResult(intent, DOWNLOAD_FILES_REQUEST);  
-
-     
-     */
-
-    /*
-    private double[] getGPS() {
-        LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        List<String> providers = lm.getProviders(true);
-
-        // Loop over the array backwards, and if you get an accurate location, then break out the loop
-        Location l = null;
-
-        for (int i = providers.size() - 1; i >= 0; i--) {
-            l = lm.getLastKnownLocation(providers.get(i));
-            if (l != null)
-                break;
-        }
-
-        double[] gps = new double[2];
-        if (l != null) {
-            gps[0] = l.getLatitude();
-            gps[1] = l.getLongitude();
-        }
-        return gps;
-    }
-    */
-
     public boolean locactionServiceAvaiable() {
         LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         List<String> providers = lm.getProviders(true);
@@ -260,68 +204,8 @@ public class Common extends Activity {
             return false;
     }
 
-    /*
-    //uses-permission android:name="android.permission.READ_PHONE_STATE"
-    private String getMyPhoneNumber() {
-        TelephonyManager mTelephonyMgr;
-        mTelephonyMgr = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        return mTelephonyMgr.getLine1Number();
-    }
-    */
-
-    /*
-    private String getMy10DigitPhoneNumber() {
-        String s = getMyPhoneNumber();
-        return s.substring(2);
-    }
-    */
-
-    /*
-    private double gps2m(float lat_a, float lng_a, float lat_b, float lng_b) {
-        float pk = (float) (180 / 3.14169);
-
-        float a1 = lat_a / pk;
-        float a2 = lng_a / pk;
-        float b1 = lat_b / pk;
-        float b2 = lng_b / pk;
-
-        float t1 = FloatMath.cos(a1) * FloatMath.cos(a2) * FloatMath.cos(b1) * FloatMath.cos(b2);
-        float t2 = FloatMath.cos(a1) * FloatMath.sin(a2) * FloatMath.cos(b1) * FloatMath.sin(b2);
-        float t3 = FloatMath.sin(a1) * FloatMath.sin(b1);
-        double tt = Math.acos(t1 + t2 + t3);
-
-        return 6366000 * tt;
-    }
-    */
-
     public static boolean isSdPresent() {
         return android.os.Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED);
-    }
-
-    public void setRingtone() {
-        //sample file     
-        String filepath = "/sdcard/play2.mp3";
-        File ringtoneFile = new File(filepath);
-
-        ContentValues content = new ContentValues();
-        content.put(MediaStore.MediaColumns.DATA, ringtoneFile.getAbsolutePath());
-        content.put(MediaStore.MediaColumns.TITLE, "chinnu");
-        content.put(MediaStore.MediaColumns.SIZE, 215454);
-        content.put(MediaStore.MediaColumns.MIME_TYPE, "audio/*");
-        content.put(AudioColumns.ARTIST, "Madonna");
-        content.put(AudioColumns.DURATION, 230);
-        content.put(AudioColumns.IS_RINGTONE, true);
-        content.put(AudioColumns.IS_NOTIFICATION, false);
-        content.put(AudioColumns.IS_ALARM, false);
-        content.put(AudioColumns.IS_MUSIC, false);
-
-        //Insert it into the database   
-        Log.i("TAG", "the absolute path of the file is :" + ringtoneFile.getAbsolutePath());
-        Uri uri = MediaStore.Audio.Media.getContentUriForPath(ringtoneFile.getAbsolutePath());
-        Uri newUri = this.getBaseContext().getContentResolver().insert(uri, content);
-        Uri ringtoneUri = newUri;
-        Log.i("TAG", "the ringtone uri is :" + ringtoneUri);
-        RingtoneManager.setActualDefaultRingtoneUri(this.getBaseContext(), RingtoneManager.TYPE_RINGTONE, newUri);
     }
 
     public static String[] tokenFn(String str, String token) {
@@ -347,71 +231,4 @@ public class Common extends Activity {
         }
         return toStr;
     }
-
-    /*
-    private boolean haveInternet(){   
-        NetworkInfo info=(ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE).getActiveNetworkInfo();   
-        if(info==null || !info.isConnected()){   
-            return false;   
-        }   
-        if(info.isRoaming()){   
-            //here is the roaming option you can change it if you want to disable internet while roaming, just return false   
-            return true;   
-        }   
-        return true;   
-    }  
-    */
-
-    /*
-     
-      String filepath ="/sdcard/play2.mp3";   
-    File ringtoneFile = new File(filepath);   
-      
-    WhereClause2 content = new WhereClause2();   
-    content.put(MediaStore.MediaColumns.DATA,      ringtoneFile.getAbsolutePath());   
-    content.put(MediaStore.MediaColumns.TITLE, "chinnu");   
-    content.put(MediaStore.MediaColumns.SIZE, 215454);   
-    content.put(MediaStore.MediaColumns.MIME_TYPE, "audio/*");   
-    content.put(MediaStore.Audio.Media.ARTIST, "Madonna");   
-    content.put(MediaStore.Audio.Media.DURATION, 230);   
-    content.put(MediaStore.Audio.Media.IS_RINGTONE, true);   
-    content.put(MediaStore.Audio.Media.IS_NOTIFICATION, false);   
-    content.put(MediaStore.Audio.Media.IS_ALARM, false);   
-    content.put(MediaStore.Audio.Media.IS_MUSIC, false);   
-      
-      
-    //Insert it into the database   
-    //Log.i(TAG, "the absolute path of the file is :"+ringtoneFile.getAbsolutePath());   
-    Uri uri = MediaStore.Audio.Media.getContentUriForPath(ringtoneFile.getAbsolutePath());   
-    Uri newUri = context.getContentResolver().insert(uri, content);   
-          ringtoneUri = newUri;   
-          //Log.i(TAG,"the ringtone uri is :"+ringtoneUri);   
-    RingtoneManager.setActualDefaultRingtoneUri(context,RingtoneManager.TYPE_RINGTONE,newUri);     
-      
-      
-     */
-    /*
-    public void postData() {
-        // Create a new HttpClient and Post Header   
-        HttpClient httpclient = new DefaultHttpClient();
-        HttpPost httppost = new HttpPost("http://www.yoursite.com/script.php");
-
-        try {
-            // Add your data   
-            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-            nameValuePairs.add(new BasicNameValuePair("id", "12345"));
-            nameValuePairs.add(new BasicNameValuePair("stringdata", "AndDev is Cool!"));
-            httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-            // Execute HTTP Post Request   
-            HttpResponse response = httpclient.execute(httppost);
-
-        } catch (ClientProtocolException e) {
-            // TODO Auto-generated catch block   
-        } catch (IOException e) {
-            // TODO Auto-generated catch block   
-        }
-    }
-    */
-
 }

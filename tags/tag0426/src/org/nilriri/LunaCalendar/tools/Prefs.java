@@ -11,7 +11,6 @@ import org.nilriri.LunaCalendar.gcal.GoogleUtil;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -138,7 +137,7 @@ public class Prefs extends PreferenceActivity {
             public boolean onPreferenceClick(Preference preference) {
                 CheckBoxPreference cpf = (CheckBoxPreference) preference;
                 if (cpf.isChecked()) {
-                    if (!Common.isSdPresent()) {
+                    if (!Common.isSdPresent()) { //sd카드 사용 불가능 상태이면...
 
                         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).edit().putBoolean(OPT_SDCARDUSE, false).commit();
 
@@ -147,11 +146,11 @@ public class Prefs extends PreferenceActivity {
 
                         Toast.makeText(getBaseContext(), "스케쥴 정보 복사중...", Toast.LENGTH_LONG).show();
                         // backup
-                        DataManager.StartCopy(Prefs.this, cpf.isChecked());
+                        DataManager.StartCopy(Prefs.this, true);
                     }
                 } else {
                     // restore
-                    DataManager.StartCopy(Prefs.this, cpf.isChecked());
+                    DataManager.StartCopy(Prefs.this, false);
                 }
                 return false;
             }
@@ -192,20 +191,14 @@ public class Prefs extends PreferenceActivity {
             case REQUEST_AUTHENTICATE:
                 if (resultCode == RESULT_OK) {
                     gotAccount(false);
-                }/* else {
-                    showDialog(DIALOG_ACCOUNTS);
-                 }*/
+                }
                 break;
             case REQUEST_RINGTONE:
                 if (resultCode == RESULT_OK) {
                     Uri uri = intent.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
-                    String title = intent.getStringExtra(RingtoneManager.EXTRA_RINGTONE_TITLE);
 
-                    Log.d(Common.TAG, "RingTone Uri=" + uri.toString());
-                    Log.d(Common.TAG, "RingTone Title=" + title);
-                     if (uri != null) {
+                    if (uri != null) {
                         setRingtone(getBaseContext(), uri.toString());
-                     
                     }
                 }
                 break;
@@ -344,8 +337,6 @@ public class Prefs extends PreferenceActivity {
 
             dialog = ProgressDialog.show(Prefs.this, "", "Connecting to google...", true);
 
-            Log.e(Common.TAG, "****** onPreExecute ********");
-
             // 기존 선택된 계정의 캘린더 목록초기화
             setCalendars(getBaseContext(), new String[] { "" });
 
@@ -390,17 +381,11 @@ public class Prefs extends PreferenceActivity {
                 handleException(e);
                 e.printStackTrace();
             }
-
-            Log.e(Common.TAG, "****** doInBackground ********");
-
             return null;
         }
 
         @Override
         protected void onPostExecute(Void result) {
-
-            Log.e(Common.TAG, "****** onPostExecute ********");
-
             // 계정이 바뀔때 로드된 캘린더 목록을 저장해 둔다.
             setCalendars(getBaseContext(), entryValues);
 
@@ -412,21 +397,14 @@ public class Prefs extends PreferenceActivity {
                 calendars.setValue(cals.get(0).getEventFeedLink());
                 calendars.setSummary(cals.get(0).title);
             }
-
             dialog.dismiss();
-
         }
-
     }
 
     void handleException(Exception e) {
-
         if (e instanceof HttpResponseException) {
             HttpResponse response = ((HttpResponseException) e).response;
             int statusCode = response.statusCode;
-
-            Log.e(Common.TAG, "handleException statusCode=" + statusCode);
-            Log.e(Common.TAG, e.getMessage(), e);
 
             try {
                 response.ignore();
@@ -437,21 +415,11 @@ public class Prefs extends PreferenceActivity {
                 gotAccount(true);
                 return;
             }
-
-            try {
-
-                Log.e(Common.TAG, response.parseAsString());
-            } catch (IOException parseException) {
-                parseException.printStackTrace();
-            }
         } else if (e instanceof UnknownHostException) {
             Log.e(Common.TAG, e.getMessage(), e);
-
         } else {
             e.printStackTrace();
-
         }
-
     }
 
     public static boolean getLunaIcon(Context context) {
@@ -470,12 +438,9 @@ public class Prefs extends PreferenceActivity {
         PreferenceManager.getDefaultSharedPreferences(context).edit().putString(OPT_RINGTONE, uri).commit();
     }
 
-  
     public static String getRingtone(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_RINGTONE, "");
     }
-
-   
 
     public static boolean getAnimation(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OPT_ANIMATION, OPT_ANIMATION_DEF);
@@ -509,6 +474,19 @@ public class Prefs extends PreferenceActivity {
         return PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_CALENDARS, OPT_CALENDARS_DEF);
     }
 
+    public static String getSyncCalendarName(Context context) {
+        String value = getSyncCalendar(context);
+
+        String entryValues[] = getCalendars(context);
+
+        for (int i = 0; i < entryValues.length; i++) {
+            if (entryValues[i].indexOf(value) >= 0) {
+                return Common.tokenFn(entryValues[i], "|")[0];
+            }
+        }
+        return "";
+    }
+
     public static String getOnlineCalendar(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_ONLINECALENDARS, OPT_ONLINECALENDARS_DEF);
     }
@@ -519,15 +497,12 @@ public class Prefs extends PreferenceActivity {
 
     public static void setCalendars(Context context, CharSequence[] values) {
         String value = "";
-
         for (int i = 0; i < values.length; i++) {
             if (i == 0) {
                 value = values[i].toString();
             } else {
-
                 value += "," + values[i].toString();
             }
-
         }
         PreferenceManager.getDefaultSharedPreferences(context).edit().putString(OPT_CALLIST, value).commit();
     }
@@ -547,9 +522,7 @@ public class Prefs extends PreferenceActivity {
             if (accName.equals(acc[i].name))
                 return acc[i];
         }
-
         return null;
-
     }
 
     public static boolean getSDCardUse(Context context) {
@@ -558,9 +531,6 @@ public class Prefs extends PreferenceActivity {
 
     public static int getWidgetColor(Context context) {
         String color = PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_WIDGETCOLOR, OPT_WIDGETCOLOR_DEF);
-
         return Integer.parseInt(color);
-
     }
-
 }

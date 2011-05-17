@@ -54,51 +54,35 @@ public class GoogleUtil {
      * Feed Retrieve
      */
     public List<CalendarEntry> getCalendarList() throws IOException {
-        Log.d(Common.TAG, "-------------getCalendarList Start-------------");
-        String[] calendarNames;
         List<CalendarEntry> calendars = this.calendars;
         calendars.clear();
-        CalendarUrl url = CalendarUrl.forAllCalendarsFeed();
-        //CalendarUrl url = CalendarUrl.forOwnCalendarsFeed();
-        while (true) {
-
-            CalendarFeed feed = CalendarFeed.executeGet(transport, url);
-            if (feed.calendars != null) {
-                calendars.addAll(feed.calendars);
+        try {
+            CalendarUrl url = CalendarUrl.forAllCalendarsFeed();
+            while (true) {
+                CalendarFeed feed = CalendarFeed.executeGet(transport, url);
+                if (feed.calendars != null) {
+                    calendars.addAll(feed.calendars);
+                }
+                String nextLink = feed.getNextLink();
+                if (nextLink == null) {
+                    break;
+                }
             }
-            String nextLink = feed.getNextLink();
-            if (nextLink == null) {
-                break;
-            }
+        } catch (IOException e) {
+            calendars.clear();
         }
-
-        int numCalendars = calendars.size();
-        calendarNames = new String[numCalendars];
-        for (int i = 0; i < numCalendars; i++) {
-            calendarNames[i] = calendars.get(i).title;
-        }
-
-        Log.d(Common.TAG, "-------------getCalendarList End-------------");
-
         return calendars;
-
     }
 
     public List<EventEntry> getEvents(String feedUrl) throws IOException {
-
         List<EventEntry> events = this.events;
         events.clear();
         try {
             CalendarUrl url = new CalendarUrl(feedUrl);
             while (true) {
-
-                Log.d(Common.TAG, "calendar.getSelfEventFeedLink()=" + url);
-
                 EventFeed feed = EventFeed.executeGet(transport, url);
-
                 if (feed.events != null) {
                     events.addAll(feed.events);
-
                 }
                 String nexturl = feed.getNextLink();
                 if (nexturl == null) {
@@ -107,18 +91,22 @@ public class GoogleUtil {
                     url = new CalendarUrl(nexturl);
                 }
             }
-
         } catch (IOException e) {
             events.clear();
         }
-
         return events;
-
     }
 
     /*
      * Events Manage Transaction
      */
+    public CalendarEntry addCalendar(String title) throws IOException {
+        CalendarUrl url = CalendarUrl.forOwnCalendarsFeed();
+        CalendarEntry calendar = new CalendarEntry();
+        calendar.title = title;
+        return calendar.executeInsert(transport, url);
+    }
+
     public EventEntry insertEvent(String feedUrl, ScheduleBean scheduleBean, String account) throws IOException {
         CalendarUrl url = new CalendarUrl(feedUrl);
         EventEntry event = newEvent(scheduleBean);
@@ -129,6 +117,10 @@ public class GoogleUtil {
     public EventEntry updateEvent(ScheduleBean bean) throws IOException {
         EventEntry event = newEvent(bean);
         return event.executeUpdate(transport);
+    }
+
+    public int deleteEvent(EventEntry event) throws IOException {
+        return event.executeDelete(transport);
     }
 
     public int deleteEvent(ScheduleBean bean) throws IOException {
@@ -167,10 +159,12 @@ public class GoogleUtil {
     /*
      * batch Transaction
      */
-
-    public void batchAddEvents(String eventFeedLink, ProgressDialog pd) throws IOException {
+    public void batchLunarEvents(String eventFeedLink, ProgressDialog pd) throws IOException {
 
         EventFeed feed = new EventFeed();
+        Calendar e = Calendar.getInstance();
+        e.set(Calendar.MONDAY, 11);
+        e.set(Calendar.DAY_OF_MONTH, 31);
 
         Calendar c = Calendar.getInstance();
         c.setFirstDayOfWeek(Calendar.SUNDAY);
@@ -180,17 +174,10 @@ public class GoogleUtil {
         int oldMonth = 0;
         int interval = 1;
 
-        //pd.setCancelable(true);
-        //pd.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        //pd.setIndeterminate(true);
-        //pd.setMax(366);
+        for (int day = 1; c.getTime().compareTo(e.getTime()) < 0; day++) {
 
-        for (int day = 1; c.get(Calendar.DAY_OF_YEAR) <= 366; day++) {
-
-            //pd.setMessage(Common.fmtDate(c).substring(0, 7) + " 데이터 작업중...");
             pd.setProgress(c.get(Calendar.DAY_OF_YEAR));
 
-            //try {Thread.sleep(1000);} catch (InterruptedException e){}
             ScheduleBean bean = new ScheduleBean();
 
             c.add(Calendar.DAY_OF_MONTH, interval);
@@ -201,10 +188,10 @@ public class GoogleUtil {
                 continue;
             }
 
-            String lDate = Common.fmtDate(lunar2solar.s2l(c));
+            String ldate = Common.fmtDate(lunar2solar.s2l(c)).substring(5).replace("-", "/");
 
             bean.setDate(c);
-            bean.setTitle("음력 " + lDate);
+            bean.setTitle(ldate + " (-)");
             bean.setContents("gen:org.nilriri.lunarcalendar.auto;");
 
             EventEntry event = newEvent(bean);
@@ -216,30 +203,23 @@ public class GoogleUtil {
             if (oldMonth != c.get(Calendar.MONTH)) {
                 EventFeed batchResult = feed.executeBatch(transport, eventFeedLink);
 
-                //pd.setMessage(Common.fmtDate(c).substring(0, 7) + " 일정 생성중...");
-
                 for (EventEntry newEvent : batchResult.events) {
                     BatchStatus batchStatus = newEvent.batchStatus;
-
                     if (batchStatus != null && !HttpResponse.isSuccessStatusCode(batchStatus.code)) {
                         Log.d(Common.TAG, "Error posting event: " + batchStatus.reason);
                     }
                 }
-
                 feed.events.clear();
                 oldMonth = c.get(Calendar.MONTH);
-
             }
-
         }
-
     }
 
     // 성경플랜달력 생성.
     public void batchBiblePlan(String eventFeedLink, ProgressDialog pd, String[] PlanList) throws IOException {
 
         EventFeed feed = new EventFeed();
-        StringBuilder recurrence ;
+        StringBuilder recurrence;
 
         Calendar c = Calendar.getInstance();
         c.setFirstDayOfWeek(Calendar.SUNDAY);
@@ -250,7 +230,6 @@ public class GoogleUtil {
 
         for (int j = 0; j < PlanList.length; j++) {
 
-            //pd.setMessage(Common.fmtDate(c).substring(0, 7) + " 데이터 작업중...");
             pd.setProgress(c.get(Calendar.DAY_OF_YEAR));
 
             //가정:창세기 1장|01-01|0|0|
@@ -266,6 +245,9 @@ public class GoogleUtil {
             c.set(Calendar.MONTH, Integer.parseInt(mmdd[0]) - 1);
             c.set(Calendar.DAY_OF_MONTH, Integer.parseInt(mmdd[1]));
 
+            Calendar c2 = (Calendar) c.clone();
+            c2.add(Calendar.DAY_OF_MONTH, 1);
+
             ScheduleBean bean = new ScheduleBean();
 
             bean.setDate(c);
@@ -273,8 +255,8 @@ public class GoogleUtil {
             bean.setContents("bindex:" + data[2] + "," + data[3]);
 
             recurrence = new StringBuilder();
-            recurrence.append("DTSTART;VALUE=DATE:"+Common.fmtDate(c).replace("-", "")+"\n");
-            recurrence.append("DTEND;VALUE=DATE:"+Common.fmtDate(c).replace("-", "")+"\n");
+            recurrence.append("DTSTART;VALUE=DATE:" + Common.fmtDate(c).replace("-", "") + "\n");
+            recurrence.append("DTEND;VALUE=DATE:" + Common.fmtDate(c2).replace("-", "") + "\n");
             recurrence.append("RRULE:FREQ=YEARLY\n");
             recurrence.append("BEGIN:VTIMEZONE\n");
             recurrence.append("TZID:Asia/Seoul\n");
@@ -283,11 +265,9 @@ public class GoogleUtil {
             recurrence.append("TZOFFSETFROM:+0900\n");
             recurrence.append("TZOFFSETTO:+0900\n");
             recurrence.append("TZNAME:KST\n");
-            recurrence.append("DTSTART:"+Common.fmtDate(c).replace("-", "")+"T000000\n");
+            recurrence.append("DTSTART:" + Common.fmtDate(c).replace("-", "") + "T000000\n");
             recurrence.append("END:STANDARD\n");
             recurrence.append("END:VTIMEZONE\n");
-            
-            //bean.setRecurrence(recurrence.toString());
 
             EventEntry event = newEvent(bean);
 
@@ -295,11 +275,10 @@ public class GoogleUtil {
             event.batchOperation = BatchOperation.INSERT;
             event.when = null;
             event.recurrence = recurrence.toString();
-            
 
             feed.events.add(event);
 
-            if (oldMonth != c.get(Calendar.MONTH) || 11== c.get(Calendar.MONTH)) {
+            if (oldMonth != c.get(Calendar.MONTH) || 11 == c.get(Calendar.MONTH)) {
                 try {
                     EventFeed batchResult = feed.executeBatch(transport, eventFeedLink);
 
