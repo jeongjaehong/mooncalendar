@@ -40,7 +40,7 @@
 	<string name="schedule_anniversary_label">기념일</string>
 	<string name="schedule_holiday_label">휴일</string>
 	<string name="onlinecalendar_label">온라인 구독달력 보기</string>
-	
+
 
 
 
@@ -115,7 +115,6 @@
 
 	<string name="settings_label">설정</string>
 	<string name="makecal_label">음력일정일괄생성</string>
-	
 	<string name="settings_title">설정</string>
 	<string name="settings_shortcut">s</string>
 	<string name="lunaicon_title">달의 변화 모양</string>
@@ -140,24 +139,21 @@
 		\
 		Lunar Scheduler 주요기능\n 1. 음력 및 양력 표시 달력\n 2. 스케쥴러
 		(알람 및 D-day)\n 3. 구글 캘린더 이벤트 연동\n \n 요구사항은 블로그에 남겨주세요.^^; \n
-		jeongjaehong@gmail.com \n 
-		Twitter: @nilriri2 \n
+		jeongjaehong@gmail.com \n Twitter: @nilriri2 \n
 		http://nilriri.blogspot.com/ \t\t\n
 		2010.04.02\n	
 	</string>
 
-	<string name="appwidget_configure_instructions">This text will be shown before the date in our
-		example widget.</string>
-	<string name="appwidget_prefix_default">Oh hai</string>
-	<string name="widget_label_1x1">D-day Widget(1x1)</string>
-	<string name="widget_label_2x2">D-day Widget(2x2)</string>
-	
+	<string name="widget_label_1x1">Calendar Widget(1x1)</string>
+	<string name="widget_label_2x2">Calendar Widget(2x2)</string>
+
 	<string name="sdcarduse">메모리사용</string>
 	<string name="sdcarduse_summary">데이터를 외부 메모리에 저장하시겠습니까?</string>
 	<string name="sdcarduse_notinstall">외부 메모리를 사용할 수 없는 상태입니다.</string>
 
-	<string name="title_list_preference">Widget Color</string>	
+	<string name="title_list_preference">Widget Color</string>
 	<string name="summary_list_preference">Widget Color</string>
 	<string name="dialog_title_list_preference">Widget Color</string>
 
+	
 </resources>

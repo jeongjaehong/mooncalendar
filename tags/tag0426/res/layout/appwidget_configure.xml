@@ -1,30 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-	<!--
-		Copyright (C) 2006 The Android Open Source Project Licensed under the
-		Apache License, Version 2.0 (the "License"); you may not use this file
-		except in compliance with the License. You may obtain a copy of the
-		License at http://www.apache.org/licenses/LICENSE-2.0 Unless required
-		by applicable law or agreed to in writing, software distributed under
-		the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-		CONDITIONS OF ANY KIND, either express or implied. See the License for
-		the specific language governing permissions and limitations under the
-		License.
-	-->
-
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="fill_parent" android:layout_height="wrap_content"
-	android:padding="10dip" android:orientation="vertical">
+	android:orientation="vertical" android:layout_gravity="center_horizontal"
+	android:padding="5dip">
 
-	<RadioButton android:text="D-day" android:id="@+id/RadioButton01"
-		android:layout_width="wrap_content" android:layout_height="wrap_content"></RadioButton>
-	<RadioButton android:text="Schedule" android:id="@+id/RadioButton02"
-		android:layout_width="wrap_content" android:layout_height="wrap_content"></RadioButton>
-	<RadioButton android:text="Calendar" android:id="@+id/RadioButton03"
-		android:layout_width="wrap_content" android:layout_height="wrap_content"></RadioButton>
+	<LinearLayout android:id="@+id/topPanel"
+		android:layout_width="fill_parent" android:layout_height="wrap_content"
+		android:minHeight="54dip" android:orientation="vertical">
+		<LinearLayout android:id="@+id/title_template"
+			android:layout_width="fill_parent" android:layout_height="wrap_content"
+			android:orientation="horizontal" android:layout_marginTop="6dip"
+			android:layout_marginBottom="9dip" android:layout_marginLeft="10dip"
+			android:layout_marginRight="10dip">
 
-	<Button android:id="@+id/save_button" android:layout_width="wrap_content"
-		android:layout_height="wrap_content" android:text="@android:string/ok" />
+			<TextView android:id="@+id/schedule_date_label"
+				android:textSize="16sp" android:layout_width="100dip"
+				android:layout_height="wrap_content" android:text="■ 색상" />
 
+			<Spinner android:id="@+id/widgetcolor" android:layout_height="wrap_content"
+				android:layout_marginLeft="10dip" android:layout_width="fill_parent" />
+		</LinearLayout>
+	</LinearLayout>
 
+	<LinearLayout android:id="@+id/topPanel"
+		android:layout_width="fill_parent" android:layout_height="wrap_content"
+		android:minHeight="54dip" android:orientation="vertical">
+		<LinearLayout android:id="@+id/title_template"
+			android:layout_width="fill_parent" android:layout_height="wrap_content"
+			android:orientation="horizontal" android:layout_marginTop="6dip"
+			android:layout_marginBottom="9dip" android:layout_marginLeft="10dip"
+			android:layout_marginRight="10dip">
+
+			<TextView android:id="@+id/schedule_date_label"
+				android:textSize="16sp" android:layout_width="100dip"
+				android:layout_height="wrap_content" android:text="■ 일정 종류" />
+
+			<Spinner android:id="@+id/widgetkind" android:layout_height="wrap_content"
+				android:layout_marginLeft="10dip" android:layout_width="fill_parent" />
+
+		</LinearLayout>
+	</LinearLayout>
+	<LinearLayout android:id="@+id/buttonPanel"
+		android:layout_width="match_parent" android:layout_height="wrap_content"
+		android:minHeight="54dip" android:orientation="horizontal"
+		android:layout_gravity="center_vertical"
+		android:layout_alignParentBottom="true">
+		<LinearLayout android:layout_width="match_parent"
+			android:layout_height="wrap_content" android:paddingTop="4dip"
+			android:paddingLeft="2dip" android:paddingRight="2dip"
+			android:orientation="horizontal" android:gravity="center">
+
+			<Button android:id="@+id/save_button" android:layout_width="100dip"
+				android:layout_height="wrap_content" android:text="@android:string/ok" />
+
+			<Button android:id="@+id/cancel_button" android:layout_width="100dip"
+				android:layout_height="wrap_content" android:text="@android:string/cancel" />
+
+		</LinearLayout>
+	</LinearLayout>
+
+	<ListView android:id="@+id/ContentsListView"
+		android:focusable="true" android:focusableInTouchMode="true"
+		android:choiceMode="singleChoice"
+		android:background="@color/background" android:fastScrollEnabled="true"
+		android:layout_width="fill_parent" android:layout_height="wrap_content" />
 
 </LinearLayout>
