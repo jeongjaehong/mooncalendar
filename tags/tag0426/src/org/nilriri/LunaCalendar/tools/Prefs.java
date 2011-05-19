@@ -47,6 +47,15 @@ public class Prefs extends PreferenceActivity {
 
     private static final String OPT_RINGTONE = "ringtone";
 
+    private static final String OPT_SOUND = "sound";
+    private static final boolean OPT_SOUND_DEF = true;
+
+    private static final String OPT_VIBRATE = "vibrate";
+    private static final boolean OPT_VIBRATE_DEF = false;
+
+    private static final String OPT_LEDLIGHT = "ledlight";
+    private static final boolean OPT_LEDLIGHT_DEF = false;
+
     private static final String OPT_ANIMATION = "useanimation";
     private static final boolean OPT_ANIMATION_DEF = false;
 
@@ -57,7 +66,7 @@ public class Prefs extends PreferenceActivity {
     private static final boolean OPT_SDCARDUSE_DEF = false;
 
     private static final String OPT_WIDGETCOLOR = "widgetcolor";
-    private static final String OPT_WIDGETCOLOR_DEF = "1";
+    private static final int OPT_WIDGETCOLOR_DEF = 1;
 
     private static final String OPT_ACCOUNTS = "accounts";
     private static final String OPT_ACCOUNTS_DEF = "";
@@ -78,7 +87,7 @@ public class Prefs extends PreferenceActivity {
     private ListPreference calendars;
     private ListPreference onlinecalendars;
     private ListPreference syncmethod;
-    private CheckBoxPreference alarmcheck;
+    private CheckBoxPreference sound;
 
     protected AccountManager manager;
 
@@ -114,7 +123,7 @@ public class Prefs extends PreferenceActivity {
         calendars = (ListPreference) findPreference("calendars");
         onlinecalendars = (ListPreference) findPreference("onlinecalendars");
         syncmethod = (ListPreference) findPreference("syncmethod");
-        alarmcheck = (CheckBoxPreference) findPreference("alarmcheck");
+        sound = (CheckBoxPreference) findPreference("sound");
 
         // 저장된 캘린더 목록을 조회한다.
         String entryValues[] = getCalendars(getBaseContext());
@@ -131,7 +140,10 @@ public class Prefs extends PreferenceActivity {
         onlinecalendars.setOnPreferenceChangeListener(new myOnPreferenceChangeListener());
         syncmethod.setOnPreferenceChangeListener(new myOnPreferenceChangeListener());
 
-        alarmcheck.setOnPreferenceClickListener(new myOnPreferenceClickListener());
+        sound.setOnPreferenceClickListener(new myOnPreferenceClickListener());
+        if (!"".equals(Prefs.getRingtone(getBaseContext()))) {
+            sound.setSummary(Prefs.getRingtone(getBaseContext()));
+        }
 
         findPreference("sdcarduse").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             public boolean onPreferenceClick(Preference preference) {
@@ -157,30 +169,35 @@ public class Prefs extends PreferenceActivity {
         });
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        Common.checkAlarmService(getBaseContext());
+
+    }
+
     public class myOnPreferenceClickListener implements OnPreferenceClickListener {
         public boolean onPreferenceClick(Preference preference) {
             CheckBoxPreference cpf = (CheckBoxPreference) preference;
+
             if (cpf.isChecked()) {
 
-                String uri = null;
+                String uri = Prefs.getRingtone(getBaseContext());
                 Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
 
                 intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION);
-                intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Select Tone");
+                intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "알림음 선택");
+
                 if (uri != null) {
                     intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(uri));
-                }
-
-                else {
+                } else {
                     intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, (Uri) null);
                 }
-
                 startActivityForResult(intent, REQUEST_RINGTONE);
             }
             return false;
-
         }
-
     }
 
     @Override
@@ -199,6 +216,8 @@ public class Prefs extends PreferenceActivity {
 
                     if (uri != null) {
                         setRingtone(getBaseContext(), uri.toString());
+
+                        sound.setSummary(uri.toString());
                     }
                 }
                 break;
@@ -434,12 +453,24 @@ public class Prefs extends PreferenceActivity {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OPT_ALARMCHECK, OPT_ALARMCHECK_DEF);
     }
 
+    public static boolean getSound(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OPT_SOUND, OPT_SOUND_DEF);
+    }
+
     public static void setRingtone(Context context, String uri) {
         PreferenceManager.getDefaultSharedPreferences(context).edit().putString(OPT_RINGTONE, uri).commit();
     }
 
     public static String getRingtone(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_RINGTONE, "");
+    }
+
+    public static boolean getVibrate(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OPT_VIBRATE, OPT_VIBRATE_DEF);
+    }
+
+    public static boolean getLedlight(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OPT_LEDLIGHT, OPT_LEDLIGHT_DEF);
     }
 
     public static boolean getAnimation(Context context) {
@@ -529,8 +560,11 @@ public class Prefs extends PreferenceActivity {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OPT_SDCARDUSE, OPT_SDCARDUSE_DEF);
     }
 
+    public static void setWidgetColor(Context context, int color) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(OPT_WIDGETCOLOR, color).commit();
+    }
+
     public static int getWidgetColor(Context context) {
-        String color = PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_WIDGETCOLOR, OPT_WIDGETCOLOR_DEF);
-        return Integer.parseInt(color);
+        return PreferenceManager.getDefaultSharedPreferences(context).getInt(OPT_WIDGETCOLOR, OPT_WIDGETCOLOR_DEF);
     }
 }

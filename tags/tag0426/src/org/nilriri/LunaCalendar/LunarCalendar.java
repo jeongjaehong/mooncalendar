@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-import org.nilriri.LunaCalendar.alarm.AlarmService_Service;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.gcal.EventEntry;
 import org.nilriri.LunaCalendar.gcal.GoogleUtil;
@@ -21,20 +20,15 @@ import org.nilriri.LunaCalendar.tools.Rotate3dAnimation;
 import org.nilriri.LunaCalendar.tools.SearchData;
 
 import android.app.Activity;
-import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
-import android.app.PendingIntent;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -88,17 +82,22 @@ public class LunarCalendar extends Activity implements RefreshManager {
 
     private LunarCalendarView lunarCalendarView;
     private ViewGroup mContainer;
-    private PendingIntent mAlarmSender;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
+        Common.checkAlarmService(LunarCalendar.this);
+        
+        /*
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_TIME_TICK);  // 1분단위로 시간이 바뀔때마다...
+        filter.addCategory(Intent.CATEGORY_DEFAULT);
+        this.registerReceiver(new WidgetBroadcastReceiver(), filter);
+        */
 
         dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
-
-        mAlarmSender = PendingIntent.getService(LunarCalendar.this, 0, new Intent(LunarCalendar.this, AlarmService_Service.class), 0);
 
         oldEvent = new OldEvent(-1, -1);
 
@@ -108,6 +107,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
         mDay = c.get(Calendar.DAY_OF_MONTH);
 
         setContentView(R.layout.animations_main_screen);
+        
 
         mContainer = (ViewGroup) findViewById(R.id.container);
         lunarCalendarView = (LunarCalendarView) findViewById(R.id.lunaCalendarView);
@@ -131,9 +131,9 @@ public class LunarCalendar extends Activity implements RefreshManager {
                         break;
                     case MotionEvent.ACTION_UP:
 
-                        if (getExpandRect(lunarCalendarView.mPrevMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
+                        if (Common.getExpandRect(lunarCalendarView.mPrevMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
                             AddMonth(-1);
-                        } else if (getExpandRect(lunarCalendarView.mNextMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
+                        } else if (Common.getExpandRect(lunarCalendarView.mNextMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
                             AddMonth(1);
                         } else if (lunarCalendarView.titleRect.contains((int) event.getX(), (int) event.getY())) {
                             showDialog(LunarCalendar.DATE_DIALOG_ID);
@@ -178,12 +178,6 @@ public class LunarCalendar extends Activity implements RefreshManager {
         mListView.setOnCreateContextMenuListener(this);
         mListView.setOnItemClickListener(new ScheduleOnItemClickListener());
 
-    }
-
-    private Rect getExpandRect(Rect rect, int offset) {
-        Rect target = new Rect();
-        target.set(rect.left - offset, rect.top - (offset + 20), rect.right + offset, rect.bottom + (offset + 20));
-        return target;
     }
 
     public class ScheduleOnItemClickListener implements OnItemClickListener {
@@ -284,16 +278,17 @@ public class LunarCalendar extends Activity implements RefreshManager {
             dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
         }
 
-        if (Prefs.getAlarmCheck(this)) {// 알람생성
-            long firstTime = SystemClock.elapsedRealtime();
+        /*
+                if (Prefs.getAlarmCheck(this)) {// 알람생성
+                    long firstTime = SystemClock.elapsedRealtime();
 
-            AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, 1000 * 60 * 5, mAlarmSender);
-        } else {// 알람해제
-            AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            am.cancel(mAlarmSender);
-        }
-
+                    AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                    am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, 1000 * 60 * 5, mAlarmSender);
+                } else {// 알람해제
+                    AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                    am.cancel(mAlarmSender);
+                }
+        */
         //화면으로 복귀할때 새로 등록되거나 삭제된 일정정보를 화면에 갱신한다.
         lunarCalendarView.loadSchduleExistsInfo();
 

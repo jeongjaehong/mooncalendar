@@ -166,6 +166,8 @@ public class ScheduleBean {
                 }
             }
 
+        } else {
+            setId(null);
         }
         cursor.close();
     }
@@ -201,7 +203,7 @@ public class ScheduleBean {
     }
 
     public Long getId() {
-        return this._id;
+        return this._id == null ? 0 : this._id;
     }
 
     public void setId(Long id) {
@@ -226,7 +228,7 @@ public class ScheduleBean {
     }
 
     public DateTime getWhenEndDate() {
-       return Common.toDateTime(getSchedule_date(), 1);
+        return Common.toDateTime(getSchedule_date(), 1);
     }
 
     public When getWhenObject() {
@@ -334,11 +336,11 @@ public class ScheduleBean {
             when.startTime = Common.toDateTime(date);
             when.endTime = Common.toDateTime(date, 1);
             setWhen(when.parseAsString());
-        }else{
+        } else {
             //TODO: 반복일정일 경우 반복일정 정보를 갱신한다.
             // 미구현...
             this.setRecurrence(null);
-            
+
             // 1회성 일정으로 강제 변경한다.
             When when = new When(getWhen());
             when.startTime = Common.toDateTime(date);

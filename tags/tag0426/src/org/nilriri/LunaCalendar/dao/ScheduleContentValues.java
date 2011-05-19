@@ -18,6 +18,7 @@ public class ScheduleContentValues {
         value.put(Schedule.SCHEDULE_CONTENTS, scheduleBean.getSchedule_contents());
         value.put(Schedule.SCHEDULE_REPEAT, scheduleBean.getSchedule_repeat());
         value.put(Schedule.ALARM_LUNASOLAR, scheduleBean.getAlarm_lunasolar());
+        value.put(Schedule.SCHEDULE_CHECK, scheduleBean.getSchedule_check());
 
         switch (scheduleBean.getSchedule_repeat()) {
             case 5:

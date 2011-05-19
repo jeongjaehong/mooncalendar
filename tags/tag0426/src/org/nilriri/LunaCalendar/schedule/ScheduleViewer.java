@@ -188,7 +188,7 @@ public class ScheduleViewer extends Activity implements OnClickListener {
                 ddayinfo += ddaysign[scheduleBean.getDisplayDday_alarmsign()];
 
                 String mDday_msg = "";
-                Cursor cursor1 = dao.queryDDay(getIntent().getLongExtra("id", 0));
+                Cursor cursor1 = dao.queryWidgetByID(getIntent().getLongExtra("id", 0));
                 if (cursor1.moveToNext()) {
                     int D_Day = cursor1.getInt(2);
 

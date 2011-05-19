@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.tools.Common;
-import org.nilriri.LunaCalendar.tools.lunar2solar;
+import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 
 import android.app.ProgressDialog;
 import android.os.Build;
@@ -188,7 +188,7 @@ public class GoogleUtil {
                 continue;
             }
 
-            String ldate = Common.fmtDate(lunar2solar.s2l(c)).substring(5).replace("-", "/");
+            String ldate = Common.fmtDate(Lunar2Solar.s2l(c)).substring(5).replace("-", "/");
 
             bean.setDate(c);
             bean.setTitle(ldate + " (-)");
