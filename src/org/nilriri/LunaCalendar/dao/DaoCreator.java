@@ -113,7 +113,7 @@ public class DaoCreator {
 
     public void onDeleteBiblePlan(Context context, SQLiteDatabase db) {
         try {
-            db.execSQL("delete from schedule where schedule_date = '1900-01-01' and schedule_repeat = 8 and alarm_time = '00:00'");
+            db.execSQL("delete from schedule where schedule_date = '1900-01-01' and schedule_repeat = 8 ");
         } catch (Exception e) {
             Log.e("onCreate", e.getMessage(), e);
         }

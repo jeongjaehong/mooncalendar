@@ -5,19 +5,24 @@ import java.util.Date;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.nilriri.LunaCalendar.widget.AppWidgetProvider1x1;
-import org.nilriri.LunaCalendar.widget.AppWidgetProvider2x2;
-import org.nilriri.LunaCalendar.widget.WidgetService;
+import org.nilriri.LunaCalendar.alarm.AlarmService_Service;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.location.LocationManager;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.os.Vibrator;
 import android.text.format.Time;
+import android.util.Log;
 import android.util.TimeFormatException;
 
 import com.google.api.client.util.DateTime;
@@ -29,9 +34,17 @@ public class Common extends Activity {
     public static final int FROYO = 8;
     public static final String AUTH_TOKEN_TYPE = "cl";
 
-    public static final int SIZE_1x1 = 11;
-    public static final int SIZE_2x2 = 22;
-    public static final int SIZE_4x4 = 44;
+    public static final int SIZE_1x1 = 0;
+    public static final int SIZE_2x2 = 1;
+    public static final int SIZE_4x4 = 2;
+
+    public static final int D_DAY_WIDGET = 0;
+    public static final int ANNIVERSARY_WIDGET = 1;
+    public static final int ALLEVENT_WIDGET = 2;
+
+    public static final int ALARM_INTERVAL = 1000 * 60 * 5; // 5분
+    //public static final int WIDGET_REFRESH_INTERVAL = 1000 * 60 * 60; // 1시간
+    public static final int WIDGET_REFRESH_INTERVAL = 1000 * 2; // 1시간
 
     public static final String ACTION_ALARM_START = "org.nilriri.LunarCalendar.ALARM_START";
     public static final String ACTION_ALARM_STOP = "org.nilriri.LunarCalendar.ALARM_STOP";
@@ -62,47 +75,6 @@ public class Common extends Activity {
         Time t = new Time(Time.TIMEZONE_UTC);
         t.setToNow();
         return t.format3339(allDay);
-    }
-
-    public static void sendServiceAlarmStart(Context context) {
-        Intent intent = new Intent(context, WidgetService.class);
-        intent.setAction(Common.ACTION_ALARM_START);
-
-        context.startService(intent);
-    }
-
-    public static void sendServiceAlarmStop(Context context) {
-        Intent intent = new Intent(context, WidgetService.class);
-        intent.setAction(Common.ACTION_ALARM_STOP);
-
-        context.stopService(intent);
-    }
-
-    public static void sendRefreshFinish(Context context) {
-        Intent finish = new Intent(Common.ACTION_REFRESH_FINISH);
-        context.sendBroadcast(finish);
-
-        Intent finishWidget1 = new Intent(context, AppWidgetProvider1x1.class);
-        finishWidget1.setAction(Common.ACTION_REFRESH_FINISH);
-        context.sendBroadcast(finishWidget1);
-
-        Intent finishWidget2 = new Intent(context, AppWidgetProvider2x2.class);
-        finishWidget2.setAction(Common.ACTION_REFRESH_FINISH);
-        context.sendBroadcast(finishWidget2);
-
-        Intent finishService = new Intent(context, WidgetService.class);
-        finishService.setAction(Common.ACTION_REFRESH_FINISH);
-        context.startService(finishService);
-    }
-
-    public static void sendWidgetUpdate(Context context) {
-        Intent i1 = new Intent(context, AppWidgetProvider1x1.class);
-        i1.setAction(Common.ACTION_UPDATE);
-        context.sendBroadcast(i1);
-
-        Intent i2 = new Intent(context, AppWidgetProvider2x2.class);
-        i2.setAction(Common.ACTION_UPDATE);
-        context.sendBroadcast(i2);
     }
 
     public static String fmtDate(int year, int month, int day) {
@@ -202,6 +174,42 @@ public class Common extends Activity {
             return true;
         else
             return false;
+    }
+
+    public static Rect getExpandRect(Rect rect, int offset) {
+        Rect target = new Rect();
+        target.set(rect.left - offset, rect.top - (offset + 20), rect.right + offset, rect.bottom + (offset + 20));
+        return target;
+    }
+
+    public static void checkAlarmService(Context context) {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<RunningAppProcessInfo> proceses = am.getRunningAppProcesses();
+        boolean isRun = false;
+
+        for (RunningAppProcessInfo process : proceses) {
+            if (process.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                if (process.processName.indexOf("org.nilriri.LunaCalendar:remote") >= 0) {
+                    isRun = true;
+                    Log.d(Common.TAG, "isRun=" + isRun);
+                    break;
+                }
+            }
+        }
+        PendingIntent mAlarmSender = PendingIntent.getService(context, 0, new Intent(context, AlarmService_Service.class), 0);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (isRun) { //실행중이면..
+            if (!Prefs.getAlarmCheck(context)) {// 알람미사용
+                // 알람서비스 중지.
+                alarmManager.cancel(mAlarmSender);
+            }
+        } else { // 실행중이 아니면...
+            if (Prefs.getAlarmCheck(context)) {// 알람사용이면
+                // 알람시작.
+                long firstTime = SystemClock.elapsedRealtime();
+                alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, Common.ALARM_INTERVAL, mAlarmSender);
+            }
+        }
     }
 
     public static boolean isSdPresent() {

@@ -61,6 +61,8 @@ public class AlarmViewer extends Activity implements OnClickListener {
                 c.setFirstDayOfWeek(Calendar.SUNDAY);
 
                 scheduleBean.setScheduleCheck(Common.fmtDate(c));
+                scheduleBean.setUpdated(Common.getTime3339Format());
+                
                 dao.localUpdate(scheduleBean);
 
                 mNotificationManager.cancel(id.intValue());
@@ -146,7 +148,7 @@ public class AlarmViewer extends Activity implements OnClickListener {
                 ddayinfo += ddaysign[scheduleBean.getDisplayDday_alarmsign()];
 
                 String mDday_msg = "";
-                Cursor cursor1 = dao.queryDDay(getIntent().getLongExtra("id", 0));
+                Cursor cursor1 = dao.queryWidgetByID(getIntent().getLongExtra("id", 0));
                 if (cursor1.moveToNext()) {
                     int D_Day = cursor1.getInt(2);
 

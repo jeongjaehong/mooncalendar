@@ -8,7 +8,7 @@ import org.nilriri.LunaCalendar.schedule.AlarmViewer;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Music;
 import org.nilriri.LunaCalendar.tools.Prefs;
-import org.nilriri.LunaCalendar.tools.lunar2solar;
+import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -17,18 +17,15 @@ import android.app.Service;
 import android.app.PendingIntent.CanceledException;
 import android.content.Intent;
 import android.database.Cursor;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.RemoteException;
-import android.util.Log;
 import android.widget.Toast;
 
 public class AlarmService_Service extends Service {
-    ScheduleDaoImpl dao = null;
+
     public NotificationManager mNM;
 
     @Override
@@ -42,28 +39,23 @@ public class AlarmService_Service extends Service {
 
     @Override
     public void onStart(Intent intent, int startId) {
-
-        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
-
         try {
             showNotification();
         } catch (CanceledException e) {
             mNM.cancelAll();
             Toast.makeText(this, R.string.alarm_service_finished, Toast.LENGTH_SHORT).show();
         }
-
     }
 
     @Override
     public void onDestroy() {
         mNM.cancel(R.string.alarm_service_started);
-
-        dao.close();
     }
 
     Runnable mTask = new Runnable() {
         public void run() {
-            long endTime = System.currentTimeMillis() + 1000 * 60 * 5;
+            //long endTime = System.currentTimeMillis() + 1000 * 60 * 5;
+            long endTime = System.currentTimeMillis() + Common.ALARM_INTERVAL;
             while (System.currentTimeMillis() < endTime) {
                 synchronized (mBinder) {
                     try {
@@ -86,7 +78,7 @@ public class AlarmService_Service extends Service {
 
         final Calendar c = Calendar.getInstance();
         c.setFirstDayOfWeek(Calendar.SUNDAY);
-        String lDay = lunar2solar.s2l(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
+        String lDay = Lunar2Solar.s2l(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
 
         displayNotify(c, lDay);
 
@@ -94,40 +86,56 @@ public class AlarmService_Service extends Service {
 
     private void displayNotify(Calendar c, String lDay) {
 
-        Cursor cursor = dao.queryAlarm(c, lDay);
+        if (Prefs.getAlarmCheck(this)) {// 알람 사용에 체크했으면...
 
-        while (cursor.moveToNext()) {
-            int id = cursor.getInt(0);
-            CharSequence title = cursor.getString(1);
-            CharSequence content = cursor.getString(2);
-            cursor.close();
-
-            Notification notification = new Notification(R.drawable.clock, title, System.currentTimeMillis());
-
-            PendingIntent contentIntent = PendingIntent.getActivity(this, id, new Intent(this, AlarmViewer.class).putExtra("id", new Long(id)), 0);
-
-            notification.setLatestEventInfo(this, title, content, contentIntent);
+            ScheduleDaoImpl dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
 
             try {
-                Uri uri = Uri.parse(Prefs.getRingtone(this));
+                Cursor cursor = dao.queryAlarm(c, lDay);
 
-                Ringtone rt = RingtoneManager.getRingtone(this, uri);
+                while (cursor.moveToNext()) {
 
-                if (null != rt) {
-                   if (rt.isPlaying())rt.stop();
+                    Long id = cursor.getLong(0);
+                    CharSequence title = cursor.getString(1);
+                    CharSequence content = cursor.getString(2);
 
-                    rt.play();
-                } else {
-                    Music.play(this, R.raw.ding);
+                    Notification notification = new Notification(R.drawable.clock, title, System.currentTimeMillis());
+                    PendingIntent contentIntent = PendingIntent.getActivity(this, id.intValue(), new Intent(this, AlarmViewer.class).putExtra("id", id), 0);
+
+                    notification.setLatestEventInfo(this, title, content, contentIntent);
+
+                    if (Prefs.getAlarmCheck(this)) {
+                        String uri = Prefs.getRingtone(this);
+                        if (!"".equals(uri)) {
+                            notification.sound = Uri.parse(uri);
+                        } else {
+                            Music.play(this, R.raw.ding);
+                        }
+
+                        if (Prefs.getVibrate(this)) {
+
+                            long[] vibrate = { 0, 100, 200, 300 };
+                            notification.vibrate = vibrate;
+                        }
+
+                        if (Prefs.getLedlight(this)) {
+                            notification.ledARGB = 0xff00ff00;
+                            notification.ledOnMS = 300;
+                            notification.ledOffMS = 1000;
+                            notification.flags = Notification.FLAG_SHOW_LIGHTS;
+                        }
+                    }
+
+                    mNM.notify(id.intValue(), notification);
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-                Log.e(Common.TAG, "error=" + e.getMessage());
-            }
 
-            mNM.notify(id, notification);
+                cursor.close();
+                dao.close();
+            } catch (Exception e) {
+                dao.close();
+                e.printStackTrace();
+            }
         }
-        cursor.close();
     }
 
     private final IBinder mBinder = new Binder() {

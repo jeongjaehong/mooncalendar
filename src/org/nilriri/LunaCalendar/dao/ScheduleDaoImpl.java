@@ -16,7 +16,7 @@ import org.nilriri.LunaCalendar.gcal.GoogleUtil;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.WhereClause;
-import org.nilriri.LunaCalendar.tools.lunar2solar;
+import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 
 import android.app.ProgressDialog;
 import android.content.ContentValues;
@@ -1055,13 +1055,13 @@ public class ScheduleDaoImpl extends AbstractDao {
         StringBuilder query = new StringBuilder();
 
         String sDate[] = Common.tokenFn(month + "-01", "-");
-        String lStart = Common.fmtDate(lunar2solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1));
+        String lStart = Common.fmtDate(Lunar2Solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1));
         Calendar c = Calendar.getInstance();
         c.setFirstDayOfWeek(Calendar.SUNDAY);
         c.set(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1);
         c.add(Calendar.DAY_OF_MONTH, -1);
         int lastDay = c.get(Calendar.DAY_OF_MONTH);
-        String lEnd = Common.fmtDate(lunar2solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), lastDay));
+        String lEnd = Common.fmtDate(Lunar2Solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), lastDay));
         boolean isChange = (lStart.substring(5).compareTo(lEnd.substring(5)) > 0);
 
         // 음력일정
@@ -1096,7 +1096,7 @@ public class ScheduleDaoImpl extends AbstractDao {
             query.append(" AND ( substr(" + Schedule.SCHEDULE_LDATE + ",6,5) between '" + lStart.substring(5) + "' and '" + lEnd.substring(5) + "')");
         }
         query.append(" ORDER BY 1 ");
-        
+
         return getReadableDatabase().rawQuery(query.toString(), null);
 
     }
@@ -1136,24 +1136,45 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     }
 
-    public Cursor queryWidget() {
+    public Cursor queryWidget(int kind) {
 
         StringBuilder query = new StringBuilder();
 
         query.append("SELECT ");
-        query.append(" " + Schedule.SCHEDULE_TITLE + " ");
+        query.append(" " + Schedule._ID + " ");
         query.append(",DATE(schedule_date, dday_alarmsign || dday_alarmday ||' DAY', 'LOCALTIME') " + Schedule.SCHEDULE_DATE + " ");
+        query.append(" ," + Schedule.SCHEDULE_TITLE + " ");
         query.append(",cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(schedule_date, dday_alarmsign || dday_alarmday ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) dday  ");
         query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
-        query.append(" LIMIT 1 ");
+        query.append(" WHERE 1 = 1 ");
+
+        switch (kind) {
+            case 0: // dday
+                query.append(" AND " + Schedule.DDAY_ALARMYN + " = 1 ");
+                break;
+            case 1: // 기념일
+                query.append(" AND " + Schedule.ANNIVERSARY + " = 'Y' ");
+                break;
+            case 2: // 모든일정
+                query.append(" AND " + Schedule.DDAY_ALARMYN + " != 1 ");
+                query.append(" AND " + Schedule.ANNIVERSARY + " != 'Y' ");
+                break;
+            default:
+                break;
+        }
+        query.append(" AND " + Schedule.SCHEDULE_DATE + " > '1900-01-01' ");
+        query.append(" AND schedule_repeat not in ('F','P', '9') ");
+        query.append(" ORDER BY " + Schedule.SCHEDULE_DATE + " DESC ");
 
         String selectionArgs[] = null;
+
+        Log.d(Common.TAG, query.toString());
 
         return getReadableDatabase().rawQuery(query.toString(), selectionArgs);
 
     }
 
-    public Cursor queryDDay(Long id) {
+    public Cursor queryWidgetByID(Long id) {
 
         StringBuilder query = new StringBuilder();
 
@@ -1162,10 +1183,13 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("," + Schedule.SCHEDULE_DATE + " ");
         query.append(",cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(schedule_date, dday_alarmsign || dday_alarmday ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) dday  ");
         query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
-        query.append(" WHERE " + Schedule.DDAY_DISPLAYYN + " = 1 ");
+        query.append(" WHERE 1 = 1 ");
+        //query.append(" WHERE " + Schedule.DDAY_DISPLAYYN + " = 1 ");
         query.append(" AND " + Schedule._ID + " = " + id);
 
         String selectionArgs[] = null;
+
+        Log.d(Common.TAG, query.toString());
 
         return getReadableDatabase().rawQuery(query.toString(), selectionArgs);
 
@@ -1259,6 +1283,8 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         String selectionArgs[] = null;
 
+        Log.d(Common.TAG, query.toString());
+
         return getReadableDatabase().rawQuery(query.toString(), selectionArgs);
 
     }
@@ -1301,9 +1327,9 @@ public class ScheduleDaoImpl extends AbstractDao {
 
             String lDay = "";
             if (sDate.length > 2) {
-                lDay = Common.fmtDate(lunar2solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), Integer.parseInt(sDate[2])));
+                lDay = Common.fmtDate(Lunar2Solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), Integer.parseInt(sDate[2])));
             } else {
-                lDay = Common.fmtDate(lunar2solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1));
+                lDay = Common.fmtDate(Lunar2Solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1));
             }
 
             if ("TODAY".equals(range)) {
@@ -1371,9 +1397,9 @@ public class ScheduleDaoImpl extends AbstractDao {
                 c.set(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]) - 1, Integer.parseInt(sDate[2]));
                 c.add(Calendar.DAY_OF_MONTH, ((c.get(Calendar.DAY_OF_WEEK) - 1) * -1));
 
-                String lStart = Common.fmtDate(lunar2solar.s2l(c));
+                String lStart = Common.fmtDate(Lunar2Solar.s2l(c));
                 c.add(Calendar.DAY_OF_MONTH, 6);
-                String lEnd = Common.fmtDate(lunar2solar.s2l(c));
+                String lEnd = Common.fmtDate(Lunar2Solar.s2l(c));
                 boolean isChange = (lStart.substring(5).compareTo(lEnd.substring(5)) > 0);
 
                 //양력일정
@@ -1437,13 +1463,13 @@ public class ScheduleDaoImpl extends AbstractDao {
                 }
 
             } else if ("MONTH".equals(range)) {
-                String lStart = Common.fmtDate(lunar2solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1));
+                String lStart = Common.fmtDate(Lunar2Solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1));
                 Calendar c = Calendar.getInstance();
                 c.setFirstDayOfWeek(Calendar.SUNDAY);
                 c.set(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]) - 1, 1);
                 c.add(Calendar.DAY_OF_MONTH, -1);
                 int lastDay = c.get(Calendar.DAY_OF_MONTH);
-                String lEnd = Common.fmtDate(lunar2solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), lastDay));
+                String lEnd = Common.fmtDate(Lunar2Solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), lastDay));
 
                 boolean isChange = (lStart.substring(5).compareTo(lEnd.substring(5)) > 0);
 

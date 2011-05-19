@@ -16,10 +16,10 @@
 
 package org.nilriri.LunaCalendar.widget;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import android.appwidget.AppWidgetManager;
-import android.content.BroadcastReceiver;
+import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
@@ -29,27 +29,28 @@ import android.util.Log;
  * BroadcastReceiver starts off disabled, and we only enable it when there is a widget
  * instance created, in order to only receive notifications when we need them.
  */
-public class WidgetBroadcastReceiver extends BroadcastReceiver {
+public class WidgetBroadcastReceiver extends android.content.BroadcastReceiver {
 
-    @Override
     public void onReceive(Context context, Intent intent) {
         Log.d("ExmampleBroadcastReceiver", "intent=" + intent);
 
-        // For our example, we'll also update all of the widgets when the timezone
-        // changes, or the user or network sets the time.
         String action = intent.getAction();
-        if (action.equals(Intent.ACTION_TIMEZONE_CHANGED) || action.equals(Intent.ACTION_TIME_CHANGED)) {
-            AppWidgetManager gm = AppWidgetManager.getInstance(context);
-            ArrayList<Integer> appWidgetIds = new ArrayList<Integer>();
-            ArrayList<String> texts = new ArrayList<String>();
+        if (action.equals(Intent.ACTION_TIMEZONE_CHANGED) || //
+                action.equals(Intent.ACTION_TIME_CHANGED) || //
+                action.equals(Intent.ACTION_TIME_TICK)) {
+            AppWidgetManager awm = AppWidgetManager.getInstance(context);
+            List<AppWidgetProviderInfo> awp = awm.getInstalledProviders();
 
-            AppWidgetConfigure.loadAllTitlePrefs(context, appWidgetIds, texts);
+            for (int i = 0; i < awp.size(); i++) {
+                AppWidgetProviderInfo af = awp.get(i);
+                int[] appWidgetIds = awm.getAppWidgetIds(af.provider);
+                if (appWidgetIds != null) {
+                    for (int ji = 0; ji < appWidgetIds.length; ji++) {
+                        WidgetProvider.updateAppWidget(context, awm, appWidgetIds[ji]);
 
-            final int N = appWidgetIds.size();
-            for (int i = 0; i < N; i++) {
-                WidgetProvider.updateAppWidget(context, gm, appWidgetIds.get(i), true);
+                    }
+                }
             }
         }
     }
-
 }

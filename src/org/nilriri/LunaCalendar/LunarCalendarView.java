@@ -7,7 +7,7 @@ import java.util.TimeZone;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Prefs;
-import org.nilriri.LunaCalendar.tools.lunar2solar;
+import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 
 import android.content.Context;
 import android.content.res.Resources.NotFoundException;
@@ -132,9 +132,9 @@ public class LunarCalendarView extends View {
             String sDay = "";
             if (!isChange) {
                 int preYear = Integer.parseInt(queryMonth.substring(0, 4)) - 1;
-                sDay = lunar2solar.l2s(preYear + "", date[1], date[2]);
+                sDay = Lunar2Solar.l2s(preYear + "", date[1], date[2]);
             } else {
-                sDay = lunar2solar.l2s(date[0], date[1], date[2]);
+                sDay = Lunar2Solar.l2s(date[0], date[1], date[2]);
             }
             int day = Integer.parseInt(sDay.substring(6));
             mScheduleMap.put(day, 1);
@@ -178,14 +178,14 @@ public class LunarCalendarView extends View {
         // 달이 바뀌면 음력 날짜정보를 계산하여 배열에 담아둔다...
         StringBuffer ldaysource = new StringBuffer();
         ldaysource.append("0").append(",");
-        String lDay = lunar2solar.s2l(lunarCalendar.mYear, lunarCalendar.mMonth + 1, 1);
+        String lDay = Lunar2Solar.s2l(lunarCalendar.mYear, lunarCalendar.mMonth + 1, 1);
         int ilday = Integer.parseInt(lDay.substring(6));
         ldaysource.append(lDay.substring(0, 6)).append(ilday > 9 ? "" + ilday : "0" + ilday);
         for (int day = 2; day <= endofmonth + 1; day++) {
 
             ilday++;
             if (ilday > 29) {
-                lDay = lunar2solar.s2l(lunarCalendar.mYear, lunarCalendar.mMonth + 1, day);
+                lDay = Lunar2Solar.s2l(lunarCalendar.mYear, lunarCalendar.mMonth + 1, day);
                 ilday = Integer.parseInt(lDay.substring(6));
             }
             ldaysource.append(",").append(lDay.substring(0, 6)).append(ilday > 9 ? "" + ilday : "0" + ilday);
@@ -550,15 +550,15 @@ public class LunarCalendarView extends View {
         int iconTop;
 
         //int ilday = Integer.parseInt(getLunaday(day).substring(6));
-        //int ilday = lunar2solar.getLunarID(getLunaday(day));
-        int ilday = Math.round(lunar2solar.CalculateMoonPhase(lunarCalendar.mYear, lunarCalendar.mMonth + 1, day));
+        //int ilday = Lunar2Solar.getLunarID(getLunaday(day));
+        int ilday = Math.round(Lunar2Solar.CalculateMoonPhase(lunarCalendar.mYear, lunarCalendar.mMonth + 1, day));
 
         Drawable drawICON;
         if (Prefs.getLunaIcon(getContext())) {
             iconLeft = (int) (dayname * getTileWidth() + (getTileWidth() * 0.6f));
             iconTop = (int) (week * getTileHeight() + (getTileHeight() * 0.6f));
 
-            // switch (lunar2solar.getLunarID(getLunaday(day))) {
+            // switch (Lunar2Solar.getLunarID(getLunaday(day))) {
             switch (ilday) {
                 case 0:
                     drawICON = getResources().getDrawable(R.drawable.i0);

@@ -25,7 +25,7 @@ import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.LunarDatePicker;
 import org.nilriri.LunaCalendar.tools.Prefs;
-import org.nilriri.LunaCalendar.tools.lunar2solar;
+import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 
 import android.app.Activity;
 import android.app.DatePickerDialog;
@@ -368,7 +368,7 @@ public class ScheduleEditor extends Activity implements OnClickListener, Refresh
     private void updateDisplay() {
 
         mSchedule_date.setText(scheduleBean.getDisplayDate());
-        mSchedule_ldate.setText(Common.fmtDate(lunar2solar.s2l(scheduleBean.getYear(), scheduleBean.getMonth(), scheduleBean.getDay())));
+        mSchedule_ldate.setText(Common.fmtDate(Lunar2Solar.s2l(scheduleBean.getYear(), scheduleBean.getMonth(), scheduleBean.getDay())));
         mLunaryn.setChecked(scheduleBean.getLunaryn());
         mAnniversary.setChecked(scheduleBean.getAnniversary());
 
@@ -554,7 +554,7 @@ public class ScheduleEditor extends Activity implements OnClickListener, Refresh
                     scheduleBean.setDate(date);
                     mSchedule_date.setText(scheduleBean.getDisplayDate());
 
-                    String lDate = Common.fmtDate(lunar2solar.s2l(scheduleBean.getYear(), scheduleBean.getMonth(), scheduleBean.getDay()));
+                    String lDate = Common.fmtDate(Lunar2Solar.s2l(scheduleBean.getYear(), scheduleBean.getMonth(), scheduleBean.getDay()));
 
                     scheduleBean.setLDate(lDate);
                     mSchedule_ldate.setText(lDate);
@@ -616,7 +616,7 @@ public class ScheduleEditor extends Activity implements OnClickListener, Refresh
                 //mAlarm_date.setText(ldate.substring(5));
             } else {
 
-                String sdate = lunar2solar.l2s(year, month, day);
+                String sdate = Lunar2Solar.l2s(year, month, day);
 
                 scheduleBean.setDate(Common.fmtDate(sdate));
                 scheduleBean.setLDate(ldate);
