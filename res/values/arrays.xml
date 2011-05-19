@@ -188,5 +188,16 @@
 		<item>stop</item>
 	</string-array>
 
+	<string-array name="entries_widgetsize">
+		<item>LunarCalendar(1x1)</item>
+		<item>LunarCalendar(2x2)</item>
+	</string-array>
+	
+	<string-array name="entries_widgetkind">
+		<item>D-day</item>
+		<item>기념일</item>
+		<item>모든일정</item>
+	</string-array>
 
+	
 </resources>
