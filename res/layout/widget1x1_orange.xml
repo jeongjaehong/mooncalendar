@@ -16,7 +16,7 @@
 			<LinearLayout android:id="@+id/layout_phone"
 				android:orientation="horizontal" android:layout_width="fill_parent"
 				android:layout_height="wrap_content">
-				<ImageView android:src="@drawable/dday" android:scaleType="fitXY"
+				<ImageView android:id="@+id/widget_icon" android:src="@drawable/dday" android:scaleType="fitXY"
 					android:layout_width="18dp" android:layout_height="18dp" />
 				<TextView android:id="@+id/text_dday" android:text="@string/empty_str"
 					android:textSize="10sp" android:textStyle="bold" android:gravity="right|center"

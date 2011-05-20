@@ -1181,7 +1181,13 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("SELECT ");
         query.append(" " + Schedule.SCHEDULE_TITLE + " ");
         query.append("," + Schedule.SCHEDULE_DATE + " ");
-        query.append(",cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(schedule_date, dday_alarmsign || dday_alarmday ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) dday  ");
+        query.append(",cast(JULIANDAY('now', 'LOCALTIME') -   ");
+        query.append("  JULIANDAY(DATE(schedule_date, dday_alarmsign ||  ");
+        query.append("  dday_alarmday ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) dday  ");
+        query.append(", case when " + Schedule.ANNIVERSARY + " = 'Y' then 3 ");
+        query.append("       when " + Schedule.DDAY_ALARMYN + " = 1 then 5 ");
+        query.append("       when " + Schedule.SCHEDULE_DATE + " <= '1900-01-01' then " + Schedule.ALARM_DAY );
+        query.append("       else 6 end as kind ");
         query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
         query.append(" WHERE 1 = 1 ");
         //query.append(" WHERE " + Schedule.DDAY_DISPLAYYN + " = 1 ");

@@ -16,8 +16,6 @@
 
 package org.nilriri.LunaCalendar.widget;
 
-import java.util.ArrayList;
-
 import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
@@ -30,6 +28,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -45,7 +44,6 @@ import android.widget.AdapterView.OnItemSelectedListener;
 public class WidgetConfigure extends Activity {
     static final String TAG = "WidgetConfigure";
 
-    private static final String PREFS_NAME = "org.nilriri.LunaCalendar.widget.WidgetProvider";
     private static final String PREF_KIND_KEY = "kind_";
     private static final String PREF_COLOR_KEY = "color_";
     private static final String PREF_PK_KEY = "pk_";
@@ -88,10 +86,12 @@ public class WidgetConfigure extends Activity {
         adp.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spin_widgetkind.setAdapter(adp);
         spin_widgetkind.setOnItemSelectedListener(new widgetKindSelectedListener());
+        spin_widgetkind.setSelection(getWidgetKind(getBaseContext(), AppWidgetManager.INVALID_APPWIDGET_ID));
 
         ArrayAdapter<CharSequence> adp_color = ArrayAdapter.createFromResource(this, R.array.entries_list_preference, android.R.layout.simple_spinner_item);
         adp_color.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spin_widgetcolor.setAdapter(adp_color);
+        spin_widgetcolor.setSelection(getWidgetColor(getBaseContext(), AppWidgetManager.INVALID_APPWIDGET_ID));
 
         // Bind the action for the save button.
         btn_ok.setOnClickListener(mOnClickListener);
@@ -108,12 +108,7 @@ public class WidgetConfigure extends Activity {
         if (mAppWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             finish();
         }
-
-        spin_widgetkind.setSelection(getWidgetKind(getBaseContext(), mAppWidgetId));
-        spin_widgetcolor.setSelection(getWidgetColor(getBaseContext(), mAppWidgetId));
-
         mListView = (ListView) findViewById(R.id.ContentsListView);
-
     }
 
     public void loadData() {
@@ -140,8 +135,10 @@ public class WidgetConfigure extends Activity {
 
     public class widgetKindSelectedListener implements OnItemSelectedListener {
         public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-            setWidgetKind(getBaseContext(), mAppWidgetId, pos);
-            loadData();
+            if (pos >= 0) {
+                setWidgetKind(getBaseContext(), mAppWidgetId, pos);
+                loadData();
+            }
         }
 
         public void onNothingSelected(AdapterView<?> parent) {
@@ -151,7 +148,7 @@ public class WidgetConfigure extends Activity {
 
     View.OnClickListener mOnClickListener = new View.OnClickListener() {
         public void onClick(View v) {
-            final Context context = WidgetConfigure.this;
+            // final Context context = WidgetConfigure.this;
 
             switch (v.getId()) {
 
@@ -163,13 +160,13 @@ public class WidgetConfigure extends Activity {
                     //  setWidgetKind(context, mAppWidgetId, selectWidgetKind);
 
                     int selectWidgetSize = spin_widgetcolor.getSelectedItemPosition();
-                    setWidgetColor(context, mAppWidgetId, selectWidgetSize);
+                    setWidgetColor(getBaseContext(), mAppWidgetId, selectWidgetSize);
 
                     setDataPk(getBaseContext(), mAppWidgetId, mListView.getItemIdAtPosition(mListView.getCheckedItemPosition()));
 
                     // Push widget update to surface with newly set prefix
-                    AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-                    WidgetProvider.updateAppWidget(context, appWidgetManager, mAppWidgetId);
+                    AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(getBaseContext());
+                    WidgetProvider.updateAppWidget(getBaseContext(), appWidgetManager, mAppWidgetId);
 
                     // Make sure we pass back the original appWidgetId
                     Intent resultValue = new Intent();
@@ -187,7 +184,8 @@ public class WidgetConfigure extends Activity {
 
     // Write the prefix to the SharedPreferences object for this widget
     static void setWidgetKind(Context context, int appWidgetId, int widgetkind) {
-        SharedPreferences.Editor prefs = context.getSharedPreferences(PREFS_NAME, 0).edit();
+        SharedPreferences.Editor prefs = PreferenceManager.getDefaultSharedPreferences(context).edit();
+        prefs.putInt(PREF_KIND_KEY + AppWidgetManager.INVALID_APPWIDGET_ID, widgetkind);
         prefs.putInt(PREF_KIND_KEY + appWidgetId, widgetkind);
         prefs.commit();
     }
@@ -195,42 +193,47 @@ public class WidgetConfigure extends Activity {
     // Read the prefix from the SharedPreferences object for this widget.
     // If there is no preference saved, get the default from a resource
     static int getWidgetKind(Context context, int appWidgetId) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         return prefs.getInt(PREF_KIND_KEY + appWidgetId, 0);
     }
 
     static void setWidgetColor(Context context, int appWidgetId, int color) {
-        SharedPreferences.Editor prefs = context.getSharedPreferences(PREFS_NAME, 0).edit();
+        SharedPreferences.Editor prefs = PreferenceManager.getDefaultSharedPreferences(context).edit();
+        prefs.putInt(PREF_COLOR_KEY + AppWidgetManager.INVALID_APPWIDGET_ID, color);
         prefs.putInt(PREF_COLOR_KEY + appWidgetId, color);
         prefs.commit();
+
     }
 
     static int getWidgetColor(Context context, int appWidgetId) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
-        int size = prefs.getInt(PREF_COLOR_KEY + appWidgetId, -1);
-        return size;
+        int defaultColor = 1;
+        try {
+            defaultColor = Integer.parseInt(Prefs.getWidgetColor(context));
+        } catch (Exception e) {
+
+        }
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        return prefs.getInt(PREF_COLOR_KEY + appWidgetId, defaultColor);
     }
 
     static void setDataPk(Context context, int appWidgetId, Long pk) {
-        SharedPreferences.Editor prefs = context.getSharedPreferences(PREFS_NAME, 0).edit();
+        SharedPreferences.Editor prefs = PreferenceManager.getDefaultSharedPreferences(context).edit();
         prefs.putLong(PREF_PK_KEY + appWidgetId, pk);
         prefs.commit();
     }
 
     static Long getDataPk(Context context, int appWidgetId) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         Long pk = prefs.getLong(PREF_PK_KEY + appWidgetId, new Long(0));
         return pk;
     }
 
-    static void deleteDataPk(Context context, int appWidgetId) {
-        setDataPk(context, appWidgetId, new Long(0));
-    }
+    static void removePrefData(Context context, int appWidgetId) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
-    static void loadAllDataPk(Context context, ArrayList<Integer> appWidgetIds, ArrayList<Long> pks) {
-        pks.clear();
-        for (int i = 0; i < appWidgetIds.size(); i++) {
-            pks.add(getDataPk(context, appWidgetIds.get(i)));
+        if (prefs.contains(PREF_PK_KEY + appWidgetId)) {
+            prefs.edit().remove(PREF_PK_KEY + appWidgetId).commit();
         }
     }
+
 }

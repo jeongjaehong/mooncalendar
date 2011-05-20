@@ -62,7 +62,7 @@ public class AlarmViewer extends Activity implements OnClickListener {
 
                 scheduleBean.setScheduleCheck(Common.fmtDate(c));
                 scheduleBean.setUpdated(Common.getTime3339Format());
-                
+
                 dao.localUpdate(scheduleBean);
 
                 mNotificationManager.cancel(id.intValue());
@@ -81,6 +81,7 @@ public class AlarmViewer extends Activity implements OnClickListener {
 
         if (scheduleBean.getId() <= 0) {
             this.finish();
+            return;
         }
 
         String title = scheduleBean.getSchedule_title();
@@ -184,5 +185,4 @@ public class AlarmViewer extends Activity implements OnClickListener {
         }
     }
 
- 
 }

@@ -2,7 +2,7 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="org.nilriri.LunaCalendar" android:installLocation="auto"
-	android:versionCode="122" android:versionName="3.7.0">
+	android:versionCode="123" android:versionName="3.7.1">
 
 	<meta-data android:name="PublisherId" android:value="PE08TRFN03" />
 	<meta-data android:name="SlotID" android:value="PE08TRFN03" />
