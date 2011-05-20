@@ -7,7 +7,7 @@ import java.util.TimeZone;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Prefs;
-import org.nilriri.LunaCalendar.tools.lunar2solar;
+import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 
 import android.content.Context;
 import android.content.res.Resources.NotFoundException;
@@ -24,7 +24,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -129,19 +128,15 @@ public class LunarCalendarView extends View {
         while (cursor2.moveToNext()) {
             String date[] = Common.tokenFn(cursor2.getString(0), "-");
 
-            Log.d("DaoImpl-queryExistsSchedule2", "ldate=" + cursor2.getString(0));
-
             boolean isChange = (queryMonth.substring(0, 7).compareTo(cursor2.getString(0).substring(0, 7)) > 0);
             String sDay = "";
             if (!isChange) {
                 int preYear = Integer.parseInt(queryMonth.substring(0, 4)) - 1;
-                sDay = lunar2solar.l2s(preYear + "", date[1], date[2]);
+                sDay = Lunar2Solar.l2s(preYear + "", date[1], date[2]);
             } else {
-                sDay = lunar2solar.l2s(date[0], date[1], date[2]);
+                sDay = Lunar2Solar.l2s(date[0], date[1], date[2]);
             }
-            Log.d("DaoImpl-queryExistsSchedule2", "sDay=" + sDay);
             int day = Integer.parseInt(sDay.substring(6));
-            Log.d("DaoImpl-queryExistsSchedule2", "sDay=" + sDay.substring(6));
             mScheduleMap.put(day, 1);
         }
         cursor2.close();
@@ -183,20 +178,19 @@ public class LunarCalendarView extends View {
         // 달이 바뀌면 음력 날짜정보를 계산하여 배열에 담아둔다...
         StringBuffer ldaysource = new StringBuffer();
         ldaysource.append("0").append(",");
-        String lDay = lunar2solar.s2l(lunarCalendar.mYear, lunarCalendar.mMonth + 1, 1);
+        String lDay = Lunar2Solar.s2l(lunarCalendar.mYear, lunarCalendar.mMonth + 1, 1);
         int ilday = Integer.parseInt(lDay.substring(6));
         ldaysource.append(lDay.substring(0, 6)).append(ilday > 9 ? "" + ilday : "0" + ilday);
         for (int day = 2; day <= endofmonth + 1; day++) {
 
             ilday++;
             if (ilday > 29) {
-                lDay = lunar2solar.s2l(lunarCalendar.mYear, lunarCalendar.mMonth + 1, day);
+                lDay = Lunar2Solar.s2l(lunarCalendar.mYear, lunarCalendar.mMonth + 1, day);
                 ilday = Integer.parseInt(lDay.substring(6));
             }
             ldaysource.append(",").append(lDay.substring(0, 6)).append(ilday > 9 ? "" + ilday : "0" + ilday);
 
         }
-        //Log.d("loadSchduleExistsInfo", "ldaysource=" + ldaysource);
 
         mLunadays = Common.tokenFn(ldaysource.toString(), ",");
 
@@ -205,11 +199,9 @@ public class LunarCalendarView extends View {
         mAnniversaryMap = new HashMap<Integer, Integer>();
         while (cursor.moveToNext()) {
             int day = cursor.getInt(0);
-            Log.d("loadSchduleExistsInfo", "Luna day=" + day);
             //음력날짜인 경우는 양력날짜로 변환하여 저장한다.
             if (day > 31) {
                 String lday = (day > 999 ? "" + day : "0" + day);
-                //Log.d("loadSchduleExistsInfo", "lday=" + lday);
                 for (int i = 1; i < mLunadays.length; i++) {
                     if (mLunadays[i].substring(4).equals(lday)) {
                         if (mAnniversaryMap.containsKey(i)) {
@@ -232,7 +224,6 @@ public class LunarCalendarView extends View {
                 }
             }
         }
-        Log.d("loadSchduleExistsInfo", "mAnniversaryMap=" + mAnniversaryMap.toString());
         cursor.close();
 
         // 타이틀에 찍을 년,월 정보를 조합한다.
@@ -247,9 +238,6 @@ public class LunarCalendarView extends View {
         int num2 = lyear % 12;
 
         String gapja = ARRAY_SIPGAN[num] + ARRAY_SIPEJIJI[num2] + getResources().getString(R.string.year_label);
-
-        //Log.d("mGAPJA", "mGAPJA=" + mGAPJA);
-        //Log.d("mGAPJA", "gapja=" + gapja);
 
         if (!mGAPJA.equals(gapja)) {
             mGAPJA = gapja;
@@ -287,7 +275,6 @@ public class LunarCalendarView extends View {
     @Override
     protected Parcelable onSaveInstanceState() {
         Parcelable p = super.onSaveInstanceState();
-        //Log.d(TAG, "onSaveInstanceState");
         Bundle bundle = new Bundle();
         bundle.putInt(SELX, getSelX());
         bundle.putInt(SELY, getSelY());
@@ -297,7 +284,6 @@ public class LunarCalendarView extends View {
 
     @Override
     protected void onRestoreInstanceState(Parcelable state) {
-        //Log.d(TAG, "onRestoreInstanceState");
         Bundle bundle = (Bundle) state;
 
         setSelection(bundle.getInt(SELX), bundle.getInt(SELY));
@@ -311,15 +297,12 @@ public class LunarCalendarView extends View {
         setTileWidth(w / 7f);
         setTileHeight(h / 8f);
         getRect(getSelX(), getSelY(), selRect);
-        //Log.d(TAG, "onSizeChanged: tileWidth " + getTileWidth() + ", tileHeight " + getTileHeight());
         super.onSizeChanged(w, h, oldw, oldh);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
 
-        //Log.i(TAG, "onDraw canvas=" + canvas.getClipBounds().toString());
-        // Draw the background...
         Paint background = new Paint();
         background.setColor(getResources().getColor(R.color.cal_background));
         canvas.drawRect(0, 0, getWidth(), getHeight(), background);
@@ -567,15 +550,15 @@ public class LunarCalendarView extends View {
         int iconTop;
 
         //int ilday = Integer.parseInt(getLunaday(day).substring(6));
-        //int ilday = lunar2solar.getLunarID(getLunaday(day));
-        int ilday = Math.round(lunar2solar.CalculateMoonPhase(lunarCalendar.mYear, lunarCalendar.mMonth + 1, day));
+        //int ilday = Lunar2Solar.getLunarID(getLunaday(day));
+        int ilday = Math.round(Lunar2Solar.CalculateMoonPhase(lunarCalendar.mYear, lunarCalendar.mMonth + 1, day));
 
         Drawable drawICON;
         if (Prefs.getLunaIcon(getContext())) {
             iconLeft = (int) (dayname * getTileWidth() + (getTileWidth() * 0.6f));
             iconTop = (int) (week * getTileHeight() + (getTileHeight() * 0.6f));
 
-            // switch (lunar2solar.getLunarID(getLunaday(day))) {
+            // switch (Lunar2Solar.getLunarID(getLunaday(day))) {
             switch (ilday) {
                 case 0:
                     drawICON = getResources().getDrawable(R.drawable.i0);
@@ -939,30 +922,22 @@ public class LunarCalendarView extends View {
         setSelY(Math.min(Math.max(y, 0), 8));
 
         if (y >= 2 && y <= 7) {
-            lunarCalendar.mDay = (getSelY() - 2) * 7 + (getSelX() + 1) - (7 - (8 - dayofweek));
 
-            // 기존위치 다시그리기
-            //invalidate(selRect);
+            int newDay = (getSelY() - 2) * 7 + (getSelX() + 1) - (7 - (8 - dayofweek));
+
+            if (lunarCalendar.mDay != newDay) {
+                lunarCalendar.todayEvents.clear();
+            }
+
+            lunarCalendar.mDay = newDay;
 
             getRect(getSelX(), getSelY(), selRect);
-            //getContractRect(getSelX(), getSelY(), todayRect, 2);
 
-            // 새로운위치 그리기
-            // invalidate(selRect);
-
-            // 선택된 날짜에 해당하는 스케쥴 정보 조회.
-            if (lunarCalendar.mListView.getCount() > 0) {
-                Cursor c = (Cursor) lunarCalendar.mListView.getItemAtPosition(0);
-                if (c.moveToFirst())
-                    c.close();
-            }
             Cursor cursor = lunarCalendar.dao.query(Common.fmtDate(lunarCalendar.mYear, lunarCalendar.mMonth + 1, lunarCalendar.mDay), this.getLunaday(lunarCalendar.mDay));
             SimpleCursorAdapter adapter = new EfficientAdapter(getContext(), R.layout.shcedule_item, cursor, new String[] { Schedule.SCHEDULE_TYPE, Schedule.SCHEDULE_TITLE }, new int[] { R.id.schedule_date, R.id.schedule_title });
 
             lunarCalendar.mListView.setAdapter(adapter);
 
-            // 새로운 선택위치를 제목(음력정보)에 반영
-            // invalidate(titleRect);
             invalidate();
         }
 

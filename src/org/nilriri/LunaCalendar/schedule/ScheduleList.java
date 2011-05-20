@@ -1,24 +1,9 @@
-/*
- * Copyright (C) 2007 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.nilriri.LunaCalendar.schedule;
 
 import java.util.Calendar;
 
 import org.nilriri.LunaCalendar.R;
+import org.nilriri.LunaCalendar.RefreshManager;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 import org.nilriri.LunaCalendar.tools.Common;
@@ -45,7 +30,6 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.AbsListView;
-import android.widget.BaseExpandableListAdapter;
 import android.widget.ExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.SimpleCursorTreeAdapter;
@@ -54,13 +38,8 @@ import android.widget.Toast;
 import android.widget.ExpandableListView.ExpandableListContextMenuInfo;
 import android.widget.ExpandableListView.OnChildClickListener;
 
-/**
- * Demonstrates expandable lists using a custom {@link ExpandableListAdapter}
- * from {@link BaseExpandableListAdapter}.
- */
-public class ScheduleList extends ExpandableListActivity implements OnTouchListener {
+public class ScheduleList extends ExpandableListActivity implements OnTouchListener, RefreshManager {
 
-    // Menu item ids    
     public static final int MENU_ITEM_EDITCHEDULE = Menu.FIRST;
     public static final int MENU_ITEM_DELSCHEDULE = Menu.FIRST + 1;
     public static final int MENU_ITEM_SCHEDULELIST = Menu.FIRST + 2;
@@ -70,13 +49,16 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
     public static final int MENU_ITEM_GCALADDEVENT = Menu.FIRST + 6;
     public static final int MENU_ITEM_ADDCHEDULE = Menu.FIRST + 7;
     public static final int MENU_ITEM_GCALIMPORT = Menu.FIRST + 8;
-    // public static final int MENU_ITEM_BIBLEVIEW = Menu.FIRST + 9;
 
     private int mGroupIdColumnIndex;
     private Calendar mCalendar;
     private OldEvent mOldEvent;
     private String mSearchRange;
     private ViewGroup mContainer;
+    private boolean isSearch;
+    private int mOperator;
+    private String mKeyword1;
+    private String mKeyword2;
 
     private ExpandableListAdapter mAdapter;
     private ScheduleDaoImpl dao = null;
@@ -84,8 +66,7 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
-        mContainer = this.getExpandableListView();//findViewById(R.id.container);
+        mContainer = this.getExpandableListView();
 
         mContainer.setOnTouchListener(this);
 
@@ -96,11 +77,14 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
         mCalendar = (Calendar) data.get("workday");
         mSearchRange = intent.getStringExtra("ScheduleRange");
         mSearchRange = mSearchRange == null ? "" : mSearchRange;
+        isSearch = intent.getBooleanExtra("isSearch", false);
+
+        mOperator = intent.getIntExtra("operator", 0);
+        mKeyword1 = intent.getStringExtra("keyword1");
+        mKeyword2 = intent.getStringExtra("keyword2");
 
         if (mCalendar == null)
             mCalendar = Calendar.getInstance();
-
-        ScheduleLoading();
 
         registerForContextMenu(getExpandableListView());
 
@@ -140,6 +124,7 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
     }
 
     private void ChangeScheduleList(int arg) {
+
         if ("TODAY".equals(mSearchRange)) {
             mCalendar.add(Calendar.DAY_OF_MONTH, arg);
         } else if ("WEEK".equals(mSearchRange)) {
@@ -154,25 +139,14 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
     public class myOnChildClickListener implements OnChildClickListener {
 
         public boolean onChildClick(ExpandableListView expandablelistview, View view, int i, int j, long id) {
-
-            //Toast.makeText(getBaseContext(), "_ID : " + l, Toast.LENGTH_SHORT).show();
             Intent intent = new Intent();
-
             intent.setClass(getBaseContext(), ScheduleViewer.class);
             intent.putExtra("id", id);
-            //final Calendar c = Calendar.getInstance();
-            //c.set(mYear, mMonth, mDay);
-            //intent.putExtra("org.nilriri.LunaCalendar.today", c);
-
             startActivity(intent);
-
             return false;
         }
     }
 
-    /**
-     * @throws IllegalArgumentException
-     */
     private void ScheduleLoading() throws IllegalArgumentException {
 
         Cursor groupCursor = null;
@@ -201,179 +175,43 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
         } else if ("MONTH".equals(mSearchRange)) {
             date = Common.fmtDate(mCalendar).substring(0, 7);
             this.setTitle(getResources().getString(R.string.schedule_monthlist_label) + " (" + date + ")");
+        } else if (isSearch) {
+            this.setTitle("검색결과");
         } else {
             this.setTitle(getResources().getString(R.string.schedule_alllist_label));
         }
 
-        groupCursor = dao.queryGroup(mSearchRange, date);
+        groupCursor = dao.queryGroup(mSearchRange, date, isSearch, mOperator, mKeyword1, mKeyword2);
 
-        // Cache the ID column index
         mGroupIdColumnIndex = groupCursor.getColumnIndexOrThrow(Schedule._ID);
 
-        // Set up our adapter
-        //mAdapter = new MyExpandableListAdapter(groupCursor, this, android.R.layout.simple_expandable_list_item_1, android.R.layout.simple_expandable_list_item_1, new String[] { ScheduleBean.SCHEDULE_DATE, ScheduleBean.SCHEDULE_TITLE }, new int[] { android.R.id.text1  }, new String[] { ScheduleBean.ALARM_DETAILINFO,  }, new int[] { android.R.id.text2 });
         mAdapter = new MyExpandableListAdapter(groupCursor, this, R.layout.schedule_groupitem, R.layout.schedule_childitem, new String[] { Schedule.SCHEDULE_DATE, Schedule.SCHEDULE_TITLE }, new int[] { R.id.schedule_date, R.id.schedule_title }, new String[] { Schedule.SCHEDULE_CONTENTS, Schedule.ALARM_DETAILINFO, Schedule.DDAY_DETAILINFO, }, new int[] { R.id.schedule_contents, R.id.alarm_detailinfo, R.id.dday_detailinfo });
         setListAdapter(mAdapter);
 
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (dao != null) {
+            dao.close();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
+
+        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
 
         ScheduleLoading();
     }
 
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-
-        ExpandableListContextMenuInfo info = (ExpandableListContextMenuInfo) menuInfo;
-
-        Cursor cursor = null;
-        int type = ExpandableListView.getPackedPositionType(info.packedPosition);
-        int groupPos = 0;
-        int childPos = 0;
-        if (type == ExpandableListView.PACKED_POSITION_TYPE_CHILD) {
-            groupPos = ExpandableListView.getPackedPositionGroup(info.packedPosition);
-            childPos = ExpandableListView.getPackedPositionChild(info.packedPosition);
-            cursor = (Cursor) mAdapter.getChild(groupPos, childPos);
-        } else if (type == ExpandableListView.PACKED_POSITION_TYPE_GROUP) {
-            groupPos = ExpandableListView.getPackedPositionGroup(info.packedPosition);
-            cursor = (Cursor) mAdapter.getGroup(groupPos);
-        }
-        //Toast.makeText(this, "_ID : " + cursor.getLong(0), Toast.LENGTH_SHORT).show();
-
-        //menu.setHeaderTitle(getResources().getString(R.string.app_korname));
-        menu.setHeaderTitle(cursor.getString(2));
-
-        String anniversary = getResources().getString(R.string.anniversary_label);
-        Cursor c = (Cursor) mAdapter.getGroup(groupPos);
-        if (!anniversary.equals(c.getString(1)) && !"B-Plan".equals(c.getString(1))) {
-            menu.add(0, MENU_ITEM_EDITCHEDULE, 0, R.string.schedule_modify_action);
-            menu.add(0, MENU_ITEM_DELSCHEDULE, 0, R.string.schedule_delete_label);
-        }
-        //Toast.makeText(getBaseContext(), "c.getString(3)=" + c.getString(3), Toast.LENGTH_LONG).show();
-        if ("F".equals(c.getString(3)) || "P".equals(c.getString(3))) {
-            // menu.add(0, MENU_ITEM_BIBLEVIEW, 0, "성경읽기");
-            try {
-
-                Intent intent = new Intent();
-
-                intent.setAction("org.nilriri.webbibles.VIEW");
-                intent.setType("vnd.org.nilriri/web-bible");
-
-                intent.putExtra("VERSION", 0);
-                intent.putExtra("VERSION2", 0);
-                intent.putExtra("BOOK", c.getInt(4));
-                intent.putExtra("CHAPTER", c.getInt(5));
-                intent.putExtra("VERSE", 0);
-
-                startActivity(intent);
-            } catch (Exception e) {
-                Toast.makeText(getBaseContext(), "온라인성경 앱일 설치되어있지 않거나 최신버젼이 아닙니다.", Toast.LENGTH_LONG).show();
-
-            }
-
-        }
-        if (Prefs.getGCalendarSync(this)) {
-            menu.add(0, MENU_ITEM_GCALADDEVENT, 0, R.string.schedule_gcaladdevent_label);
-            menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_label);
-        }
-
-    }
-
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        ExpandableListContextMenuInfo info = (ExpandableListContextMenuInfo) item.getMenuInfo();
-        Cursor cursor = null;
-
-        Long id = new Long(-1);
-
-        int type = ExpandableListView.getPackedPositionType(info.packedPosition);
-        if (type == ExpandableListView.PACKED_POSITION_TYPE_CHILD) {
-            int groupPos = ExpandableListView.getPackedPositionGroup(info.packedPosition);
-            int childPos = ExpandableListView.getPackedPositionChild(info.packedPosition);
-
-            cursor = (Cursor) mAdapter.getChild(groupPos, childPos);
-
-            //Toast.makeText(this, "_ID : " + cursor.getLong(0), Toast.LENGTH_SHORT).show();
-
-            id = cursor.getLong(0);
-
-        } else if (type == ExpandableListView.PACKED_POSITION_TYPE_GROUP) {
-            int groupPos = ExpandableListView.getPackedPositionGroup(info.packedPosition);
-            // Toast.makeText(this, title + ": Group " + groupPos + " clicked", Toast.LENGTH_SHORT).show();
-
-            cursor = (Cursor) mAdapter.getGroup(groupPos);
-
-            //Toast.makeText(this, "_ID : "+cursor.getLong(0) , Toast.LENGTH_SHORT).show();
-            id = cursor.getLong(0);
-
-        }
-
-        switch (item.getItemId()) {
-
-            case MENU_ITEM_EDITCHEDULE: {
-                String anniversary = getResources().getString(R.string.anniversary_label);
-
-                if (anniversary.equals(cursor.getString(1))) {
-                    Intent intent = new Intent();
-                    intent.setClass(this, ScheduleViewer.class);
-
-                    intent.putExtra("id", id);
-
-                    startActivity(intent);
-                } else {
-                    Intent intent = new Intent();
-                    intent.setClass(this, ScheduleEditor.class);
-
-                    intent.putExtra("SID", id);
-                    intent.putExtra("STODAY", mCalendar);
-
-                    startActivity(intent);
-                }
-                return true;
-            }
-            case MENU_ITEM_DELSCHEDULE: {
-                dao.delete(id);
-
-                ScheduleLoading();
-                return true;
-            }
-            case MENU_ITEM_GCALADDEVENT: {
-
-                //CalendarFeedDemo.main();
-
-                //AclFeedDemo.main();
-
-                //EventFeedDemo.addEvents(this, dao.queryGCalendar(id));
-                //TODO:
-
-                return true;
-
-            }
-            case MENU_ITEM_GCALIMPORT: {
-
-                //EventFeedDemo.LoadEvents(this, this.mCalendar, "");
-                //TODO:
-
-                ScheduleLoading();
-
-                return true;
-
-            }
-
-        }
-
-        return false;
-    }
-
-    /**
-     * A simple adapter which maintains an ArrayList of photo resource Ids. 
-     * Each photo is displayed as an image. This adapter supports clearing the
-     * list of photos and adding a new photo.
-     *
-     */
     public class MyExpandableListAdapter extends SimpleCursorTreeAdapter {
 
         public MyExpandableListAdapter(Cursor cursor, Context context, int groupLayout, int childLayout, String[] groupFrom, int[] groupTo, String[] childrenFrom, int[] childrenTo) {
@@ -382,39 +220,28 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
 
         @Override
         protected Cursor getChildrenCursor(Cursor groupCursor) {
-            // Given the group, we return a cursor for all the children within that group 
-
             Long id = groupCursor.getLong(mGroupIdColumnIndex);
-
             Cursor childCursor = dao.queryChild(id);
-
-            // The returned Cursor MUST be managed by us, so we use Activity's helper
-            // functionality to manage it for us.
             return childCursor;
         }
 
         public TextView getGenericView() {
-            // Layout parameters for the ExpandableListView
             AbsListView.LayoutParams lp = new AbsListView.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, 64);
-
             TextView textView = new TextView(ScheduleList.this);
             textView.setLayoutParams(lp);
-            // Center the text vertically
             textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
-            // Set the text starting position
             textView.setPadding(36, 0, 0, 0);
             return textView;
         }
-
     }
+    
+    /*
+     * Change Animation
+     */
 
     private void applyRotation(int position, float start, float end) {
-        // Find the center of the container
         final float centerX = mContainer.getWidth() / 2.0f;
         final float centerY = mContainer.getHeight() / 2.0f;
-
-        // Create a new 3D rotation with the supplied parameter
-        // The animation listener is used to trigger the next animation
         final Rotate3dAnimation rotation = new Rotate3dAnimation(start, end, centerX, centerY, 310.0f, true);
         rotation.setDuration(500);
         rotation.setFillAfter(true);
@@ -455,16 +282,8 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
             Rotate3dAnimation rotation;
 
             if (mPosition < 0) {
-                //lunaCalendarView.setVisibility(View.GONE);
-                //lunaCalendarView.setVisibility(View.VISIBLE);
-                //lunaCalendarView.requestFocus();
-
                 rotation = new Rotate3dAnimation(180, 360, centerX, centerY, 310.0f, false);
             } else {
-                //lunaCalendarView.setVisibility(View.GONE);
-                //lunaCalendarView.setVisibility(View.VISIBLE);
-                //lunaCalendarView.requestFocus();
-
                 rotation = new Rotate3dAnimation(180, 0, centerX, centerY, 310.0f, false);
             }
 
@@ -476,6 +295,130 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
         }
     }
 
+    /*
+     * Context Menu       
+     */
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+
+        ExpandableListContextMenuInfo info = (ExpandableListContextMenuInfo) menuInfo;
+
+        Cursor cursor = null;
+        int type = ExpandableListView.getPackedPositionType(info.packedPosition);
+        int groupPos = 0;
+        int childPos = 0;
+        if (type == ExpandableListView.PACKED_POSITION_TYPE_CHILD) {
+            groupPos = ExpandableListView.getPackedPositionGroup(info.packedPosition);
+            childPos = ExpandableListView.getPackedPositionChild(info.packedPosition);
+            cursor = (Cursor) mAdapter.getChild(groupPos, childPos);
+        } else if (type == ExpandableListView.PACKED_POSITION_TYPE_GROUP) {
+            groupPos = ExpandableListView.getPackedPositionGroup(info.packedPosition);
+            cursor = (Cursor) mAdapter.getGroup(groupPos);
+        }
+        menu.setHeaderTitle(cursor.getString(2));
+
+        String anniversary = getResources().getString(R.string.anniversary_label);
+
+        Cursor c = (Cursor) mAdapter.getGroup(groupPos);
+        if (!anniversary.equals(c.getString(1)) && !"B-Plan".equals(c.getString(1))) {
+            menu.add(0, MENU_ITEM_EDITCHEDULE, 0, R.string.schedule_modify_action);
+            menu.add(0, MENU_ITEM_DELSCHEDULE, 0, R.string.schedule_delete_label);
+        }
+
+        if ("F".equals(c.getString(3)) || "P".equals(c.getString(3))) {
+            try {
+
+                Intent intent = new Intent();
+
+                intent.setAction("org.nilriri.webbibles.VIEW");
+                intent.setType("vnd.org.nilriri/web-bible");
+
+                intent.putExtra("VERSION", 0);
+                intent.putExtra("VERSION2", 0);
+                intent.putExtra("BOOK", c.getInt(4));
+                intent.putExtra("CHAPTER", c.getInt(5));
+                intent.putExtra("VERSE", 0);
+
+                startActivity(intent);
+            } catch (Exception e) {
+                Toast.makeText(getBaseContext(), "온라인성경 앱일 설치되어있지 않거나 최신버젼이 아닙니다.", Toast.LENGTH_LONG).show();
+
+            }
+
+        }
+
+        if ("auto".equals(Prefs.getSyncMethod(this)) // 동기화 방법 
+                && !"".equals(Prefs.getSyncCalendar(this))) {
+            menu.add(0, MENU_ITEM_GCALADDEVENT, 0, R.string.schedule_gcaladdevent_label);
+            menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_label);
+        }
+
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        ExpandableListContextMenuInfo info = (ExpandableListContextMenuInfo) item.getMenuInfo();
+        Cursor cursor = null;
+
+        Long id = new Long(-1);
+
+        int type = ExpandableListView.getPackedPositionType(info.packedPosition);
+        if (type == ExpandableListView.PACKED_POSITION_TYPE_CHILD) {
+            int groupPos = ExpandableListView.getPackedPositionGroup(info.packedPosition);
+            int childPos = ExpandableListView.getPackedPositionChild(info.packedPosition);
+            cursor = (Cursor) mAdapter.getChild(groupPos, childPos);
+            id = cursor.getLong(0);
+        } else if (type == ExpandableListView.PACKED_POSITION_TYPE_GROUP) {
+            int groupPos = ExpandableListView.getPackedPositionGroup(info.packedPosition);
+            cursor = (Cursor) mAdapter.getGroup(groupPos);
+            id = cursor.getLong(0);
+        }
+
+        switch (item.getItemId()) {
+
+            case MENU_ITEM_EDITCHEDULE: {
+                String anniversary = getResources().getString(R.string.anniversary_label);
+
+                if (anniversary.equals(cursor.getString(1))) {
+                    Intent intent = new Intent();
+                    intent.setClass(this, ScheduleViewer.class);
+
+                    intent.putExtra("id", id);
+
+                    startActivity(intent);
+                } else {
+                    Intent intent = new Intent();
+                    intent.setClass(this, ScheduleEditor.class);
+
+                    intent.putExtra("SID", id);
+                    intent.putExtra("STODAY", mCalendar);
+
+                    startActivity(intent);
+                }
+                return true;
+            }
+            case MENU_ITEM_DELSCHEDULE: {
+                dao.syncDelete(id, this);
+                return true;
+            }
+            case MENU_ITEM_GCALADDEVENT: {
+                dao.syncInsert(id, this);
+                return true;
+            }
+
+            case MENU_ITEM_GCALIMPORT: {
+                dao.syncImport(this);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /*
+     * Option Menu
+     * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
@@ -576,10 +519,7 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
 
             case MENU_ITEM_GCALIMPORT: {
 
-                // EventFeedDemo.LoadEvents(this, this.mCalendar, "");
-                //TODO:
-
-                ScheduleLoading();
+                dao.syncImport(this);
 
                 return true;
 
@@ -659,17 +599,14 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
             }
         }
 
-        if (Prefs.getGCalendarSync(this)) {
-            if (menu.findItem(MENU_ITEM_GCALIMPORT) == null) {
-                MenuItem item3 = menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_menu);
-                item3.setIcon(android.R.drawable.ic_menu_rotate);
-            }
-        }
-
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
 
         return true;
+    }
+
+    public void refresh() {
+        this.ScheduleLoading();
     }
 
 }

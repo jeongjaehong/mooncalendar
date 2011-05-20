@@ -2,7 +2,7 @@ package org.nilriri.LunaCalendar.tools;
 
 import java.util.Calendar;
 
-public class lunar2solar {
+public class Lunar2Solar {
 
     private static final int[][] kk = new int[][] {
     /*1881*/{ 1, 2, 1, 2, 1, 2, 2, 3, 2, 2, 1, 2, 1 }, { 1, 2, 1, 2, 1, 2, 1, 2, 2, 1, 2, 2, 0 }, { 1, 1, 2, 1, 1, 2, 1, 2, 2, 2, 1, 2, 0 }, { 2, 1, 1, 2, 1, 3, 2, 1, 2, 2, 1, 2, 2 }, { 2, 1, 1, 2, 1, 1, 2, 1, 2, 1, 2, 2, 0 }, { 2, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 0 }, { 2, 2, 1, 2, 3, 2, 1, 1, 2, 1, 2, 1, 2 }, { 2, 1, 2, 2, 1, 2, 1, 1, 2, 1, 2, 1, 0 }, { 2, 1, 2, 2, 1, 2, 1, 2, 1, 2, 1, 2, 0 }, { 1, 2, 3, 2, 1, 2, 2, 1, 2, 1, 2, 1, 2 },
@@ -74,10 +74,8 @@ public class lunar2solar {
             }
 
         }
-        /* 1. 1. 1. - 1910. 2. 10. */
         td1 = 1880 * 365 + Math.abs(1880 / 4) - Math.abs(1880 / 100) + Math.abs(1880 / 400) + 30;
 
-        /* ## 1. 1. 1. - Year. Month. Day. ## */
         k11 = (Year - 1);
         td2 = k11 * 365 + Math.abs(k11 / 4) - Math.abs(k11 / 100) + Math.abs(k11 / 400);
         leap = ((Year % 400) == 0) || ((Year % 100) != 0) && ((Year % 4) == 0);
@@ -92,10 +90,8 @@ public class lunar2solar {
 
         td2 = td2 + Day;
 
-        /* ## 1881. 1. 30. - Year. Month. Day. ## */
         td = td2 - td1 + 1;
 
-        /* ## Lunar Year Caculation ## */
         td0 = dt[0];
 
         for (idx = 0; idx <= 162; idx++) {
@@ -149,8 +145,6 @@ public class lunar2solar {
         boolean leap = false;
         int DayTotal = 0;
 
-        //Log.d("XXXXXXTTTTT=", "length=" + kk.length);
-        //Log.d("XXXXXXTTTTT=", "length00=" + kk[0].length);
         if (LunarYear != 1881) {
             m1 = LunarYear - 1882;
             for (i = 0; i <= m1; i++) {
@@ -162,7 +156,6 @@ public class lunar2solar {
                     DayTotal = DayTotal + 362;
             }
         }
-        //Log.d("DayTotal=", "start=" + DayTotal);
         m1 = m1 + 1;
         n2 = LunarMonth - 1;
         m2 = 0;
@@ -177,15 +170,10 @@ public class lunar2solar {
                 DayTotal = DayTotal + 28 + kk[m1][m2];
             }
 
-            //Log.d("XXXXXXTTTTT=", "m1=" + m1);
-            //Log.d("XXXXXXTTTTT=", "m2=" + m2);
-            //Log.d("XXXXX88888XTTTTT=", "kk[m1][m2]=" + kk[m1][m2]);
-            //Log.d("DayTotal=", "DayTotal=" + DayTotal);
             m2 = m2 + 1;
         }
 
         DayTotal = DayTotal + LunarDay + 29;
-        //Log.d("XXXXX+++++++XTTTTT=", "DayTotal=" + DayTotal);
 
         m1 = 1880;
         while (true) {
@@ -199,7 +187,6 @@ public class lunar2solar {
                 break;
             DayTotal = DayTotal - m2;
         }
-        //Log.d("XXXXX------XTTTTT=", "DayTotal=" + DayTotal);
 
         int SolarYear = m1;
 
@@ -207,9 +194,6 @@ public class lunar2solar {
 
         m1 = 0;
         while (true) {
-            //Log.d("XXXXXXTTTTT=", "m1=" + m1);
-            //Log.d("XXXXXXTTTTT=", "DayTotal=" + DayTotal);
-            //Log.d("XXXXXXTTTTT=", "m[m1]=" + m[m1]);
             if (DayTotal <= m[m1])
                 break;
             DayTotal = DayTotal - m[m1];
@@ -243,24 +227,23 @@ public class lunar2solar {
         switch (y / 100) {
             case 19:
                 delta = -4;
-                break; // 20th century
+                break;
             case 20:
                 delta = -8.3f;
-                break; // 21st century
+                break;
             default:
-                break; // error
+                break;
         }
 
-        ry = y % 100; // get last two digits
-        ry %= 19; // get reminder divided by 19
+        ry = y % 100;
+        ry %= 19;
         if (ry > 9)
-            ry -= 19; // make -9 <= ry <= 9
-        ry *= 11; // -99 <= ry <= 99
-        ry %= 30; // -29 <= ry <= 29
+            ry -= 19;
+        ry *= 11;
+        ry %= 30;
         if (m < 3)
             m += 2;
 
-        //moon = ( 30 + ry + m + d - delta ) % 30;
         moon = (30 + ry + m + d + delta) % 30f;
         return moon;
     }

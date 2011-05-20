@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:id="@+id/widget" android:background="@drawable/widget_background_transparent"
-	android:clickable="true" android:padding="0dip" android:layout_width="160dip"
-	android:layout_height="160dip" android:layout_gravity="center">
+	android:clickable="true" android:padding="18dp" android:layout_width="160dp"
+	android:layout_height="160dp" android:layout_gravity="center">
 	<LinearLayout android:id="@+id/content"
-		android:orientation="vertical" android:gravity="center"
-		android:paddingTop="0dip" android:paddingLeft="0dip"
-		android:paddingRight="0dip" android:paddingBottom="0dip"
+		android:orientation="vertical" android:gravity="center_horizontal"
+		android:paddingTop="2dp" android:paddingLeft="3dp"
+		android:paddingRight="3dp" android:paddingBottom="2dp"
 		android:layout_width="fill_parent" android:layout_height="fill_parent">
 		<LinearLayout android:orientation="vertical"
 			android:layout_width="fill_parent" android:layout_height="wrap_content">
 			<LinearLayout android:id="@+id/layout_phone"
 				android:orientation="horizontal" android:layout_width="fill_parent"
 				android:layout_height="wrap_content">
-				<ImageView android:src="@drawable/dday" android:scaleType="fitXY"
+				<ImageView android:id="@+id/widget_icon" android:src="@drawable/dday" android:scaleType="fitXY"
 					android:layout_width="36dp" android:layout_height="36dp" />
 				<TextView android:id="@+id/text_dday" android:text="@string/empty_str"
 					android:textSize="18sp" android:textStyle="bold" android:gravity="right|center"
-					android:layout_width="fill_parent" android:layout_height="fill_parent" />
+					android:textColor="@color/widget_dday" android:layout_width="fill_parent"
+					android:layout_height="fill_parent" />
 			</LinearLayout>
 			<LinearLayout android:id="@+id/layout_message"
 				android:orientation="horizontal" android:layout_width="fill_parent"
