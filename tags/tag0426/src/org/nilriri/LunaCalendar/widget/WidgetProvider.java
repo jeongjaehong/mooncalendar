@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2008 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.nilriri.LunaCalendar.widget;
 
 import java.util.Calendar;
@@ -34,24 +18,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 import android.widget.RemoteViews;
 
-/**
- * A widget provider.  We have a string that we pull from a preference in order to show
- * the configuration settings and the current time when the widget was updated.  We also
- * register a BroadcastReceiver for time-changed and timezone-changed broadcasts, and
- * update then too.
- *
- * <p>See also the following files:
- * <ul>
- *   <li>WidgetConfigure.java</li>
- *   <li>WidgetBroadcastReceiver.java</li>
- *   <li>res/layout/appwidget_configure.xml</li>
- *   <li>res/layout/appwidget_provider.xml</li>
- *   <li>res/xml/appwidget_provider.xml</li>
- * </ul>
- */
 public class WidgetProvider extends AppWidgetProvider {
     // log tag
     private static final String TAG = "WidgetProvider";
@@ -78,7 +49,7 @@ public class WidgetProvider extends AppWidgetProvider {
         // When the user deletes the widget, delete the preference associated with it.
         final int N = appWidgetIds.length;
         for (int i = 0; i < N; i++) {
-            WidgetConfigure.deleteDataPk(context, appWidgetIds[i]);
+            WidgetConfigure.removePrefData(context, appWidgetIds[i]);
         }
         super.onDeleted(context, appWidgetIds);
     }
@@ -122,6 +93,7 @@ public class WidgetProvider extends AppWidgetProvider {
         String mDday_title = "";
         String mDday_msg = "";
         String mDday_date = "";
+        int kind = 6;
 
         Cursor cursor = dao.queryWidgetByID(WidgetConfigure.getDataPk(context, appWidgetId));
         if (cursor.moveToNext()) {
@@ -129,6 +101,7 @@ public class WidgetProvider extends AppWidgetProvider {
             String D_dayTitle = cursor.getString(0);
             String D_dayDate = cursor.getString(1);
             int D_Day = cursor.getInt(2);
+            kind = cursor.getInt(3);
 
             switch (WidgetConfigure.getWidgetKind(context, appWidgetId)) {
                 case Common.D_DAY_WIDGET: {//dday
@@ -166,12 +139,28 @@ public class WidgetProvider extends AppWidgetProvider {
             mDday_msg = Common.fmtDate(c);
             mDday_date = "À½·Â : " + Common.fmtDate(Lunar2Solar.s2l(c)).substring(5);
         }
-        cursor.close();
 
         views.setTextViewText(R.id.text_dday, mDday_title);
         views.setTextViewText(R.id.text_title, mDday_msg);
         views.setTextViewText(R.id.text_contents, mDday_date);
 
+        Bitmap bitmap = null;
+        switch (kind) {
+            case 3:
+                bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.flag3);
+                break;
+            case 5:
+                bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.dday);
+                break;
+            default:
+            case 6:
+                bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.pen);
+                break;
+        }
+
+        views.setImageViewBitmap(R.id.widget_icon, bitmap);
+
+        cursor.close();
         dao.close();
 
         views.setOnClickPendingIntent(R.id.widget, PendingIntent.getActivity(context, 0, new Intent(context, LunarCalendar.class), 0));

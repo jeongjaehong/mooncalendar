@@ -9,8 +9,7 @@
 		android:minHeight="54dip" android:orientation="vertical">
 		<LinearLayout android:id="@+id/title_template"
 			android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:orientation="horizontal" android:layout_marginTop="6dip"
-			android:layout_marginBottom="9dip" android:layout_marginLeft="10dip"
+			android:orientation="horizontal" android:layout_marginLeft="10dip"
 			android:layout_marginRight="10dip">
 
 			<TextView android:id="@+id/schedule_date_label"
@@ -27,8 +26,7 @@
 		android:minHeight="54dip" android:orientation="vertical">
 		<LinearLayout android:id="@+id/title_template"
 			android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:orientation="horizontal" android:layout_marginTop="6dip"
-			android:layout_marginBottom="9dip" android:layout_marginLeft="10dip"
+			android:orientation="horizontal" android:layout_marginLeft="10dip"
 			android:layout_marginRight="10dip">
 
 			<TextView android:id="@+id/schedule_date_label"
@@ -61,8 +59,8 @@
 
 	<ListView android:id="@+id/ContentsListView"
 		android:focusable="true" android:focusableInTouchMode="true"
-		android:choiceMode="singleChoice"
-		android:background="@color/background" android:fastScrollEnabled="true"
-		android:layout_width="fill_parent" android:layout_height="wrap_content" />
+		android:choiceMode="singleChoice" android:background="@color/background"
+		android:fastScrollEnabled="true" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" />
 
 </LinearLayout>

@@ -66,7 +66,7 @@ public class Prefs extends PreferenceActivity {
     private static final boolean OPT_SDCARDUSE_DEF = false;
 
     private static final String OPT_WIDGETCOLOR = "widgetcolor";
-    private static final int OPT_WIDGETCOLOR_DEF = 1;
+    private static final String OPT_WIDGETCOLOR_DEF = "1";
 
     private static final String OPT_ACCOUNTS = "accounts";
     private static final String OPT_ACCOUNTS_DEF = "";
@@ -564,7 +564,7 @@ public class Prefs extends PreferenceActivity {
         PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(OPT_WIDGETCOLOR, color).commit();
     }
 
-    public static int getWidgetColor(Context context) {
-        return PreferenceManager.getDefaultSharedPreferences(context).getInt(OPT_WIDGETCOLOR, OPT_WIDGETCOLOR_DEF);
+    public static String getWidgetColor(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_WIDGETCOLOR, OPT_WIDGETCOLOR_DEF);
     }
 }
