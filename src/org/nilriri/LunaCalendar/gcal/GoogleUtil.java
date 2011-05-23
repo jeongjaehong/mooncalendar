@@ -7,6 +7,7 @@ import java.util.List;
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Lunar2Solar;
+import org.nilriri.LunaCalendar.tools.Prefs;
 
 import android.app.ProgressDialog;
 import android.os.Build;
@@ -142,10 +143,17 @@ public class GoogleUtil {
         event.title = scheduleBean.getSchedule_title();
         event.updated = scheduleBean.getUpdated();
         event.published = scheduleBean.getPublished();
-        event.reminder = null;
-        //event.reminder.add(new Reminder());
-        event.recurrence = null;//scheduleBean.getRecurrence();   
-        event.when = scheduleBean.getWhenObject();
+        //event.reminder = null;
+        event.reminder.add(new Reminder());
+
+        if ("".equals(scheduleBean.getRecurrence())) {
+            event.recurrence = null;
+            event.when = scheduleBean.getWhenObject();
+        } else {
+            event.recurrence = scheduleBean.getRecurrence();
+            event.when = null;
+        }
+
         event.setWhos(scheduleBean.getWho());
         event.content = scheduleBean.getSchedule_contents();
         event.uid = new AtomValue(scheduleBean.getGID());
@@ -297,9 +305,48 @@ public class GoogleUtil {
                     feed.events.clear();
                     oldMonth = c.get(Calendar.MONTH);
                 }
+            }
+        }
+    }
 
+    public void batchDelete(String feedUrl) throws IOException {
+        try {
+            EventFeed feed = null;
+
+            CalendarUrl url = new CalendarUrl(feedUrl);
+            while (true) {
+                Log.d(Common.TAG, "Delete url: " + url.toString());
+                feed = EventFeed.executeGet(transport, url);
+                if (feed.events != null) {
+
+                    for (int i = 0; i < feed.events.size(); i++) {
+                        feed.events.get(i).batchId = feed.events.get(i).etag;
+                        feed.events.get(i).batchOperation = BatchOperation.DELETE;
+                    }
+
+                    EventFeed batchResult = feed.executeBatch(transport, feedUrl);
+
+                    for (EventEntry newEvent : batchResult.events) {
+                        BatchStatus batchStatus = newEvent.batchStatus;
+
+                        if (batchStatus != null && !HttpResponse.isSuccessStatusCode(batchStatus.code)) {
+                            Log.d(Common.TAG, "Error posting event: " + batchStatus.reason);
+                        } else {
+                            Log.d(Common.TAG, "Delete Result: " + batchStatus.reason);
+                        }
+                    }
+                }
+                String nexturl = feed.getNextLink();
+                Log.d(Common.TAG, "Delete getNextLink: " + nexturl);
+                if (nexturl == null) {
+                    break;
+                } else {
+                    url = new CalendarUrl(nexturl);
+                }
             }
 
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
     }

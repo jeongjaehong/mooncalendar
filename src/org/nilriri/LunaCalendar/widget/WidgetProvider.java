@@ -1,10 +1,16 @@
 package org.nilriri.LunaCalendar.widget;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 import org.nilriri.LunaCalendar.LunarCalendar;
 import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
+import org.nilriri.LunaCalendar.gcal.EventEntry;
+import org.nilriri.LunaCalendar.gcal.GoogleUtil;
+import org.nilriri.LunaCalendar.schedule.AlarmViewer;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 import org.nilriri.LunaCalendar.tools.Prefs;
@@ -20,12 +26,18 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
+import android.text.format.Time;
 import android.util.Log;
+import android.view.View;
 import android.widget.RemoteViews;
 
 public class WidgetProvider extends AppWidgetProvider {
     // log tag
     private static final String TAG = "WidgetProvider";
+
+    private static Context mContext;
+    private static AppWidgetManager mAppWidgetManager;
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -41,6 +53,14 @@ public class WidgetProvider extends AppWidgetProvider {
             updateAppWidget(context, appWidgetManager, appWidgetId);
         }
         super.onUpdate(context, appWidgetManager, appWidgetIds);
+    }
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
+        Log.d(Common.TAG, "onReceive=" + intent);
+
+        // WidgetUtil.refreshWidgets(mContext);
     }
 
     @Override
@@ -63,6 +83,11 @@ public class WidgetProvider extends AppWidgetProvider {
         // be called after boot if there is a widget instance for this provider.
         PackageManager pm = context.getPackageManager();
         pm.setComponentEnabledSetting(new ComponentName("org.nilriri.LunaCalendar", ".widget.WidgetBroadcastReceiver"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+
+        //  Intent intent = new Intent(mContext, AlarmService_Service.class);
+        //  intent.setAction(Common.ACTION_ALARM_START);
+        //  mContext.startService(intent);
+
         super.onEnabled(context);
     }
 
@@ -73,102 +98,214 @@ public class WidgetProvider extends AppWidgetProvider {
         Log.d(TAG, "onDisabled");
         PackageManager pm = context.getPackageManager();
         pm.setComponentEnabledSetting(new ComponentName("org.nilriri.LunaCalendar", ".widget.WidgetBroadcastReceiver"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+
+        //  Intent intent = new Intent(mContext, AlarmService_Service.class);
+        //  intent.setAction(Common.ACTION_ALARM_STOP);
+        //  mContext.stopService(intent);
+
         super.onDisabled(context);
     }
 
     public static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
-        Log.d(TAG, "updateAppWidget appWidgetId=" + appWidgetId);
-        // Getting the string this way allows the string to be localized.  The format
-        // string is filled in using java.util.Formatter-style format strings.
+        mContext = context;
+        mAppWidgetManager = appWidgetManager;
 
-        // Construct the RemoteViews object.  It takes the package name (in our case, it's our
-        // package, but it needs this because on the other side it's the widget host inflating
-        // the layout from our package).
-        int layout = getWidgetLayout(context, appWidgetManager, appWidgetId);
+        if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            new ShowOnlineCalendar().execute(appWidgetId);
+        }
+    }
 
-        RemoteViews views = new RemoteViews(context.getPackageName(), layout);
+    private static class ShowOnlineCalendar extends AsyncTask<Integer, Void, Void> {
+        private List<EventEntry> todayEvents = new ArrayList<EventEntry>();
+        private RemoteViews views;
+        private ScheduleDaoImpl dao;
+        private int mAppWidgetId;
 
-        ScheduleDaoImpl dao = new ScheduleDaoImpl(context, null, Prefs.getSDCardUse(context));
+        @Override
+        protected void onPreExecute() {
+        }
 
-        String mDday_title = "";
-        String mDday_msg = "";
-        String mDday_date = "";
-        int kind = 6;
+        @Override
+        protected Void doInBackground(Integer... params) {
 
-        Cursor cursor = dao.queryWidgetByID(WidgetConfigure.getDataPk(context, appWidgetId));
-        if (cursor.moveToNext()) {
+            mAppWidgetId = params[0];
 
-            String D_dayTitle = cursor.getString(0);
-            String D_dayDate = cursor.getString(1);
-            int D_Day = cursor.getInt(2);
-            kind = cursor.getInt(3);
+            int layout = getWidgetLayout(mContext, mAppWidgetManager, mAppWidgetId);
+            views = new RemoteViews(mContext.getPackageName(), layout);
+            dao = new ScheduleDaoImpl(mContext, null, Prefs.getSDCardUse(mContext));
+            try {
 
-            switch (WidgetConfigure.getWidgetKind(context, appWidgetId)) {
-                case Common.D_DAY_WIDGET: {//dday
-                    if (D_Day == 0) {
-                        mDday_title += "D day";
-                    } else if (D_Day > 0) {
-                        mDday_title += "D+" + D_Day + context.getResources().getString(R.string.day_label) + "";
-                    } else {
-                        mDday_title += "D-" + Math.abs(D_Day - 1) + context.getResources().getString(R.string.day_label) + "";
+                String mDday_title = "";
+                String mDday_msg = "";
+                String mDday_date = "";
+                int kind = 6;
+                Bitmap bitmap = null;
+
+                Long dataPK = WidgetConfigure.getDataPk(mContext, mAppWidgetId);
+
+                if (dataPK == -1) {
+
+                    StringBuilder eventdata = new StringBuilder();
+
+                    String url = Prefs.getOnlineCalendar(mContext);
+
+                    Calendar c = Calendar.getInstance();
+
+                    StringBuilder where = new StringBuilder("?start-min=");
+                    where.append(Common.fmtDate(c));
+                    where.append("&start-max=");
+                    c.add(Calendar.DAY_OF_MONTH, 1);
+                    where.append(Common.fmtDate(c));
+                    url += where.toString();
+
+                    GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
+                    todayEvents = gu.getEvents(url);
+                    if (todayEvents.size() <= 0) {
+                        cancel(true);
                     }
-                    break;
+
+                    String names[] = new String[todayEvents.size()];
+                    final String index[] = new String[todayEvents.size()];
+
+                    for (int i = 0; i < todayEvents.size(); i++) {
+                        names[i] = todayEvents.get(i).getStartDate().substring(5, 10) + " : " + todayEvents.get(i).title;
+                        index[i] = todayEvents.get(i).content;
+                        eventdata.append(names[i]).append("\n");
+                    }
+
+                    views.setTextViewText(R.id.text_dday, "OnLine");
+                    views.setTextViewText(R.id.text_title2, eventdata.toString());
+                    views.setViewVisibility(R.id.text_title, View.GONE);
+                    views.setViewVisibility(R.id.text_title2, View.VISIBLE);
+                    views.setTextViewText(R.id.text_contents, "");
+
+                    bitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.flag4);
+
+                    views.setImageViewBitmap(R.id.widget_icon, bitmap);
+
+                    Intent intent = new Intent(mContext, LunarCalendar.class);
+                    intent.putExtra("pk", WidgetConfigure.getDataPk(mContext, mAppWidgetId));
+                    views.setOnClickPendingIntent(R.id.widget, PendingIntent.getActivity(mContext, 0, intent, 0));
+
+                    mAppWidgetManager.updateAppWidget(mAppWidgetId, views);
+                } else {
+
+                    Cursor cursor = dao.queryWidgetByID(dataPK);
+                    if (cursor.moveToNext()) {
+
+                        String D_dayTitle = cursor.getString(0);
+                        String D_dayDate = cursor.getString(1);
+                        int D_Day = cursor.getInt(2);
+                        kind = cursor.getInt(3);
+
+                        switch (kind) {
+                            case Common.D_DAY_WIDGET: {//dday
+                                if (D_Day == 0) {
+                                    mDday_title += "D day";
+                                } else if (D_Day > 0) {
+                                    mDday_title += "D+" + D_Day + mContext.getResources().getString(R.string.day_label) + "";
+                                } else {
+                                    mDday_title += "D-" + Math.abs(D_Day - 1) + mContext.getResources().getString(R.string.day_label) + "";
+                                }
+
+                                if (WidgetConfigure.getReceiver(mContext)) {
+
+                                    Calendar c = Calendar.getInstance();
+
+                                    Time t = new Time();
+                                    t.set(c.getTimeInMillis());
+
+                                    //Log.e("@@@@@@@@", "now=" + t.format3339(false));
+
+                                    mDday_date += "\n" + t.format3339(false).substring(11);
+
+                                } else {
+                                    mDday_msg += D_dayTitle.length() >= 18 ? D_dayTitle.substring(0, 18) + "..." : D_dayTitle;
+
+                                    mDday_msg = mDday_msg == null ? "" : mDday_msg;
+
+                                    mDday_date = D_dayDate;
+                                }
+
+                                break;
+                            }
+                            default:
+                            case Common.ALLEVENT_WIDGET: {// 모든일정
+                                mDday_title = "일정";
+
+                                mDday_msg += D_dayTitle.length() >= 18 ? D_dayTitle.substring(0, 18) + "..." : D_dayTitle;
+                                //mDday_msg += "\n" + D_dayDate;
+                                mDday_date = D_dayDate;
+
+                                mDday_msg = mDday_msg == null ? "" : mDday_msg;
+                                break;
+                            }
+                            case Common.ANNIVERSARY_WIDGET: {//기념일
+                                mDday_title = "기념일";
+
+                                mDday_msg += D_dayTitle.length() >= 18 ? D_dayTitle.substring(0, 18) + "..." : D_dayTitle;
+                                //mDday_msg += "\n" + D_dayDate;
+                                mDday_date = D_dayDate;
+
+                                mDday_msg = mDday_msg == null ? "" : mDday_msg;
+                                break;
+                            }
+                        }
+
+                    } else {
+                        String daynm[] = { "일", "월", "화", "수", "목", "금", "토" };
+                        Calendar c = Calendar.getInstance();
+                        mDday_title = daynm[c.get(Calendar.DAY_OF_WEEK) - 1];
+                        mDday_title += ", W" + c.get(Calendar.WEEK_OF_YEAR);
+
+                        mDday_msg = Common.fmtDate(c);
+                        mDday_date = "음력 : " + Common.fmtDate(Lunar2Solar.s2l(c)).substring(5);
+                    }
+
+                    views.setTextViewText(R.id.text_dday, mDday_title);
+                    views.setTextViewText(R.id.text_title, mDday_msg);
+                    views.setTextViewText(R.id.text_contents, mDday_date);
+
+                    switch (kind) {
+                        case Common.ANNIVERSARY_WIDGET:
+                            bitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.flag3);
+                            break;
+                        case Common.D_DAY_WIDGET:
+                            bitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.dday);
+                            break;
+                        default:
+                        case Common.ALLEVENT_WIDGET:
+                            bitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.pen);
+                            break;
+                    }
+
+                    //views.setTextViewText(R.id.text_contents, mDday_date);
+
+                    views.setImageViewBitmap(R.id.widget_icon, bitmap);
+
+                    cursor.close();
+
+                    Log.d(Common.TAG, "Widget dataPK=" + dataPK);
+                    
+                    PendingIntent contentIntent = PendingIntent.getActivity(mContext, mAppWidgetId, new Intent(mContext, LunarCalendar.class).putExtra("DataPk", dataPK), 0);
+
+                    views.setOnClickPendingIntent(R.id.widget, contentIntent);
+
+                    mAppWidgetManager.updateAppWidget(mAppWidgetId, views);
                 }
-                case Common.ALLEVENT_WIDGET: {// 모든일정
-                    mDday_title = "일정";
-                    break;
-                }
-                case Common.ANNIVERSARY_WIDGET: {//기념일
-                    mDday_title = "기념일";
-                    break;
-                }
+                dao.close();
+            } catch (IOException e) {
+                dao.close();
+                cancel(true);
+                e.printStackTrace();
             }
-
-            mDday_msg += D_dayTitle.length() >= 18 ? D_dayTitle.substring(0, 18) + "..." : D_dayTitle;
-            //mDday_msg += "\n" + D_dayDate;
-            mDday_date = D_dayDate;
-
-            mDday_msg = mDday_msg == null ? "" : mDday_msg;
-
-        } else {
-            String daynm[] = { "일", "월", "화", "수", "목", "금", "토" };
-            Calendar c = Calendar.getInstance();
-            mDday_title = daynm[c.get(Calendar.DAY_OF_WEEK) - 1];
-            mDday_title += ", W" + c.get(Calendar.WEEK_OF_YEAR);
-
-            mDday_msg = Common.fmtDate(c);
-            mDday_date = "음력 : " + Common.fmtDate(Lunar2Solar.s2l(c)).substring(5);
+            return null;
         }
 
-        views.setTextViewText(R.id.text_dday, mDday_title);
-        views.setTextViewText(R.id.text_title, mDday_msg);
-        views.setTextViewText(R.id.text_contents, mDday_date);
+        @Override
+        protected void onPostExecute(Void result) {
 
-        Bitmap bitmap = null;
-        switch (kind) {
-            case 3:
-                bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.flag3);
-                break;
-            case 5:
-                bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.dday);
-                break;
-            default:
-            case 6:
-                bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.pen);
-                break;
         }
-
-        views.setImageViewBitmap(R.id.widget_icon, bitmap);
-
-        cursor.close();
-        dao.close();
-
-        views.setOnClickPendingIntent(R.id.widget, PendingIntent.getActivity(context, 0, new Intent(context, LunarCalendar.class), 0));
-
-        appWidgetManager.updateAppWidget(appWidgetId, views);
-        //ComponentName componentName = new ComponentName(context, WidgetProvider.class);
-        //appWidgetManager.updateAppWidget(componentName, views);
-
     }
 
     private static int getWidgetColor(Context context, int appWidgetId) {

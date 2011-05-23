@@ -10,13 +10,18 @@ import java.util.List;
 import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.RefreshManager;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
+import org.nilriri.LunaCalendar.gcal.BatchOperation;
+import org.nilriri.LunaCalendar.gcal.BatchStatus;
 import org.nilriri.LunaCalendar.gcal.CalendarEntry;
 import org.nilriri.LunaCalendar.gcal.EventEntry;
+import org.nilriri.LunaCalendar.gcal.EventFeed;
 import org.nilriri.LunaCalendar.gcal.GoogleUtil;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.WhereClause;
 import org.nilriri.LunaCalendar.tools.Lunar2Solar;
+
+import com.google.api.client.http.HttpResponse;
 
 import android.app.ProgressDialog;
 import android.content.ContentValues;
@@ -125,8 +130,8 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         for (int i = 0; i < events.size(); i++) {
             try {
-                //GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
-                //gu.deleteEvent(events.get(i));
+                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
+                gu.deleteEvent(events.get(i));
 
                 ScheduleBean scheduleBean = new ScheduleBean(events.get(i));
                 doImport(scheduleBean);
@@ -196,9 +201,10 @@ public class ScheduleDaoImpl extends AbstractDao {
         if ("auto".equals(Prefs.getSyncMethod(this.mContext)) // 동기화 방법 
                 && !"".equals(Prefs.getSyncCalendar(mContext))) {
             this.refreshManager = caller;
+
             new googleMakeCalendar().execute(isNew);
 
-            //Bible Reading Plan생성.
+            //Bible Reading Plan생성.            
             //new googleMakeBiblePlan().execute();
         } else {
             Toast.makeText(mContext, "구글캘린더 계정설정 또는 동기화 대상 캘린더가 지정되지 않았습니다.", Toast.LENGTH_LONG).show();
@@ -209,7 +215,6 @@ public class ScheduleDaoImpl extends AbstractDao {
     /*
      * AsyncTask     
      */
-
     private class googleInsert extends AsyncTask<Void, Void, Void> {
         private ProgressDialog dialog;
         EventEntry event;
@@ -234,6 +239,8 @@ public class ScheduleDaoImpl extends AbstractDao {
 
                     // 기존에 구글캘린더에 존재하는 일정을 다시 추가하면 복제한다.
                     if (!"".equals(oldBean.getSelfurl())) {
+                        oldBean.setTitle("사본_" + oldBean.getSchedule_title());
+
                         oldBean.setId(localInsert(oldBean));
                         oldBean.setEditurl(null);
                         oldBean.setSelfUrl(null);
@@ -307,26 +314,31 @@ public class ScheduleDaoImpl extends AbstractDao {
                 GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
                 event = gu.updateEvent(oldBean);
 
-                if (!"".equals(event.getEditLink())) {
-                    ScheduleBean eventBean = new ScheduleBean(event);
+                if (event == null) {
 
-                    // 변경된 내용을 구글 캘린더에 반영한 후에 결과정보를 로컬에 다시 반영한다.
-                    oldBean.setTitle(eventBean.getSchedule_title());
-                    oldBean.setDate(eventBean.getSchedule_date());
-                    oldBean.setContents(eventBean.getSchedule_contents());
-                    oldBean.setGID(eventBean.getGID());
-                    oldBean.setEtag(eventBean.getEtag());
-                    oldBean.setPublished(eventBean.getPublished());
-                    oldBean.setUpdated(eventBean.getUpdated());
-                    oldBean.setWhen(eventBean.getWhen());
-                    oldBean.setWho(eventBean.getWho());
-                    oldBean.setRecurrence(eventBean.getRecurrence());
-                    oldBean.setSelfUrl(eventBean.getSelfurl());
-                    oldBean.setEditurl(eventBean.getEditurl());
-                    oldBean.setOriginalevent(eventBean.getOriginalevent());
-                    oldBean.setEventstatus(eventBean.getEventstatus());
+                } else {
+                    if (!"".equals(event.getEditLink())) {
 
-                    localUpdate(oldBean);
+                        ScheduleBean eventBean = new ScheduleBean(event);
+
+                        // 변경된 내용을 구글 캘린더에 반영한 후에 결과정보를 로컬에 다시 반영한다.
+                        oldBean.setTitle(eventBean.getSchedule_title());
+                        oldBean.setDate(eventBean.getSchedule_date());
+                        oldBean.setContents(eventBean.getSchedule_contents());
+                        oldBean.setGID(eventBean.getGID());
+                        oldBean.setEtag(eventBean.getEtag());
+                        oldBean.setPublished(eventBean.getPublished());
+                        oldBean.setUpdated(eventBean.getUpdated());
+                        oldBean.setWhen(eventBean.getWhen());
+                        oldBean.setWho(eventBean.getWho());
+                        oldBean.setRecurrence(eventBean.getRecurrence());
+                        oldBean.setSelfUrl(eventBean.getSelfurl());
+                        oldBean.setEditurl(eventBean.getEditurl());
+                        oldBean.setOriginalevent(eventBean.getOriginalevent());
+                        oldBean.setEventstatus(eventBean.getEventstatus());
+
+                        localUpdate(oldBean);
+                    }
                 }
 
             } catch (IOException e) {
@@ -416,6 +428,38 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     }
 
+    @SuppressWarnings("unused")
+    private class googleInit extends AsyncTask<Void, Void, Void> {
+        private ProgressDialog dialog;
+
+        @Override
+        protected void onPreExecute() {
+            dialog = ProgressDialog.show(mContext, "", "구글캘린더의 모든 일정을 삭제하고 있습니다...", true);
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
+                String url = Prefs.getSyncCalendar(mContext);
+                gu.batchDelete(url);
+            } catch (IOException e) {
+                cancel(true);
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            CallerRefresh();
+            dialog.dismiss();
+        }
+
+    }
+
+    @SuppressWarnings("unused")
     private class googleMakeCalendar extends AsyncTask<Boolean, Void, Void> {
         private ProgressDialog dialog;
 
@@ -486,6 +530,7 @@ public class ScheduleDaoImpl extends AbstractDao {
                 String[] PlanList = mContext.getResources().getStringArray(R.array.array_bibleplan);
                 GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
                 String url = Prefs.getSyncCalendar(mContext);
+                //gu.batchDelete(url);
                 gu.batchBiblePlan(url, dialog, PlanList);
             } catch (IOException e) {
                 cancel(true);
@@ -782,12 +827,15 @@ public class ScheduleDaoImpl extends AbstractDao {
             buf.append("\t" + Schedule.EVENTSTATUS);
             buf.append("\n");
 
-            while (cursor.moveToNext()) {
+            while (cursor.getCount() > 0) {
 
                 for (int col = 0; col < cursor.getColumnCount(); col++) {
                     buf.append(cursor.getString(col)).append("||");
                 }
                 buf.append("\n");
+
+                if (!cursor.moveToNext())
+                    break;
 
             }
 
@@ -859,12 +907,14 @@ public class ScheduleDaoImpl extends AbstractDao {
             buf.append("\t" + Schedule.EVENTSTATUS);
             buf.append("\n\r");
 
-            while (cursor.moveToNext()) {
+            while (cursor.getCount() > 0) {
                 pd.setProgress(cursor.getPosition() + 10);
                 for (int col = 0; col < cursor.getColumnCount(); col++) {
                     buf.append(cursor.getString(col)).append("\t");
                 }
                 buf.append("\n\r");
+                if (!cursor.moveToNext())
+                    break;
             }
             fos.write(buf.toString().getBytes());
             fos.close();
@@ -937,7 +987,12 @@ public class ScheduleDaoImpl extends AbstractDao {
         db.beginTransaction();
         boolean isFirst = true;
 
-        while (cursor.moveToNext()) {
+        Log.d(Common.TAG, "cursor=" + cursor.getCount());
+
+        Log.d(Common.TAG, " cursor.moveToFirst()=" + cursor.moveToFirst());
+        Log.d(Common.TAG, " moveToNext()=" + cursor.moveToNext());
+
+        while (cursor.getCount() > 0) {
 
             if (isFirst) {
                 StringBuilder query = new StringBuilder();
@@ -953,9 +1008,13 @@ public class ScheduleDaoImpl extends AbstractDao {
 
             val.remove(Schedule._ID);
 
+            Log.d(Common.TAG, "Contents=" + val);
+
             db.insert("schedule", null, val);
 
             isFirst = false;
+            if (!cursor.moveToNext())
+                break;
         }
 
         db.setTransactionSuccessful();
@@ -1151,19 +1210,25 @@ public class ScheduleDaoImpl extends AbstractDao {
         switch (kind) {
             case 0: // dday
                 query.append(" AND " + Schedule.DDAY_ALARMYN + " = 1 ");
+                query.append(" AND " + Schedule.ANNIVERSARY + " != 'Y' ");
                 break;
             case 1: // 기념일
+                query.append(" AND " + Schedule.DDAY_ALARMYN + " != 1 ");
                 query.append(" AND " + Schedule.ANNIVERSARY + " = 'Y' ");
                 break;
-            case 2: // 모든일정
+            case 2: // 일반일정
                 query.append(" AND " + Schedule.DDAY_ALARMYN + " != 1 ");
                 query.append(" AND " + Schedule.ANNIVERSARY + " != 'Y' ");
+                break;
+            case 3: // 모든일정
                 break;
             default:
                 break;
         }
-        query.append(" AND " + Schedule.SCHEDULE_DATE + " > '1900-01-01' ");
-        query.append(" AND schedule_repeat not in ('F','P', '9') ");
+        if (3 != kind) {
+            query.append(" AND " + Schedule.SCHEDULE_DATE + " > '1900-01-01' ");
+            query.append(" AND schedule_repeat not in ('F','P', '9') ");
+        }
         query.append(" ORDER BY " + Schedule.SCHEDULE_DATE + " DESC ");
 
         String selectionArgs[] = null;
@@ -1180,13 +1245,15 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         query.append("SELECT ");
         query.append(" " + Schedule.SCHEDULE_TITLE + " ");
-        query.append("," + Schedule.SCHEDULE_DATE + " ");
+        query.append(", " + Schedule.SCHEDULE_DATE + " || ");
+        query.append(" case when " + Schedule.LUNARYN + " = 'Y' then '\n(음력 '||substr(" + Schedule.SCHEDULE_LDATE + ",6,5)||')'");
+        query.append("  else ' ' end as " + Schedule.SCHEDULE_DATE);
         query.append(",cast(JULIANDAY('now', 'LOCALTIME') -   ");
         query.append("  JULIANDAY(DATE(schedule_date, dday_alarmsign ||  ");
         query.append("  dday_alarmday ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) dday  ");
         query.append(", case when " + Schedule.ANNIVERSARY + " = 'Y' then 3 ");
         query.append("       when " + Schedule.DDAY_ALARMYN + " = 1 then 5 ");
-        query.append("       when " + Schedule.SCHEDULE_DATE + " <= '1900-01-01' then " + Schedule.ALARM_DAY );
+        query.append("       when " + Schedule.SCHEDULE_DATE + " <= '1900-01-01' then " + Schedule.ALARM_DAY);
         query.append("       else 6 end as kind ");
         query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
         query.append(" WHERE 1 = 1 ");

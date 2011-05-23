@@ -6,9 +6,11 @@ import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.schedule.AlarmViewer;
 import org.nilriri.LunaCalendar.tools.Common;
+import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 import org.nilriri.LunaCalendar.tools.Music;
 import org.nilriri.LunaCalendar.tools.Prefs;
-import org.nilriri.LunaCalendar.tools.Lunar2Solar;
+import org.nilriri.LunaCalendar.widget.WidgetConfigure;
+import org.nilriri.LunaCalendar.widget.WidgetUtil;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -81,6 +83,10 @@ public class AlarmService_Service extends Service {
         String lDay = Lunar2Solar.s2l(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
 
         displayNotify(c, lDay);
+
+        if (WidgetConfigure.getReceiver(getBaseContext())) {
+            WidgetUtil.refreshWidgets(getBaseContext());
+        }
 
     }
 

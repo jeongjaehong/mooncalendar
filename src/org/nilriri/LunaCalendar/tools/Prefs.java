@@ -149,12 +149,15 @@ public class Prefs extends PreferenceActivity {
             public boolean onPreferenceClick(Preference preference) {
                 CheckBoxPreference cpf = (CheckBoxPreference) preference;
                 if (cpf.isChecked()) {
+                    Log.d(Common.TAG, "==========외부메모리 사용=========");
                     if (!Common.isSdPresent()) { //sd카드 사용 불가능 상태이면...
 
                         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).edit().putBoolean(OPT_SDCARDUSE, false).commit();
 
                         Toast.makeText(getBaseContext(), getBaseContext().getResources().getString(R.string.sdcarduse_notinstall), Toast.LENGTH_LONG).show();
                     } else {
+                        
+                        Log.d(Common.TAG, "==========외부메모리 사용2=========");
 
                         Toast.makeText(getBaseContext(), "스케쥴 정보 복사중...", Toast.LENGTH_LONG).show();
                         // backup
@@ -162,6 +165,7 @@ public class Prefs extends PreferenceActivity {
                     }
                 } else {
                     // restore
+                    Log.d(Common.TAG, "==========내부메모리 사용=========");
                     DataManager.StartCopy(Prefs.this, false);
                 }
                 return false;
