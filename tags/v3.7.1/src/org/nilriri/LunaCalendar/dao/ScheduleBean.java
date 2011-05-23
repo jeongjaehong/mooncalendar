@@ -10,6 +10,7 @@ import org.nilriri.LunaCalendar.tools.Common;
 
 import android.database.Cursor;
 import android.text.Editable;
+import android.util.Log;
 
 import com.google.api.client.util.DateTime;
 
@@ -174,20 +175,35 @@ public class ScheduleBean {
 
     public ScheduleBean(EventEntry event) {
 
-        this.setTitle(event.title);
-        this.setDate(event.getStartDate());
-        this.setContents(event.content);
-        this.setGID(event.uid.value);
-        this.setEtag(event.etag);
-        this.setPublished(event.published);
-        this.setUpdated(event.updated);
-        this.setWhen(event.when.parseAsString());
-        this.setWho(event.getWhos());
-        this.setRecurrence(event.recurrence);
-        this.setSelfUrl(event.getSelfLink());
-        this.setEditurl(event.getEditLink());
-        this.setOriginalevent(event.originalEvent.parseAsString());
-        this.setEventstatus(event.eventStatus.getValue());
+        try {
+            this.setTitle(event.title);
+            this.setDate(event.getStartDate());
+            this.setContents(event.content);
+            this.setGID(event.uid.value);
+            this.setEtag(event.etag);
+            this.setPublished(event.published);
+            this.setUpdated(event.updated);
+
+            if (null != event.when && !"".equals(event.when.parseAsString())) {
+                this.setWhen(event.when.parseAsString());
+            }
+
+            this.setWho(event.getWhos());
+
+            if (null != event.recurrence && !"".equals(event.recurrence)) {
+                this.setRecurrence(event.recurrence);
+            }
+
+            this.setSelfUrl(event.getSelfLink());
+            this.setEditurl(event.getEditLink());
+            if (event.originalEvent != null) {
+                this.setOriginalevent(event.originalEvent.parseAsString());
+            }
+            this.setEventstatus(event.eventStatus.getValue());
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.d(Common.TAG, "event is " + event.toString());
+        }
     }
 
     public String getSchedule_title() {
@@ -246,7 +262,8 @@ public class ScheduleBean {
             }
         } else {
             //반복일정이 있을때는 <gd:when>태그는 사용하지 않는다..
-            return new When();
+            return null;//new When();
+
         }
 
     }
@@ -280,9 +297,28 @@ public class ScheduleBean {
 
     }
 
+    public int getLMonth() {
+        StringTokenizer token = new StringTokenizer(this.schedule_ldate, "-");
+
+        token.nextToken();
+
+        int rssult = Integer.parseInt(token.nextToken());
+        return rssult;
+    }
+
     public int getMonth() {
         StringTokenizer token = new StringTokenizer(this.schedule_date, "-");
 
+        token.nextToken();
+
+        int rssult = Integer.parseInt(token.nextToken());
+        return rssult;
+    }
+
+    public int getLDay() {
+        StringTokenizer token = new StringTokenizer(this.schedule_ldate, "-");
+
+        token.nextToken();
         token.nextToken();
 
         int rssult = Integer.parseInt(token.nextToken());
@@ -339,13 +375,20 @@ public class ScheduleBean {
         } else {
             //TODO: 반복일정일 경우 반복일정 정보를 갱신한다.
             // 미구현...
-            this.setRecurrence(null);
+            Log.d(Common.TAG, "OLD Recurrence=" + this.getRecurrence());
+
+            this.setWhen(null);
+
+            /*
+
+            this.setRecurrence(null);            
 
             // 1회성 일정으로 강제 변경한다.
             When when = new When(getWhen());
             when.startTime = Common.toDateTime(date);
             when.endTime = Common.toDateTime(date, 1);
             setWhen(when.parseAsString());
+            */
         }
 
     }

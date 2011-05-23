@@ -57,15 +57,18 @@ public class OriginalEvent {
     public String parseAsString() {
         StringBuilder result = new StringBuilder();
 
-        result.append("href;").append(href).append(",");
-        result.append("id;").append(id).append(",");
+        try {
+            result.append("href;").append(href).append(",");
+            result.append("id;").append(id).append(",");
 
-        for (int i = 0; i < this.when.size(); i++) {
-            if (i == 0) {
-                result.append(",when;").append(this.when.get(i).parseAsString());
-            } else {
-                result.append("*").append(this.when.get(i).parseAsString());
+            for (int i = 0; i < this.when.size(); i++) {
+                if (i == 0) {
+                    result.append(",when;").append(this.when.get(i).parseAsString());
+                } else {
+                    result.append("*").append(this.when.get(i).parseAsString());
+                }
             }
+        } catch (Exception e) {
         }
         return result.toString();
     }

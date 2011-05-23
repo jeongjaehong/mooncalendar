@@ -33,6 +33,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
@@ -47,6 +48,7 @@ public class WidgetConfigure extends Activity {
     private static final String PREF_KIND_KEY = "kind_";
     private static final String PREF_COLOR_KEY = "color_";
     private static final String PREF_PK_KEY = "pk_";
+    private static final String PREF_RECEIVER_KEY = "receiver";
 
     private int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
 
@@ -55,6 +57,7 @@ public class WidgetConfigure extends Activity {
     private Button btn_ok;
     private Button btn_cancel;
     private ListView mListView;
+    private CheckBox chk_reveiver;
 
     public ScheduleDaoImpl dao = null;
 
@@ -79,14 +82,16 @@ public class WidgetConfigure extends Activity {
 
         spin_widgetkind = (Spinner) findViewById(R.id.widgetkind);
         spin_widgetcolor = (Spinner) findViewById(R.id.widgetcolor);
+        chk_reveiver = (CheckBox) findViewById(R.id.check_receiver);
         btn_ok = (Button) findViewById(R.id.save_button);
         btn_cancel = (Button) findViewById(R.id.cancel_button);
+        chk_reveiver.setChecked(getReceiver(getBaseContext()));
 
         ArrayAdapter<CharSequence> adp = ArrayAdapter.createFromResource(this, R.array.entries_widgetkind, android.R.layout.simple_spinner_item);
         adp.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spin_widgetkind.setAdapter(adp);
         spin_widgetkind.setOnItemSelectedListener(new widgetKindSelectedListener());
-        spin_widgetkind.setSelection(getWidgetKind(getBaseContext(), AppWidgetManager.INVALID_APPWIDGET_ID));
+        spin_widgetkind.setSelection(getWidgetKind(getBaseContext()));
 
         ArrayAdapter<CharSequence> adp_color = ArrayAdapter.createFromResource(this, R.array.entries_list_preference, android.R.layout.simple_spinner_item);
         adp_color.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -96,6 +101,7 @@ public class WidgetConfigure extends Activity {
         // Bind the action for the save button.
         btn_ok.setOnClickListener(mOnClickListener);
         btn_cancel.setOnClickListener(mOnClickListener);
+        chk_reveiver.setOnClickListener(mOnClickListener);
 
         // Find the widget id from the intent. 
         Intent intent = getIntent();
@@ -111,8 +117,8 @@ public class WidgetConfigure extends Activity {
         mListView = (ListView) findViewById(R.id.ContentsListView);
     }
 
-    public void loadData() {
-        Cursor cursor = dao.queryWidget(getWidgetKind(getBaseContext(), mAppWidgetId));
+    public void loadData(int kind) {
+        Cursor cursor = dao.queryWidget(kind);
         SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, //
                 android.R.layout.simple_list_item_single_choice, cursor, //
                 new String[] { Schedule.SCHEDULE_TITLE },//
@@ -136,8 +142,8 @@ public class WidgetConfigure extends Activity {
     public class widgetKindSelectedListener implements OnItemSelectedListener {
         public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
             if (pos >= 0) {
-                setWidgetKind(getBaseContext(), mAppWidgetId, pos);
-                loadData();
+                setWidgetKind(getBaseContext(), pos);
+                loadData(pos);
             }
         }
 
@@ -162,11 +168,23 @@ public class WidgetConfigure extends Activity {
                     int selectWidgetSize = spin_widgetcolor.getSelectedItemPosition();
                     setWidgetColor(getBaseContext(), mAppWidgetId, selectWidgetSize);
 
-                    setDataPk(getBaseContext(), mAppWidgetId, mListView.getItemIdAtPosition(mListView.getCheckedItemPosition()));
+                    if (4 == spin_widgetkind.getSelectedItemPosition()) {
+                        setDataPk(getBaseContext(), mAppWidgetId, new Long(-1));
+                    } else {
+                        setDataPk(getBaseContext(), mAppWidgetId, mListView.getItemIdAtPosition(mListView.getCheckedItemPosition()));
+
+                    }
 
                     // Push widget update to surface with newly set prefix
                     AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(getBaseContext());
                     WidgetProvider.updateAppWidget(getBaseContext(), appWidgetManager, mAppWidgetId);
+
+                    //IntentFilter filter = new IntentFilter();
+                    //filter.addAction(Intent.ACTION_TIME_TICK);
+                    //filter.addCategory(Intent.CATEGORY_DEFAULT);
+                    //registerReceiver(new WidgetProvider(), filter);
+
+                    setReceiver(getBaseContext(), chk_reveiver.isChecked());
 
                     // Make sure we pass back the original appWidgetId
                     Intent resultValue = new Intent();
@@ -183,18 +201,17 @@ public class WidgetConfigure extends Activity {
     };
 
     // Write the prefix to the SharedPreferences object for this widget
-    static void setWidgetKind(Context context, int appWidgetId, int widgetkind) {
+    static void setWidgetKind(Context context, int widgetkind) {
         SharedPreferences.Editor prefs = PreferenceManager.getDefaultSharedPreferences(context).edit();
         prefs.putInt(PREF_KIND_KEY + AppWidgetManager.INVALID_APPWIDGET_ID, widgetkind);
-        prefs.putInt(PREF_KIND_KEY + appWidgetId, widgetkind);
         prefs.commit();
     }
 
     // Read the prefix from the SharedPreferences object for this widget.
     // If there is no preference saved, get the default from a resource
-    static int getWidgetKind(Context context, int appWidgetId) {
+    static int getWidgetKind(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        return prefs.getInt(PREF_KIND_KEY + appWidgetId, 0);
+        return prefs.getInt(PREF_KIND_KEY + AppWidgetManager.INVALID_APPWIDGET_ID, 0);
     }
 
     static void setWidgetColor(Context context, int appWidgetId, int color) {
@@ -214,6 +231,17 @@ public class WidgetConfigure extends Activity {
         }
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         return prefs.getInt(PREF_COLOR_KEY + appWidgetId, defaultColor);
+    }
+
+    static void setReceiver(Context context, boolean isEnable) {
+        SharedPreferences.Editor prefs = PreferenceManager.getDefaultSharedPreferences(context).edit();
+        prefs.putBoolean(PREF_RECEIVER_KEY, isEnable);
+        prefs.commit();
+    }
+
+    public static boolean getReceiver(Context context) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        return prefs.getBoolean(PREF_RECEIVER_KEY, false);
     }
 
     static void setDataPk(Context context, int appWidgetId, Long pk) {

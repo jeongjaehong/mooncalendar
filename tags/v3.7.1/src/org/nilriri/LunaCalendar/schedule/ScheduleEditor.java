@@ -18,17 +18,18 @@ package org.nilriri.LunaCalendar.schedule;
 
 import java.util.Calendar;
 
+import org.nilriri.LunaCalendar.DatePickerDialog;
 import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.RefreshManager;
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.tools.Common;
+import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 import org.nilriri.LunaCalendar.tools.LunarDatePicker;
 import org.nilriri.LunaCalendar.tools.Prefs;
-import org.nilriri.LunaCalendar.tools.Lunar2Solar;
+import org.nilriri.LunaCalendar.widget.WidgetUtil;
 
 import android.app.Activity;
-import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
@@ -657,8 +658,8 @@ public class ScheduleEditor extends Activity implements OnClickListener, Refresh
 
         if (!isShowDialog) {
 
-            scheduleBean.setDate(scheduleBean.getSchedule_date());
-            scheduleBean.setLDate(this.mSchedule_ldate.getText().toString());
+            scheduleBean.setDate(mSchedule_date.getText().toString());
+            scheduleBean.setLDate(mSchedule_ldate.getText().toString());
             scheduleBean.setLunarYN(mLunaryn.isChecked());
             scheduleBean.setAnniversary(mAnniversary.isChecked());
             scheduleBean.setTitle(mSchedule_title.getText());
@@ -690,6 +691,13 @@ public class ScheduleEditor extends Activity implements OnClickListener, Refresh
             }
         }
 
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        WidgetUtil.refreshWidgets(getBaseContext());
     }
 
     @Override

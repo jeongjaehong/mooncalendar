@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.gcal.EventEntry;
 import org.nilriri.LunaCalendar.gcal.GoogleUtil;
@@ -14,6 +15,7 @@ import org.nilriri.LunaCalendar.schedule.ScheduleViewer;
 import org.nilriri.LunaCalendar.tools.About;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.DataManager;
+import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 import org.nilriri.LunaCalendar.tools.OldEvent;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.Rotate3dAnimation;
@@ -21,7 +23,6 @@ import org.nilriri.LunaCalendar.tools.SearchData;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -89,25 +90,47 @@ public class LunarCalendar extends Activity implements RefreshManager {
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         Common.checkAlarmService(LunarCalendar.this);
-        
-        /*
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_TIME_TICK);  // 1분단위로 시간이 바뀔때마다...
-        filter.addCategory(Intent.CATEGORY_DEFAULT);
-        this.registerReceiver(new WidgetBroadcastReceiver(), filter);
-        */
 
         dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
-
         oldEvent = new OldEvent(-1, -1);
 
+        Intent intent = getIntent();
+
         final Calendar c = Calendar.getInstance();
-        mYear = c.get(Calendar.YEAR);
-        mMonth = c.get(Calendar.MONTH);
-        mDay = c.get(Calendar.DAY_OF_MONTH);
+        if (intent.hasExtra("DataPk")) {
+
+            Bundle data = intent.getExtras();
+            Long dataPK = (Long) data.get("DataPk");
+            Log.d(Common.TAG, "dataPK=" + dataPK);
+            ScheduleBean s = new ScheduleBean(dao.query(dataPK));
+
+            if (dataPK > 0) {
+                if (s.getLunaryn()) {
+                    String sdate = Lunar2Solar.l2s(c.get(Calendar.YEAR) + "", s.getLMonth() + "", s.getLDay() + "");
+
+                    Log.d(Common.TAG, "sdate=" + sdate);
+
+                    mYear = Integer.parseInt(sdate.substring(0, 4));
+                    mMonth = Integer.parseInt(sdate.substring(4, 6)) - 1;
+                    mDay = Integer.parseInt(sdate.substring(6, 8));
+
+                } else {
+                    mYear = c.get(Calendar.YEAR);
+                    mMonth = s.getMonth() - 1;
+                    mDay = s.getDay();
+                }
+            } else {
+                mYear = c.get(Calendar.YEAR);
+                mMonth = c.get(Calendar.MONTH);
+                mDay = c.get(Calendar.DAY_OF_MONTH);
+            }
+        } else {
+            mYear = c.get(Calendar.YEAR);
+            mMonth = c.get(Calendar.MONTH);
+            mDay = c.get(Calendar.DAY_OF_MONTH);
+        }
 
         setContentView(R.layout.animations_main_screen);
-        
 
         mContainer = (ViewGroup) findViewById(R.id.container);
         lunarCalendarView = (LunarCalendarView) findViewById(R.id.lunaCalendarView);

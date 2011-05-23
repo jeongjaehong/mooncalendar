@@ -38,13 +38,14 @@ public class Common extends Activity {
     public static final int SIZE_2x2 = 1;
     public static final int SIZE_4x4 = 2;
 
-    public static final int D_DAY_WIDGET = 0;
-    public static final int ANNIVERSARY_WIDGET = 1;
-    public static final int ALLEVENT_WIDGET = 2;
+    public static final int D_DAY_WIDGET = 5;
+    public static final int ANNIVERSARY_WIDGET = 3;
+    public static final int ALLEVENT_WIDGET = 6;
+    public static final int ONLINE_WIDGET = 0;
 
     public static final int ALARM_INTERVAL = 1000 * 60 * 5; // 5분
     //public static final int WIDGET_REFRESH_INTERVAL = 1000 * 60 * 60; // 1시간
-    public static final int WIDGET_REFRESH_INTERVAL = 1000 * 2; // 1시간
+    public static final int WIDGET_REFRESH_INTERVAL = 1000 * 60 * 20 * 24; // 24시간 
 
     public static final String ACTION_ALARM_START = "org.nilriri.LunarCalendar.ALARM_START";
     public static final String ACTION_ALARM_STOP = "org.nilriri.LunarCalendar.ALARM_STOP";
@@ -86,7 +87,12 @@ public class Common extends Activity {
     public static DateTime toDateTime(String date) {
         DateTime result = new DateTime(new Date());
 
+        try{
         result = DateTime.parseRfc3339(date);
+        }catch(Exception e){
+            Log.e(Common.TAG, "Date="+date);
+            e.printStackTrace();
+        }
 
         return result;
 
