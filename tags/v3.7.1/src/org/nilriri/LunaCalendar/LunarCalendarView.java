@@ -874,6 +874,7 @@ public class LunarCalendarView extends View {
                 holder = new ViewHolder();
                 holder.text = (TextView) convertView.findViewById(R.id.schedule_title);
                 holder.icon = (ImageView) convertView.findViewById(R.id.flags);
+                holder.clock = (ImageView) convertView.findViewById(R.id.clock_flags);
 
                 convertView.setTag(holder);
             } else {
@@ -906,6 +907,13 @@ public class LunarCalendarView extends View {
                 default:
                     holder.icon.setImageBitmap(flag4);
             }
+            
+            int clock = ((Cursor) super.getItem(position)).getInt(6);
+            if(clock > 0) {
+                holder.clock.setVisibility(View.VISIBLE);
+            }else {
+                holder.clock.setVisibility(View.GONE);
+            }
 
             return convertView;
         }
@@ -913,6 +921,7 @@ public class LunarCalendarView extends View {
         static class ViewHolder {
             TextView text;
             ImageView icon;
+            ImageView clock;
         }
     }
 

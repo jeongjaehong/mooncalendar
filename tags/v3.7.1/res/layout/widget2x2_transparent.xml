@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:id="@+id/widget" android:background="@drawable/widget_background_transparent"
-	android:clickable="true" android:paddingTop="70dp" android:paddingLeft="55dp"
+	android:clickable="true" android:paddingTop="80dp" android:paddingLeft="55dp"
 		android:paddingRight="55dp" android:paddingBottom="50dp"  android:layout_width="230dp"
 	android:layout_height="310dp" android:layout_gravity="center">
 	<LinearLayout android:id="@+id/content"

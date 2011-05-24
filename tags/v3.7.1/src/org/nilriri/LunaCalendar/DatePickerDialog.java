@@ -10,7 +10,7 @@ import android.widget.DatePicker;
 
 public class DatePickerDialog extends android.app.DatePickerDialog {
 
-    private static final String DAYNAMES[] = {"토", "일", "월", "화", "수", "목", "금", "토" };
+    private static final String DAYNAMES[] = { "토", "일", "월", "화", "수", "목", "금", "토" };
 
     public DatePickerDialog(Context context, OnDateSetListener callBack, int year, int monthOfYear, int dayOfMonth) {
         super(context, callBack, year, monthOfYear, dayOfMonth);
@@ -39,10 +39,8 @@ public class DatePickerDialog extends android.app.DatePickerDialog {
         String title = Common.fmtDate(Lunar2Solar.s2l(c));
 
         title = "음력 " + title.substring(5).replace("-", "월 ") + "일 ";
-        //title += " = " + c.get(Calendar.DAY_OF_WEEK);
 
-        if (c.get(Calendar.DAY_OF_WEEK) >= 0)
-            title += "(" + DAYNAMES[c.get(Calendar.DAY_OF_WEEK)] + "요일)";
+        title += "(" + DAYNAMES[c.get(Calendar.DAY_OF_WEEK)] + "요일)";
 
         this.setTitle(title);
 

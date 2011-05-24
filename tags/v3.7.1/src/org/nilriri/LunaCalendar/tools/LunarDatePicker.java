@@ -3,6 +3,7 @@ package org.nilriri.LunaCalendar.tools;
 import java.util.Calendar;
 
 import org.nilriri.LunaCalendar.R;
+import org.nilriri.LunaCalendar.tools.NumberPicker.OnChangedListener;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -12,11 +13,15 @@ import android.view.View;
 import android.view.Window;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.TextView;
 
 public class LunarDatePicker extends Activity implements OnClickListener {
+    private static final String DAYNAMES[] = { "토", "일", "월", "화", "수", "목", "금", "토" };
+
     private NumberPicker mYear;
     private NumberPicker mMonth;
     private NumberPicker mDay;
+    private TextView mTitle;
 
     private Button mOk;
     private Button mCancel;
@@ -34,6 +39,8 @@ public class LunarDatePicker extends Activity implements OnClickListener {
         mYear = (NumberPicker) this.findViewById(R.id.year);
         mMonth = (NumberPicker) this.findViewById(R.id.month);
         mDay = (NumberPicker) this.findViewById(R.id.day);
+
+        mTitle = (TextView) this.findViewById(R.id.alertTitle);
 
         mYear.setRange(1901, 2043);
         mMonth.setRange(1, 12);
@@ -53,6 +60,10 @@ public class LunarDatePicker extends Activity implements OnClickListener {
         mOk.setOnClickListener(this);
         mCancel.setOnClickListener(this);
 
+        mYear.setOnChangeListener(new dateOnChangedListener());
+        mMonth.setOnChangeListener(new dateOnChangedListener());
+        mDay.setOnChangeListener(new dateOnChangedListener());
+
         mIntent = this.getIntent();
 
         Calendar c = Calendar.getInstance();
@@ -69,7 +80,21 @@ public class LunarDatePicker extends Activity implements OnClickListener {
         }
         mMonth.setCurrent(mIntent.getIntExtra("month", c.get(Calendar.MONTH) + 1));
         mDay.setCurrent(mIntent.getIntExtra("day", c.get(Calendar.DAY_OF_MONTH)));
+
     }
+
+    @Override
+    public void onResume() {
+        super.onRestart();
+        changeTitle(mYear.mCurrent, mMonth.mCurrent, mDay.mCurrent);
+    }
+
+    public class dateOnChangedListener implements OnChangedListener {
+
+        public void onChanged(NumberPicker picker, int oldVal, int newVal) {
+            changeTitle(mYear.mCurrent, mMonth.mCurrent, mDay.mCurrent);
+        }
+    };
 
     public void onClick(View view) {
 
@@ -102,4 +127,25 @@ public class LunarDatePicker extends Activity implements OnClickListener {
         }
 
     }
+
+    private void changeTitle(int year, int month, int day) {
+
+        String sdate = Lunar2Solar.l2s(year, month, day);
+
+        Calendar c = Calendar.getInstance();
+        c.setFirstDayOfWeek(Calendar.SUNDAY);
+        c.set(Calendar.YEAR, Integer.parseInt(sdate.substring(0, 4)));
+        c.set(Calendar.MONTH, Integer.parseInt(sdate.substring(4, 6)) - 1);
+        c.set(Calendar.DAY_OF_MONTH, Integer.parseInt(sdate.substring(6, 8)));
+
+        String title = Common.fmtDate(c);
+
+        title = "양력 " + title.substring(5).replace("-", "월 ") + "일 ";
+
+        title += "(" + DAYNAMES[c.get(Calendar.DAY_OF_WEEK)] + "요일)";
+
+        mTitle.setText(title);
+
+    }
+
 }

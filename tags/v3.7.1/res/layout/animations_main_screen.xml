@@ -26,10 +26,9 @@
 
 		<ListView android:id="@+id/ContentsListView"
 			android:layout_width="fill_parent" android:layout_height="90dip"
-			android:focusable="true" android:focusableInTouchMode="true"
+			android:focusable="false" android:focusableInTouchMode="false"
 			android:background="@color/cal_background"
 			android:layout_alignParentBottom="true" />
-
 
 	</RelativeLayout>
 
