@@ -546,7 +546,7 @@ public class ScheduleBean {
     }
 
     public int getAlarm_day() {
-        return (this.alarm_day + "") == null ? initToday(Calendar.DAY_OF_MONTH) : this.alarm_day;
+        return this.alarm_day > 0 ? this.alarm_day : initToday(Calendar.DAY_OF_MONTH);
     }
 
     public String getDisplayAlarmDay() {

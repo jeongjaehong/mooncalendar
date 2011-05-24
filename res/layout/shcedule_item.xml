@@ -22,4 +22,9 @@
 		android:layout_toRightOf="@id/rowidcolon" android:singleLine="true"
 		android:textSize="17sp" android:textColor="@color/today_schedule_list"
 		android:ellipsize="marquee" />
+	<ImageView android:layout_height="wrap_content" android:id="@+id/clock_flags"
+		android:src="@drawable/clock" android:adjustViewBounds="true"
+		android:layout_toRightOf="@id/rowidcolon" android:layout_width="wrap_content" android:maxWidth="16dip"
+		android:maxHeight="16dip" android:scaleType="centerInside" 
+		android:visibility="gone"/>
 </RelativeLayout>
