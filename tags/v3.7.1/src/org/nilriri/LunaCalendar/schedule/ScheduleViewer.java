@@ -26,8 +26,10 @@ import org.nilriri.LunaCalendar.tools.Prefs;
 import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Window;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
 
@@ -47,6 +49,7 @@ public class ScheduleViewer extends Activity implements OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.schedule_viewer);
 
         mSchedule_conents = (TextView) findViewById(R.id.schedule_contents);
@@ -90,8 +93,6 @@ public class ScheduleViewer extends Activity implements OnClickListener {
         }
     }
 
- 
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -115,6 +116,7 @@ public class ScheduleViewer extends Activity implements OnClickListener {
             }
         }
         this.setTitle(title);
+        ((TextView) findViewById(R.id.title)).setText(title);
 
         mSchedule_conents.setText(scheduleBean.getSchedule_contents());
 
@@ -129,10 +131,10 @@ public class ScheduleViewer extends Activity implements OnClickListener {
 
         switch (scheduleBean.getSchedule_repeat()) {
             case 1:
+                repeatnm += scheduleBean.getDisplayAlarmDate() + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
             case 2:
-                repeatnm += scheduleBean.getDisplayAlarmDate() + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
             case 3:

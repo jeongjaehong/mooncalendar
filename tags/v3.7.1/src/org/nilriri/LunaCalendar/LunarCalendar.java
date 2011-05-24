@@ -452,17 +452,102 @@ public class LunarCalendar extends Activity implements RefreshManager {
         }
     };
 
-    public void onCreateLunarEvents() {
+    public void onSelectTargetCalendar(int choice) {
+        
+        final int mChoice = choice;
 
-        String names[] = new String[] { "달력 신규생성", Prefs.getSyncCalendarName(LunarCalendar.this) };
+        final String names[] = Prefs.getSyncCalendarName(LunarCalendar.this);
+        final String values[] = Prefs.getSyncCalendarValue(LunarCalendar.this);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(LunarCalendar.this);
-        builder.setTitle("음력일정을 생성할 달력을 선택하십시오.");
+        builder.setTitle("배치 작업을 실행할 달력을 선택하십시오.");
         builder.setItems(names, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
 
                 try {
-                    dao.batchMakeCalendar(LunarCalendar.this, (which == 0));
+
+                    switch (mChoice) {
+                        case 0: // <item>음력일정 일괄생성</item>
+
+                            dao.batchMakeCalendar(LunarCalendar.this, values[which]);
+
+                            break;
+                        case 1: // <item>맥체인성경읽기 일정생성(가정)</item>
+
+                            dao.batchBibleCalendar(LunarCalendar.this, values[which], which + "");
+
+                            break;
+                        case 2: // <item>맥체인성경읽기 일정생성(개인)</item>
+                            dao.batchBibleCalendar(LunarCalendar.this, values[which], which + "");
+
+                            break;
+                        case 3: // <item>로컬일정 일괄 생성</item>
+
+                            dao.batchUpload(LunarCalendar.this, values[which]);
+
+                            break;
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(LunarCalendar.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        }).show();
+
+    }
+
+    public void onBatchJob() {
+
+        String dataworks[] = getResources().getStringArray(R.array.entries_batchjobs);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(LunarCalendar.this);
+        builder.setTitle("배치 작업을 선택하십시오.");
+        builder.setItems(dataworks, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+
+                try {
+
+                    onSelectTargetCalendar(which);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(LunarCalendar.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        }).show();
+
+    }
+
+    public void onDataWork() {
+
+        String dataworks[] = getResources().getStringArray(R.array.entries_dataworks);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(LunarCalendar.this);
+        builder.setTitle("작업을 선택하십시오.");
+        builder.setItems(dataworks, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+
+                try {
+                    switch (which) {
+                        case 0: // 백업
+
+                            DataManager.StartBackup(LunarCalendar.this);
+
+                            break;
+                        case 1: // 복원
+
+                            DataManager.StartRestore(LunarCalendar.this);
+                            AddMonth(0);
+                            updateDisplay();
+
+                            break;
+                        case 2: // csv export
+                            break;
+                        case 3: // csv import
+                            break;
+                    }
+
                 } catch (Exception e) {
                     Toast.makeText(LunarCalendar.this, e.getMessage(), Toast.LENGTH_LONG).show();
                 }
@@ -491,23 +576,22 @@ public class LunarCalendar extends Activity implements RefreshManager {
             itemImport.setIcon(android.R.drawable.ic_popup_sync);
         }
 
-        MenuItem itemBackup = menu.add(0, MENU_ITEM_BACKUP, 0, R.string.backup_label);
-        itemBackup.setIcon(android.R.drawable.ic_menu_save);
-
-        MenuItem itemRestore = menu.add(0, MENU_ITEM_RESTORE, 0, R.string.restore_label);
-        itemRestore.setIcon(android.R.drawable.ic_menu_upload);
-
-        MenuItem itemLunarEvent = menu.add(0, MENU_ITEM_MAKECAL, 0, R.string.makecal_label);
-        itemLunarEvent.setIcon(android.R.drawable.ic_menu_my_calendar);
-
         MenuItem itemSearch = menu.add(0, MENU_ITEM_SEARCH, 0, R.string.eventsearch_label);
         itemSearch.setIcon(android.R.drawable.ic_menu_search);
 
-        MenuItem itemAbout = menu.add(0, MENU_ITEM_ABOUT, 0, R.string.about_label);
-        itemAbout.setIcon(android.R.drawable.ic_menu_help);
+        /*        
+                MenuItem itemBackup = menu.add(0, MENU_ITEM_BACKUP, 0, R.string.backup_label);
+                itemBackup.setIcon(android.R.drawable.ic_menu_save);
+
+                MenuItem itemRestore = menu.add(0, MENU_ITEM_RESTORE, 0, R.string.restore_label);
+                itemRestore.setIcon(android.R.drawable.ic_menu_upload);
+
+                MenuItem itemLunarEvent = menu.add(0, MENU_ITEM_MAKECAL, 0, R.string.makecal_label);
+                itemLunarEvent.setIcon(android.R.drawable.ic_menu_my_calendar);
+        */
 
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
+        inflater.inflate(R.menu.main_menu, menu);
 
         return true;
     }
@@ -545,32 +629,26 @@ public class LunarCalendar extends Activity implements RefreshManager {
                 }
                 return true;
             }
-            case MENU_ITEM_BACKUP: {
-                DataManager.StartBackup(LunarCalendar.this);
-                return true;
-            }
-            case MENU_ITEM_MAKECAL: {
-                //dao.batchMakeCalendar(this);
-                onCreateLunarEvents();
-                return true;
-            }
-            case MENU_ITEM_SEARCH: {
+            case MENU_ITEM_SEARCH: { // 자료검색
                 Intent intent = new Intent();
                 intent.setClass(this, SearchData.class);
                 startActivity(intent);
                 return true;
             }
-            case MENU_ITEM_RESTORE: {
-                DataManager.StartRestore(LunarCalendar.this);
-                this.AddMonth(0);
-                this.updateDisplay();
+            case R.id.datawork: { // 자료관리
+                onDataWork();
                 return true;
             }
-            case R.id.settings: {
+            case R.id.batchjob: { // 배치작업
+                onBatchJob();
+                return true;
+            }
+
+            case R.id.settings: { // 설정메뉴
                 startActivity(new Intent(this, Prefs.class));
                 return true;
             }
-            case MENU_ITEM_ABOUT: {
+            case R.id.about: { // 프로그램 정보
                 startActivity(new Intent(this, About.class));
                 return true;
             }

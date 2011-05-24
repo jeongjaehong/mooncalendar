@@ -369,7 +369,7 @@ public class LunarCalendarView extends View {
 
         // 띠별 동물아이콘 그리기
         Rect all = new Rect();
-        all.set(getWidth() - 38, getHeight() - 45, getWidth() - 3, getHeight() - 1);
+        all.set(getWidth() - 28, getHeight() - 35, getWidth() - 3, getHeight() - 1);
         //Drawable drawableAnimal = getResources().getDrawable(ARRAY_DDI[num2]);
         drawableAnimal.setBounds(all);
         drawableAnimal.setAlpha(100);

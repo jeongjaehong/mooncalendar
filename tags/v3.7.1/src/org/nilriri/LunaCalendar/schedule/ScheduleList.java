@@ -185,7 +185,13 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
 
         mGroupIdColumnIndex = groupCursor.getColumnIndexOrThrow(Schedule._ID);
 
-        mAdapter = new MyExpandableListAdapter(groupCursor, this, R.layout.schedule_groupitem, R.layout.schedule_childitem, new String[] { Schedule.SCHEDULE_DATE, Schedule.SCHEDULE_TITLE }, new int[] { R.id.schedule_date, R.id.schedule_title }, new String[] { Schedule.SCHEDULE_CONTENTS, Schedule.ALARM_DETAILINFO, Schedule.DDAY_DETAILINFO, }, new int[] { R.id.schedule_contents, R.id.alarm_detailinfo, R.id.dday_detailinfo });
+        mAdapter = new MyExpandableListAdapter(groupCursor, this, //
+                R.layout.schedule_groupitem, //
+                R.layout.schedule_childitem, //
+                new String[] { Schedule.SCHEDULE_DATE, Schedule.SCHEDULE_TITLE }, //
+                new int[] { R.id.schedule_date, R.id.schedule_title }, //
+                new String[] { Schedule.SCHEDULE_CONTENTS, Schedule.ALARM_DETAILINFO, Schedule.DDAY_DETAILINFO, },//
+                new int[] { R.id.schedule_contents, R.id.alarm_detailinfo, R.id.dday_detailinfo });
         setListAdapter(mAdapter);
 
     }
@@ -234,7 +240,7 @@ public class ScheduleList extends ExpandableListActivity implements OnTouchListe
             return textView;
         }
     }
-    
+
     /*
      * Change Animation
      */

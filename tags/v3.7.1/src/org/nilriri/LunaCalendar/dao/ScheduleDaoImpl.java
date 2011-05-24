@@ -192,15 +192,43 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     }
 
-    public void batchMakeCalendar(RefreshManager caller, boolean isNew) {
+    /*
+     * 배치작업
+     */
+    public void batchMakeCalendar(RefreshManager caller, String target) {
         if ("auto".equals(Prefs.getSyncMethod(this.mContext)) // 동기화 방법 
                 && !"".equals(Prefs.getSyncCalendar(mContext))) {
             this.refreshManager = caller;
 
-            new googleMakeCalendar().execute(isNew);
+            new googleMakeCalendar().execute(target);
 
-            //Bible Reading Plan생성.            
-            //new googleMakeBiblePlan().execute();
+        } else {
+            Toast.makeText(mContext, "구글캘린더 계정설정 또는 동기화 대상 캘린더가 지정되지 않았습니다.", Toast.LENGTH_LONG).show();
+        }
+
+    }
+
+    public void batchUpload(RefreshManager caller, String target) {
+        if ("auto".equals(Prefs.getSyncMethod(this.mContext)) // 동기화 방법 
+                && !"".equals(Prefs.getSyncCalendar(mContext))) {
+            this.refreshManager = caller;
+
+            new googleUploadCalendar().execute(target);
+
+        } else {
+            Toast.makeText(mContext, "구글캘린더 계정설정 또는 동기화 대상 캘린더가 지정되지 않았습니다.", Toast.LENGTH_LONG).show();
+        }
+
+    }
+
+    public void batchBibleCalendar(RefreshManager caller, String target, String gb) {
+        if ("auto".equals(Prefs.getSyncMethod(this.mContext)) // 동기화 방법 
+                && !"".equals(Prefs.getSyncCalendar(mContext))) {
+            this.refreshManager = caller;
+
+            //Bible Reading Plan생성.   
+            String[] param = new String[] { target, gb };
+            new googleMakeBiblePlan().execute(param);
         } else {
             Toast.makeText(mContext, "구글캘린더 계정설정 또는 동기화 대상 캘린더가 지정되지 않았습니다.", Toast.LENGTH_LONG).show();
         }
@@ -455,7 +483,7 @@ public class ScheduleDaoImpl extends AbstractDao {
     }
 
     @SuppressWarnings("unused")
-    private class googleMakeCalendar extends AsyncTask<Boolean, Void, Void> {
+    private class googleMakeCalendar extends AsyncTask<String, Void, Void> {
         private ProgressDialog dialog;
 
         @Override
@@ -469,12 +497,12 @@ public class ScheduleDaoImpl extends AbstractDao {
         }
 
         @Override
-        protected Void doInBackground(Boolean... params) {
+        protected Void doInBackground(String... params) {
 
             try {
                 GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
                 String url = "";
-                if (params[0]) {
+                if ("".equals(params[0])) {
                     String calName = "음력_" + Common.fmtDate().substring(0, 4);
 
                     CalendarEntry entry = gu.addCalendar(calName);
@@ -486,7 +514,7 @@ public class ScheduleDaoImpl extends AbstractDao {
                         Log.e(Common.TAG, "===== 신규 달력생성 실패!!! =====");
                     }
                 } else {
-                    url = Prefs.getSyncCalendar(mContext);
+                    url = params[0];
                 }
                 gu.batchLunarEvents(url, dialog);
             } catch (IOException e) {
@@ -505,7 +533,58 @@ public class ScheduleDaoImpl extends AbstractDao {
     }
 
     @SuppressWarnings("unused")
-    private class googleMakeBiblePlan extends AsyncTask<Void, Void, Void> {
+    private class googleUploadCalendar extends AsyncTask<String, Void, Void> {
+        private ProgressDialog dialog;
+
+        @Override
+        protected void onPreExecute() {
+            dialog = new ProgressDialog(mContext);
+            dialog.setTitle("일정생성!");
+            dialog.setMessage("구글캘린더에 일정을 생성하고 있습니다...");
+            dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            dialog.setMax(100);
+            dialog.show();
+        }
+
+        @Override
+        protected Void doInBackground(String... params) {
+
+            try {
+                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
+                String url = "";
+                if ("".equals(params[0])) {
+                    String calName = "로컬일정_" + Common.fmtDate().substring(5);
+
+                    CalendarEntry entry = gu.addCalendar(calName);
+
+                    url = entry.getEventFeedLink();
+
+                    if ("".equals(url)) {
+                        cancel(true);
+                        Log.e(Common.TAG, "===== 신규 달력생성 실패!!! =====");
+                    }
+                } else {
+                    url = params[0];
+                }
+
+                gu.batchLocalEvents(queryAllLocal(), url, dialog);
+            } catch (IOException e) {
+                cancel(true);
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            CallerRefresh();
+            dialog.dismiss();
+        }
+
+    }
+
+    @SuppressWarnings("unused")
+    private class googleMakeBiblePlan extends AsyncTask<String, Void, Void> {
         private ProgressDialog dialog;
 
         @Override
@@ -520,13 +599,29 @@ public class ScheduleDaoImpl extends AbstractDao {
         }
 
         @Override
-        protected Void doInBackground(Void... params) {
+        protected Void doInBackground(String... params) {
             try {
-                String[] PlanList = mContext.getResources().getStringArray(R.array.array_bibleplan);
+
                 GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
-                String url = Prefs.getSyncCalendar(mContext);
-                //gu.batchDelete(url);
-                gu.batchBiblePlan(url, dialog, PlanList);
+                String url = "";
+                if ("".equals(params[0])) {
+                    String calName = "성경읽기" + ("2".equals(params[1]) ? "(개인)" : "(가정)");
+
+                    CalendarEntry entry = gu.addCalendar(calName);
+
+                    url = entry.getEventFeedLink();
+
+                    if ("".equals(url)) {
+                        cancel(true);
+                        Log.e(Common.TAG, "===== 신규 달력생성 실패!!! =====");
+                    }
+                } else {
+                    url = params[0];
+                }
+
+                String[] PlanList = mContext.getResources().getStringArray(R.array.array_bibleplan);
+
+                gu.batchBiblePlan(url, dialog, PlanList, params[1]);
             } catch (IOException e) {
                 cancel(true);
                 e.printStackTrace();
@@ -539,6 +634,7 @@ public class ScheduleDaoImpl extends AbstractDao {
             CallerRefresh();
             dialog.dismiss();
         }
+
     }
 
     /*
@@ -760,6 +856,50 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     }
 
+    public Cursor queryAllLocal() {
+
+        StringBuilder query = new StringBuilder("SELECT " + Schedule._ID);
+        query.append("   ," + Schedule.SCHEDULE_DATE);
+        query.append("   ," + Schedule.SCHEDULE_TITLE);
+        query.append("   ," + Schedule.SCHEDULE_CONTENTS);
+        query.append("   ," + Schedule.SCHEDULE_REPEAT);
+        query.append("   ," + Schedule.SCHEDULE_CHECK);
+        query.append("   ," + Schedule.ALARM_LUNASOLAR);
+        query.append("   ," + Schedule.ALARM_DATE);
+        query.append("   ," + Schedule.ALARM_TIME);
+        query.append("   ," + Schedule.ALARM_DAYS);
+        query.append("   ," + Schedule.ALARM_DAY);
+        query.append("   ," + Schedule.DDAY_ALARMYN);
+        query.append("   ," + Schedule.DDAY_ALARMDAY);
+        query.append("   ," + Schedule.DDAY_ALARMSIGN);
+        query.append("   ," + Schedule.DDAY_DISPLAYYN);
+        query.append("   ," + Schedule.GID);
+        query.append("   ," + Schedule.ANNIVERSARY);
+        query.append("   ," + Schedule.LUNARYN);
+        query.append("   ," + Schedule.SCHEDULE_LDATE);
+        query.append("   ," + Schedule.ALARM_DETAILINFO);
+        query.append("   ," + Schedule.DDAY_DETAILINFO);
+        query.append("   ," + Schedule.SCHEDULE_TYPE);
+        query.append("   ," + Schedule.BIBLE_BOOK);
+        query.append("   ," + Schedule.BIBLE_CHAPTER);
+        query.append("   ," + Schedule.ETAG);
+        query.append("   ," + Schedule.PUBLISHED);
+        query.append("   ," + Schedule.UPDATED);
+        query.append("   ," + Schedule.WHEN);
+        query.append("   ," + Schedule.WHO);
+        query.append("   ," + Schedule.RECURRENCE);
+        query.append("   ," + Schedule.SELFURL);
+        query.append("   ," + Schedule.EDITURL);
+        query.append("   ," + Schedule.ORIGINALEVENT);
+        query.append("   ," + Schedule.EVENTSTATUS);
+        query.append(" FROM  schedule ");
+        query.append(" WHERE " + Schedule.SCHEDULE_DATE + " > '1900-01-01' ");
+        query.append("   AND " + Schedule.SCHEDULE_REPEAT + " not in ('F','P', '9') ");
+        query.append("   AND trim(" + Schedule.GID + ") = ''");
+        return getReadableDatabase().rawQuery(query.toString(), null);
+
+    }
+
     /*
      * Data Manger Query
      */
@@ -810,6 +950,7 @@ public class ScheduleDaoImpl extends AbstractDao {
             buf.append("\t" + Schedule.EVENTSTATUS);
             buf.append("\n");
 
+            cursor.moveToFirst();
             while (cursor.getCount() > 0) {
 
                 for (int col = 0; col < cursor.getColumnCount(); col++) {
@@ -890,6 +1031,7 @@ public class ScheduleDaoImpl extends AbstractDao {
             buf.append("\t" + Schedule.EVENTSTATUS);
             buf.append("\n\r");
 
+            cursor.moveToFirst();
             while (cursor.getCount() > 0) {
                 pd.setProgress(cursor.getPosition() + 10);
                 for (int col = 0; col < cursor.getColumnCount(); col++) {
@@ -975,6 +1117,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         Log.d(Common.TAG, " cursor.moveToFirst()=" + cursor.moveToFirst());
         Log.d(Common.TAG, " moveToNext()=" + cursor.moveToNext());
 
+        cursor.moveToFirst();
         while (cursor.getCount() > 0) {
 
             if (isFirst) {
@@ -1363,10 +1506,19 @@ public class ScheduleDaoImpl extends AbstractDao {
         }
 
         query.append("SELECT " + Schedule._ID);
-        query.append("    ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 THEN '" + mContext.getResources().getString(R.string.anniversary_label) + "'");
-        query.append("    when  " + Schedule.SCHEDULE_REPEAT + " in ('F','P') THEN " + " ' B-Plan ' ");
-        query.append("    when  " + Schedule.SCHEDULE_REPEAT + " < 9 and " + Schedule.DDAY_ALARMYN + " = 1 THEN " + Schedule.SCHEDULE_DATE + "||'\n'||strftime('%Y-%m-%d', DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'localtime') ");
-        query.append("    ELSE " + Schedule.SCHEDULE_DATE + " END " + Schedule.SCHEDULE_DATE);
+        if ("TODAY".equals(range)) {
+            query.append("    ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 THEN '" + mContext.getResources().getString(R.string.anniversary_label) + "'");
+            query.append("    when  " + Schedule.SCHEDULE_REPEAT + " in ('F','P') THEN " + " ' B-Plan ' ");
+            query.append("    when  " + Schedule.SCHEDULE_REPEAT + " < 9 and " + Schedule.DDAY_ALARMYN + " = 1 ");
+            query.append("    then " + Schedule.SCHEDULE_DATE + "||'\n'||strftime('%Y-%m-%d', DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'localtime') ");
+            query.append("    when  " + Schedule.SCHEDULE_REPEAT + " between 1 and 8 and " + Schedule.DDAY_ALARMYN + " != 1 THEN " + Schedule.ALARM_DATE + " ||'\n'|| ifnull(case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ," + Schedule.SCHEDULE_DATE + ")");
+            query.append("    ELSE " + Schedule.SCHEDULE_DATE + " END " + Schedule.SCHEDULE_DATE);
+        } else {
+            query.append("    ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 THEN '" + mContext.getResources().getString(R.string.anniversary_label) + "'");
+            query.append("    when  " + Schedule.SCHEDULE_REPEAT + " in ('F','P') THEN " + " ' B-Plan ' ");
+            query.append("    when  " + Schedule.SCHEDULE_REPEAT + " < 9 and " + Schedule.DDAY_ALARMYN + " = 1 THEN " + Schedule.SCHEDULE_DATE + "||'\n'||strftime('%Y-%m-%d', DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'localtime') ");
+            query.append("    ELSE " + Schedule.SCHEDULE_DATE + " END " + Schedule.SCHEDULE_DATE);
+        }
         query.append("    ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " IN ('F','P','9') THEN " + Schedule.SCHEDULE_TITLE + "||'('||" + Schedule.ALARM_DATE + "||')'");
         query.append("    when  " + Schedule.SCHEDULE_REPEAT + " < 9 and " + Schedule.DDAY_ALARMYN + " = 1 THEN ");
         query.append("   substr(" + Schedule.SCHEDULE_TITLE + ", 1, 15) ||'('|| ");
@@ -1622,7 +1774,8 @@ public class ScheduleDaoImpl extends AbstractDao {
             }
         }
 
-        query.append(" ORDER BY " + Schedule.SCHEDULE_DATE + " ASC ");
+        query.append(" ORDER BY 1 ASC ");
+        //query.append(" ORDER BY " + Schedule.SCHEDULE_DATE + " ASC ");
 
         return getReadableDatabase().rawQuery(query.toString(), null);
 
@@ -1640,13 +1793,13 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("    ,case when " + Schedule.SCHEDULE_REPEAT + " = 9 then " + Schedule.ALARM_DATE);
         query.append("    else " + Schedule.SCHEDULE_CONTENTS + " end " + Schedule.SCHEDULE_CONTENTS);
         query.append("    ,case " + Schedule.SCHEDULE_REPEAT + " ");
-        query.append("    when 1 then  " + Schedule.ALARM_DATE + " || ' ' || " + Schedule.ALARM_TIME + " ");
-        query.append("    when 2 then '" + mContext.getResources().getString(R.string.every_day_label) + "' || " + Schedule.ALARM_TIME + " ");
-        query.append("    when 3 then '" + mContext.getResources().getString(R.string.every_week_label) + "' || d.dayname || ' '|| " + Schedule.ALARM_TIME + " ");
+        query.append("    when 1 then  " + Schedule.ALARM_DATE + " || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
+        query.append("    when 2 then '" + mContext.getResources().getString(R.string.every_day_label) + "' || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
+        query.append("    when 3 then '" + mContext.getResources().getString(R.string.every_week_label) + "' || d.dayname || ' '|| case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
         query.append("    when 4 then '" + mContext.getResources().getString(R.string.every_month_label) + "' || ( ");
         query.append("        case when " + Schedule.ALARM_LUNASOLAR + " = 0 then '" + mContext.getResources().getString(R.string.gregorian) + "' else '" + mContext.getResources().getString(R.string.lunar) + "' end)|| ' '|| " + Schedule.ALARM_DAY + " || '" + mContext.getResources().getString(R.string.day_label) + "' ");
         query.append("    when 5 then '" + mContext.getResources().getString(R.string.every_year_label) + "' || ( ");
-        query.append("        case when " + Schedule.ALARM_LUNASOLAR + " = 0 then '" + mContext.getResources().getString(R.string.gregorian) + "' else '" + mContext.getResources().getString(R.string.lunar) + "' end)|| ' '|| " + Schedule.ALARM_DATE + " || ' ' || " + Schedule.ALARM_TIME + " ");
+        query.append("        case when " + Schedule.ALARM_LUNASOLAR + " = 0 then '" + mContext.getResources().getString(R.string.gregorian) + "' else '" + mContext.getResources().getString(R.string.lunar) + "' end)|| ' '|| " + Schedule.ALARM_DATE + " || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
         query.append("    else '" + mContext.getResources().getString(R.string.alarm_none) + "' end alarm_detailinfo ");
         query.append("    ,case when cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) < 0   ");
         query.append("          then 'D ' || cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) || 'day'  ");
@@ -1656,6 +1809,8 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("    , " + Schedule.BIBLE_BOOK + ", " + Schedule.BIBLE_CHAPTER + " ");
         query.append(" FROM " + Schedule.SCHEDULE_DAYS_JOIN_TABLE);
         query.append(" WHERE _id = ? ");
+
+        Log.d(Common.TAG, "query=" + query.toString());
 
         return getReadableDatabase().rawQuery(query.toString(), selectionArgs);
 
