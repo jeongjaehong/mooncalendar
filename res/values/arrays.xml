@@ -202,5 +202,19 @@
 		<item>온라인구독일정</item>
 	</string-array>
 
+	<string-array name="entries_dataworks">
+		<item>일정 백업</item>
+		<item>일정 복원</item>
+		<item>CSV 내보내기</item>
+		<item>CSV 가져오기</item>
+	</string-array>
+
+	<string-array name="entries_batchjobs">
+		<item>음력일정 일괄생성</item>
+		<item>맥체인성경읽기 일정생성(가정)</item>
+		<item>맥체인성경읽기 일정생성(개인)</item>
+		<item>로컬일정 일괄 생성</item>
+	</string-array>
+
 
 </resources>

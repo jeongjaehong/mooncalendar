@@ -13,6 +13,7 @@ import android.app.NotificationManager;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Window;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
 
@@ -32,6 +33,7 @@ public class AlarmViewer extends Activity implements OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.alarm_viewer);
 
         //dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
@@ -87,6 +89,7 @@ public class AlarmViewer extends Activity implements OnClickListener {
         String title = scheduleBean.getSchedule_title();
         title += " (" + scheduleBean.getDisplayDate() + ")";
         this.setTitle(title);
+        ((TextView) findViewById(R.id.title)).setText(title);
 
         mSchedule_conents.setText(scheduleBean.getSchedule_contents());
 
@@ -98,10 +101,10 @@ public class AlarmViewer extends Activity implements OnClickListener {
 
         switch (scheduleBean.getSchedule_repeat()) {
             case 1:
+                repeatnm += scheduleBean.getDisplayAlarmDate() + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
             case 2:
-                repeatnm += scheduleBean.getDisplayAlarmDate() + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
             case 3:

@@ -156,7 +156,7 @@ public class Prefs extends PreferenceActivity {
 
                         Toast.makeText(getBaseContext(), getBaseContext().getResources().getString(R.string.sdcarduse_notinstall), Toast.LENGTH_LONG).show();
                     } else {
-                        
+
                         Log.d(Common.TAG, "==========외부메모리 사용2=========");
 
                         Toast.makeText(getBaseContext(), "스케쥴 정보 복사중...", Toast.LENGTH_LONG).show();
@@ -509,17 +509,30 @@ public class Prefs extends PreferenceActivity {
         return PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_CALENDARS, OPT_CALENDARS_DEF);
     }
 
-    public static String getSyncCalendarName(Context context) {
-        String value = getSyncCalendar(context);
+    public static String[] getSyncCalendarName(Context context) {
 
         String entryValues[] = getCalendars(context);
-
+        String result[] = new String[entryValues.length + 1];
+        result[0] = "달력신규생성 후 작업";
         for (int i = 0; i < entryValues.length; i++) {
-            if (entryValues[i].indexOf(value) >= 0) {
-                return Common.tokenFn(entryValues[i], "|")[0];
-            }
+
+            result[i + 1] = Common.tokenFn(entryValues[i], "|")[0];
+
         }
-        return "";
+        return result;
+    }
+
+    public static String[] getSyncCalendarValue(Context context) {
+
+        String entryValues[] = getCalendars(context);
+        String result[] = new String[entryValues.length + 1];
+        result[0] = "";
+        for (int i = 0; i < entryValues.length; i++) {
+
+            result[i + 1] = Common.tokenFn(entryValues[i], "|")[1];
+
+        }
+        return result;
     }
 
     public static String getOnlineCalendar(Context context) {

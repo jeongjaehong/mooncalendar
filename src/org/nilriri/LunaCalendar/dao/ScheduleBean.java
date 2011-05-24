@@ -54,6 +54,120 @@ public class ScheduleBean {
     public ScheduleBean() {
     }
 
+    public ScheduleBean(Cursor cursor, boolean isCurrentRow) {
+
+        for (int col = 0; col < Constants.mColumns.length; col++) {
+
+            int colIndex = cursor.getColumnIndex(Constants.mColumns[col]);
+
+            switch (colIndex) {
+                case Schedule.COL_ID:
+                    setId(cursor.getLong(Schedule.COL_ID));
+                    break;
+                case Schedule.COL_SCHEDULE_DATE:
+                    setDate(cursor.getString(Schedule.COL_SCHEDULE_DATE));
+                    break;
+                case Schedule.COL_SCHEDULE_LDATE:
+                    setLDate(cursor.getString(Schedule.COL_SCHEDULE_LDATE));
+                    break;
+                case Schedule.COL_LUNARYN:
+                    setLunarYN("Y".equals(cursor.getString(Schedule.COL_LUNARYN)));
+                    break;
+                case Schedule.COL_ANNIVERSARY:
+                    setAnniversary("Y".equals(cursor.getString(Schedule.COL_ANNIVERSARY)));
+                    break;
+                case Schedule.COL_SCHEDULE_TITLE:
+                    setTitle(cursor.getString(Schedule.COL_SCHEDULE_TITLE));
+                    break;
+                case Schedule.COL_SCHEDULE_CONTENTS:
+                    setContents(cursor.getString(Schedule.COL_SCHEDULE_CONTENTS));
+                    break;
+                case Schedule.COL_SCHEDULE_REPEAT:
+                    setRepeat(cursor.getInt(Schedule.COL_SCHEDULE_REPEAT));
+                    break;
+                case Schedule.COL_SCHEDULE_CHECK:
+                    setScheduleCheck(cursor.getString(Schedule.COL_SCHEDULE_CHECK));
+                    break;
+                case Schedule.COL_ALARM_LUNASOLAR:
+                    setLunaSolar(cursor.getInt(Schedule.COL_ALARM_LUNASOLAR));
+                    break;
+                case Schedule.COL_ALARM_DATE:
+                    setAlarmDate(cursor.getString(Schedule.COL_ALARM_DATE));
+                    break;
+                case Schedule.COL_ALARM_TIME:
+                    setAlarmTime(cursor.getString(Schedule.COL_ALARM_TIME));
+                    break;
+                case Schedule.COL_ALARM_DAYS:
+                    setAlarmDays(cursor.getInt(Schedule.COL_ALARM_DAYS));
+                    break;
+                case Schedule.COL_ALARM_DAY:
+                    setAlarmDay(cursor.getInt(Schedule.COL_ALARM_DAY));
+                    break;
+                case Schedule.COL_DDAY_ALARMYN:
+                    setDday_alarmyn(cursor.getInt(Schedule.COL_DDAY_ALARMYN));
+                    break;
+                case Schedule.COL_DDAY_ALARMDAY:
+                    setDday_alarmday(cursor.getInt(Schedule.COL_DDAY_ALARMDAY));
+                    break;
+                case Schedule.COL_DDAY_ALARMSIGN:
+                    setDday_alarmsign(cursor.getString(Schedule.COL_DDAY_ALARMSIGN));
+                    break;
+                case Schedule.COL_DDAY_DISPLAYYN:
+                    setDday_displayyn(cursor.getInt(Schedule.COL_DDAY_DISPLAYYN));
+                    break;
+                case Schedule.COL_GID:
+                    setGID(cursor.getString(Schedule.COL_GID));
+                    break;
+                case Schedule.COL_ALARM_DETAILINFO:
+                    setAlarm_detailinfo(cursor.getString(Schedule.COL_ALARM_DETAILINFO));
+                    break;
+                case Schedule.COL_DDAY_DETAILINFO:
+                    setDday_detailinfo(cursor.getString(Schedule.COL_DDAY_DETAILINFO));
+                    break;
+                case Schedule.COL_SCHEDULE_TYPE:
+                    setSchedule_type(cursor.getString(Schedule.COL_SCHEDULE_TYPE));
+                    break;
+                case Schedule.COL_BIBLE_BOOK:
+                    setBible_book(cursor.getString(Schedule.COL_BIBLE_BOOK));
+                    break;
+                case Schedule.COL_BIBLE_CHAPTER:
+                    setBible_chapter(cursor.getString(Schedule.COL_BIBLE_CHAPTER));
+                    break;
+                case Schedule.COL_ETAG:
+                    setEtag(cursor.getString(Schedule.COL_ETAG));
+                    break;
+                case Schedule.COL_PUBLISHED:
+                    setPublished(cursor.getString(Schedule.COL_PUBLISHED));
+                    break;
+                case Schedule.COL_UPDATED:
+                    setUpdated(cursor.getString(Schedule.COL_UPDATED));
+                    break;
+                case Schedule.COL_WHEN:
+                    setWhen(cursor.getString(Schedule.COL_WHEN));
+                    break;
+                case Schedule.COL_WHO:
+                    setWho(cursor.getString(Schedule.COL_WHO));
+                    break;
+                case Schedule.COL_RECURRENCE:
+                    setRecurrence(cursor.getString(Schedule.COL_RECURRENCE));
+                    break;
+                case Schedule.COL_SELFURL:
+                    setSelfUrl(cursor.getString(Schedule.COL_SELFURL));
+                    break;
+                case Schedule.COL_EDITURL:
+                    setEditurl(cursor.getString(Schedule.COL_EDITURL));
+                    break;
+                case Schedule.COL_ORIGINALEVENT:
+                    setOriginalevent(cursor.getString(Schedule.COL_ORIGINALEVENT));
+                    break;
+                case Schedule.COL_EVENTSTATUS:
+                    setEventstatus(cursor.getString(Schedule.COL_EVENTSTATUS));
+                    break;
+            }
+        }
+
+    }
+
     public ScheduleBean(Cursor cursor) {
         if (cursor.moveToNext()) {
 
@@ -406,6 +520,14 @@ public class ScheduleBean {
     public void setRepeat(int repeat) {
         this.schedule_repeat = repeat;
 
+        if (this.schedule_repeat == 0) {
+            alram_lunasolar = 0;
+            alarm_date = null;
+            alarm_time = null;
+            alarm_days = 0;
+            alarm_day = 0;
+        }
+
     }
 
     public void setScheduleCheck(String schedule_check) {
@@ -422,8 +544,11 @@ public class ScheduleBean {
     }
 
     public String getAlarm_date() {
-
-        return this.alarm_date == null ? "" : this.alarm_date;
+        if (getSchedule_repeat() > 0) {
+            return this.alarm_date == null ? Common.fmtDate() : this.alarm_date;
+        } else {
+            return this.alarm_date == null ? "" : this.alarm_date;
+        }
     }
 
     public int getAlarmYear() {
@@ -495,6 +620,14 @@ public class ScheduleBean {
         return ret >= 10 ? ret + "" : "0" + ret;
     }
 
+    public Calendar initToday() {
+        Calendar c = Calendar.getInstance();
+        c.setFirstDayOfWeek(Calendar.SUNDAY);
+
+        return c;
+
+    }
+
     public int initToday(int field) {
         Calendar c = Calendar.getInstance();
         c.setFirstDayOfWeek(Calendar.SUNDAY);
@@ -529,7 +662,11 @@ public class ScheduleBean {
     }
 
     public String getAlarm_time() {
-        return this.alarm_time == null ? "" : this.alarm_time;
+        if (getSchedule_repeat() > 0) {
+            return this.alarm_time == null ? Common.fmtTime() : this.alarm_time;
+        } else {
+            return this.alarm_time == null ? "" : this.alarm_time;
+        }
     }
 
     public String getDisplayAlarmTime() {
@@ -574,7 +711,7 @@ public class ScheduleBean {
 
         if (arg == null || "".equals(arg)) {
             final Calendar c = Calendar.getInstance();
-            Common.fmtTime(c);
+            arg = Common.fmtTime(c);
         }
         this.alarm_time = arg;
     }
@@ -656,6 +793,12 @@ public class ScheduleBean {
      */
     public void setDday_alarmyn(int dday_alarmyn) {
         this.dday_alarmyn = dday_alarmyn;
+
+        if (0 == this.dday_alarmyn) {
+            dday_alarmday = 0;
+            dday_alarmsign = null;
+            dday_displayyn = 0;
+        }
     }
 
     /**

@@ -10,6 +10,7 @@ import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 import org.nilriri.LunaCalendar.tools.Prefs;
 
 import android.app.ProgressDialog;
+import android.database.Cursor;
 import android.os.Build;
 import android.util.Log;
 
@@ -223,8 +224,42 @@ public class GoogleUtil {
         }
     }
 
+    public void batchLocalEvents(Cursor cursor, String eventFeedLink, ProgressDialog pd) throws IOException {
+
+        EventFeed feed = new EventFeed();
+        Calendar e = Calendar.getInstance();
+        e.set(Calendar.MONDAY, 11);
+        e.set(Calendar.DAY_OF_MONTH, 31);
+
+        pd.setMax(cursor.getCount());
+
+        while (cursor.moveToNext()) {
+
+            pd.setProgress(cursor.getPosition());
+
+            ScheduleBean bean = new ScheduleBean(cursor, true);
+
+            EventEntry event = newEvent(bean);
+
+            event.batchId = bean.getId().toString();
+            event.batchOperation = BatchOperation.INSERT;
+            feed.events.add(event);
+
+        }
+
+        EventFeed batchResult = feed.executeBatch(transport, eventFeedLink);
+
+        for (EventEntry newEvent : batchResult.events) {
+            BatchStatus batchStatus = newEvent.batchStatus;
+            if (batchStatus != null && !HttpResponse.isSuccessStatusCode(batchStatus.code)) {
+                Log.d(Common.TAG, "Error posting event: " + batchStatus.reason);
+            }
+        }
+
+    }
+
     // 성경플랜달력 생성.
-    public void batchBiblePlan(String eventFeedLink, ProgressDialog pd, String[] PlanList) throws IOException {
+    public void batchBiblePlan(String eventFeedLink, ProgressDialog pd, String[] PlanList, String gb) throws IOException {
 
         EventFeed feed = new EventFeed();
         StringBuilder recurrence;
@@ -243,9 +278,16 @@ public class GoogleUtil {
             //가정:창세기 1장|01-01|0|0|
             String data[] = Common.tokenFn(PlanList[j], "|");
 
-            // 가정용 맥체인성경읽기일정. 생성.
-            if (data[0].indexOf("개인:") < 0) {
-                continue;
+            if ("2".equals(gb)) {
+                // 개인용 맥체인성경읽기일정. 생성.
+                if (data[0].indexOf("개인:") < 0) {
+                    continue;
+                }
+            } else {
+                // 가정용 맥체인성경읽기일정. 생성.
+                if (data[0].indexOf("가정:") < 0) {
+                    continue;
+                }
             }
 
             String mmdd[] = Common.tokenFn(data[1], "-");

@@ -87,10 +87,10 @@ public class Common extends Activity {
     public static DateTime toDateTime(String date) {
         DateTime result = new DateTime(new Date());
 
-        try{
-        result = DateTime.parseRfc3339(date);
-        }catch(Exception e){
-            Log.e(Common.TAG, "Date="+date);
+        try {
+            result = DateTime.parseRfc3339(date);
+        } catch (Exception e) {
+            Log.e(Common.TAG, "Date=" + date);
             e.printStackTrace();
         }
 
@@ -133,6 +133,13 @@ public class Common extends Activity {
         String returnValue = "";
         returnValue = (new StringBuilder()).append(hour > 9 ? hour : "0" + hour).append(":").append(minute > 9 ? minute : "0" + minute).toString();
         return returnValue;
+    }
+
+    public static String fmtTime() {
+        Calendar c = Calendar.getInstance();
+
+        c.setFirstDayOfWeek(Calendar.SUNDAY);
+        return fmtTime(c);
     }
 
     public static String fmtTime(Calendar c) {
