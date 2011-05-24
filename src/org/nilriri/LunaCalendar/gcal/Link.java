@@ -29,6 +29,14 @@ public class Link {
     @Key("@rel")
     public String rel;
 
+    public Link() {
+    }
+
+    public Link(String rel, String href) {
+        this.rel = rel;
+        this.href = href;
+    }
+
     public static String find(List<Link> links, String rel) {
         if (links != null) {
             for (Link link : links) {

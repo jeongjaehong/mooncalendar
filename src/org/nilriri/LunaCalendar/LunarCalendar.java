@@ -1,43 +1,35 @@
 package org.nilriri.LunaCalendar;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-import org.nilriri.LunaCalendar.alarm.AlarmService_Service;
+import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
-import org.nilriri.LunaCalendar.gcal.CalendarEntry;
-import org.nilriri.LunaCalendar.gcal.CalendarFeed;
-import org.nilriri.LunaCalendar.gcal.CalendarUrl;
 import org.nilriri.LunaCalendar.gcal.EventEntry;
-import org.nilriri.LunaCalendar.gcal.EventFeed;
-import org.nilriri.LunaCalendar.gcal.Util;
+import org.nilriri.LunaCalendar.gcal.GoogleUtil;
 import org.nilriri.LunaCalendar.schedule.ScheduleEditor;
 import org.nilriri.LunaCalendar.schedule.ScheduleList;
 import org.nilriri.LunaCalendar.schedule.ScheduleViewer;
 import org.nilriri.LunaCalendar.tools.About;
+import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.DataManager;
+import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 import org.nilriri.LunaCalendar.tools.OldEvent;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.Rotate3dAnimation;
+import org.nilriri.LunaCalendar.tools.SearchData;
 
-import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.app.Activity;
-import android.app.AlarmManager;
 import android.app.AlertDialog;
-import android.app.DatePickerDialog;
 import android.app.Dialog;
-import android.app.PendingIntent;
-import android.content.Context;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.graphics.Rect;
-import android.os.Build;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -57,54 +49,11 @@ import android.widget.ListView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
-import com.google.api.client.googleapis.GoogleHeaders;
-import com.google.api.client.http.HttpResponse;
-import com.google.api.client.http.HttpResponseException;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.apache.ApacheHttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.xml.atom.AtomParser;
-import com.google.common.collect.Lists;
-
-public class LunarCalendar extends Activity {
+public class LunarCalendar extends Activity implements RefreshManager {
 
     static final int DATE_DIALOG_ID = 1;
 
-    protected AccountManager accountManager;
-
     private OldEvent oldEvent;
-
-    private static final String AUTH_TOKEN_TYPE = "cl";
-
-    private static final String TAG = "CalendarSample";
-
-    private static final boolean LOGGING_DEFAULT = true;
-
-    private static final int MENU_ADD = 0;
-
-    private static final int MENU_ACCOUNTS = 1;
-
-    private static final int CONTEXT_EDIT = 0;
-
-    private static final int CONTEXT_DELETE = 1;
-
-    private static final int CONTEXT_LOGGING = 2;
-
-    private static final int REQUEST_AUTHENTICATE = 0;
-
-    private static final String PREF = "MyPrefs";
-
-    private static final int DIALOG_ACCOUNTS = 0;
-
-    private static HttpTransport transport;
-
-    private String authToken;
-
-    private final List<CalendarEntry> calendars = Lists.newArrayList();
-    private final List<EventEntry> events = Lists.newArrayList();
-
-    /** SDK 2.2 ("FroYo") version build number. */
-    private static final int FROYO = 8;
 
     // Menu item ids    
     public static final int MENU_ITEM_SCHEDULELIST = Menu.FIRST;
@@ -118,6 +67,9 @@ public class LunarCalendar extends Activity {
     public static final int MENU_ITEM_DELSCHEDULE = Menu.FIRST + 8;
     public static final int MENU_ITEM_BACKUP = Menu.FIRST + 9;
     public static final int MENU_ITEM_RESTORE = Menu.FIRST + 10;
+    public static final int MENU_ITEM_MAKECAL = Menu.FIRST + 11;
+    public static final int MENU_ITEM_ONLINECAL = Menu.FIRST + 12;
+    public static final int MENU_ITEM_SEARCH = Menu.FIRST + 13;
 
     // date and time
     public int mYear;
@@ -125,44 +77,58 @@ public class LunarCalendar extends Activity {
     public int mDay;
     public ListView mListView;
     private int mAddMonthOffset = 0;
+    public List<EventEntry> todayEvents = new ArrayList<EventEntry>();
 
     public ScheduleDaoImpl dao = null;
 
     private LunarCalendarView lunarCalendarView;
     private ViewGroup mContainer;
-    private PendingIntent mAlarmSender;
-
-    public LunarCalendar() {
-        if (Build.VERSION.SDK_INT <= FROYO) {
-            transport = new ApacheHttpTransport();
-        } else {
-            transport = new NetHttpTransport();
-        }
-        GoogleHeaders headers = new GoogleHeaders();
-        headers.setApplicationName("Google-CalendarAndroidSample/1.0");
-        headers.gdataVersion = "2";
-        transport.defaultHeaders = headers;
-        AtomParser parser = new AtomParser();
-        parser.namespaceDictionary = Util.DICTIONARY;
-        transport.addParser(parser);
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
+        Common.checkAlarmService(LunarCalendar.this);
 
         dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
-
-        mAlarmSender = PendingIntent.getService(LunarCalendar.this, 0, new Intent(LunarCalendar.this, AlarmService_Service.class), 0);
-
         oldEvent = new OldEvent(-1, -1);
 
+        Intent intent = getIntent();
+
         final Calendar c = Calendar.getInstance();
-        mYear = c.get(Calendar.YEAR);
-        mMonth = c.get(Calendar.MONTH);
-        mDay = c.get(Calendar.DAY_OF_MONTH);
+        if (intent.hasExtra("DataPk")) {
+
+            Bundle data = intent.getExtras();
+            Long dataPK = (Long) data.get("DataPk");
+            Log.d(Common.TAG, "dataPK=" + dataPK);
+            ScheduleBean s = new ScheduleBean(dao.query(dataPK));
+
+            if (dataPK > 0) {
+                if (s.getLunaryn()) {
+                    String sdate = Lunar2Solar.l2s(c.get(Calendar.YEAR) + "", s.getLMonth() + "", s.getLDay() + "");
+
+                    Log.d(Common.TAG, "sdate=" + sdate);
+
+                    mYear = Integer.parseInt(sdate.substring(0, 4));
+                    mMonth = Integer.parseInt(sdate.substring(4, 6)) - 1;
+                    mDay = Integer.parseInt(sdate.substring(6, 8));
+
+                } else {
+                    mYear = c.get(Calendar.YEAR);
+                    mMonth = s.getMonth() - 1;
+                    mDay = s.getDay();
+                }
+            } else {
+                mYear = c.get(Calendar.YEAR);
+                mMonth = c.get(Calendar.MONTH);
+                mDay = c.get(Calendar.DAY_OF_MONTH);
+            }
+        } else {
+            mYear = c.get(Calendar.YEAR);
+            mMonth = c.get(Calendar.MONTH);
+            mDay = c.get(Calendar.DAY_OF_MONTH);
+        }
 
         setContentView(R.layout.animations_main_screen);
 
@@ -187,19 +153,12 @@ public class LunarCalendar extends Activity {
                         oldEvent.set(event.getX(), event.getY());
                         break;
                     case MotionEvent.ACTION_UP:
-                        //Log.d(TAG, "oldEvent():" + oldEvent.toString());
-                        //Log.d(TAG, "upEvent():" + event.toString());
 
-                        if (getExpandRect(lunarCalendarView.mPrevMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
+                        if (Common.getExpandRect(lunarCalendarView.mPrevMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
                             AddMonth(-1);
-                        } /*else if (getExpandRect(lunarCalendarView.mPrevYearR, 20).contains((int) event.getX(), (int) event.getY())) {
-                            // Toast.makeText(getBaseContext(), lunarCalendarView.mPrevYearR.toString() + ":" + event.getX() + "," + (int) event.getY(), Toast.LENGTH_LONG).show();
-                            AddMonth(-12);
-                          }*/else if (getExpandRect(lunarCalendarView.mNextMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
+                        } else if (Common.getExpandRect(lunarCalendarView.mNextMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
                             AddMonth(1);
-                        } /*else if (getExpandRect(lunarCalendarView.mNextYearR, 20).contains((int) event.getX(), (int) event.getY())) {
-                            AddMonth(12);
-                          } */else if (lunarCalendarView.titleRect.contains((int) event.getX(), (int) event.getY())) {
+                        } else if (lunarCalendarView.titleRect.contains((int) event.getX(), (int) event.getY())) {
                             showDialog(LunarCalendar.DATE_DIALOG_ID);
                         } else {
                             if (event.getX() - oldEvent.getX() > 50) {//Right
@@ -217,12 +176,8 @@ public class LunarCalendar extends Activity {
                                     AddMonth(1);
                                 }
                             } else if (event.getY() - oldEvent.getY() > 50) {
-                                //applyRotation(-1, 0, 180);
-                                //AddMonth(-12);
                                 mAddMonthOffset = -12;
                             } else if (event.getY() - oldEvent.getY() < -50) {
-                                //applyRotation(1, 360, 180);
-                                //AddMonth(12);
                                 mAddMonthOffset = 12;
                             } else {
                                 lunarCalendarView.setSelection((int) (event.getX() / lunarCalendarView.getTileWidth()), (int) (event.getY() / lunarCalendarView.getTileHeight()));
@@ -243,16 +198,9 @@ public class LunarCalendar extends Activity {
 
         mListView = (ListView) findViewById(R.id.ContentsListView);
 
-        // Inform the list we provide context menus for items
         mListView.setOnCreateContextMenuListener(this);
         mListView.setOnItemClickListener(new ScheduleOnItemClickListener());
 
-    }
-
-    private Rect getExpandRect(Rect rect, int offset) {
-        Rect target = new Rect();
-        target.set(rect.left - offset, rect.top - (offset + 20), rect.right + offset, rect.bottom + (offset + 20));
-        return target;
     }
 
     public class ScheduleOnItemClickListener implements OnItemClickListener {
@@ -269,7 +217,6 @@ public class LunarCalendar extends Activity {
                 try {
 
                     if ("B-Plan".equals(c.getString(1))) {
-
                         intent.setAction("org.nilriri.webbibles.VIEW");
                         intent.setType("vnd.org.nilriri/web-bible");
 
@@ -285,7 +232,7 @@ public class LunarCalendar extends Activity {
 
                     startActivity(intent);
                 } catch (Exception e) {
-                    Toast.makeText(getBaseContext(), "온라인성경 앱일 설치되어있지 않거나 최신버젼이 아닙니다.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getBaseContext(), "온라인성경 앱이 설치되어있지 않거나 최신버젼이 아닙니다.", Toast.LENGTH_LONG).show();
 
                 }
             }
@@ -301,110 +248,179 @@ public class LunarCalendar extends Activity {
     public void AddMonth(int offset) {
         // 달이 바뀌면서 기존에 선택된 영역이 새로 바뀐달에서는 날짜 영역이 아닌경우 에러가 발생함.
         // TODO: 새로운 달의 날짜범위를 넘어가면 1일이나 마지막 날짜로 변환.
-        //Log.d("XXXXXXXXXXXX", "AddMonth=" + mMonth + "." + mDay);
+        try {
+            final Calendar c = Calendar.getInstance();
+            c.setFirstDayOfWeek(Calendar.SUNDAY);
+            c.set(mYear, mMonth, 1);
+            c.add(Calendar.MONTH, 1);
+            c.add(Calendar.DAY_OF_MONTH, -1);
 
-        final Calendar c = Calendar.getInstance();
-        c.setFirstDayOfWeek(Calendar.SUNDAY);
-        c.set(mYear, mMonth, 1);
-        c.add(Calendar.MONTH, 1);
-        c.add(Calendar.DAY_OF_MONTH, -1);
+            if (mDay < 1 || mDay > c.get(Calendar.DAY_OF_MONTH)) {
+                mDay = 1;
+                lunarCalendarView.setSelX(c.get(Calendar.DAY_OF_WEEK) - 1);
+                lunarCalendarView.setSelY(2);
+            }
 
-        //Log.d("AddMonth", "mDay=" + mDay + ",max=" + c.get(Calendar.DAY_OF_MONTH));
+            c.set(mYear, mMonth, mDay);
+            c.add(Calendar.MONTH, offset);
+            mYear = c.get(Calendar.YEAR);
+            mMonth = c.get(Calendar.MONTH);
+            mDay = c.get(Calendar.DAY_OF_MONTH);
 
-        if (mDay < 1 || mDay > c.get(Calendar.DAY_OF_MONTH)) {
-            mDay = 1;
-            lunarCalendarView.setSelX(c.get(Calendar.DAY_OF_WEEK) - 1);
-            lunarCalendarView.setSelY(2);
-            //updateDisplay();
+            lunarCalendarView.loadSchduleExistsInfo();
+
+            // 달이 바뀔때는 화면전체를 다시 그린다.
+            lunarCalendarView.invalidate();
+
+            // 날짜가 바뀌면 다시 조회하기 위해서 초기화한다.
+            todayEvents.clear();
+        } catch (Exception e) {
+            Log.e(Common.TAG, e.getMessage(), e);
         }
-
-        c.set(mYear, mMonth, mDay);
-        c.add(Calendar.MONTH, offset);
-
-        mYear = c.get(Calendar.YEAR);
-        mMonth = c.get(Calendar.MONTH);
-        mDay = c.get(Calendar.DAY_OF_MONTH);
-
-        //updateDisplay();
-
-        lunarCalendarView.loadSchduleExistsInfo();
-
-        // 달이 바뀔때는 화면전체를 다시 그린다.
-        lunarCalendarView.invalidate();
-
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
-        // Music.play(this, android.R.raw.);
-
-        /*
-        String uri = "geo:"+ -122.084095 + "," + 37.422006;   
-        startActivity(new Intent(android.content.Intent.ACTION_VIEW, Uri.parse(uri)));   
-          
-        // You can also choose to place a point like so:   
-        String uris = "geo:"+ 37.422006 + "," + -122.084095 + "?q=my+street+address";   
-        startActivity(new Intent(android.content.Intent.ACTION_VIEW, Uri.parse(uris)));           
-        */
-
-        /*
-        
-        Intent intent = new Intent();   
-        intent.setAction(Intent.ACTION_PICK);   
-        Uri startDir = Uri.fromFile(new File("/sdcard"));   
-        // Files and directories   
-        intent.setDataAndType(startDir, "vnd.android.cursor.dir/lysesoft.andexplorer.file");   
-        // Optional filtering on file extension.   
-        intent.putExtra("browser_filter_extension_whitelist", "*.png,*.txt,*.mp3");   
-        // Title   
-        intent.putExtra("explorer_title", "Select a file");   
-        // Optional colors   
-        intent.putExtra("browser_title_background_color", "440000AA");   
-        intent.putExtra("browser_title_foreground_color", "FFFFFFFF");   
-        intent.putExtra("browser_list_background_color", "66000000");   
-        // Optional font scale   
-        intent.putExtra("browser_list_fontscale", "120%");   
-        // Optional 0=simple list, 1 = list with filename and size, 2 = list with filename, size and date.   
-        intent.putExtra("browser_list_layout", "2");   
-        startActivityForResult(intent, 0);
-        */
-
-        if (Prefs.getAlarmCheck(this)) {
-            long firstTime = SystemClock.elapsedRealtime();
-
-            // ScheduleBean the alarm!
-            AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, 1000 * 60 * 5, mAlarmSender);
-
-            // Tell the user about what we did.
-            // Toast.makeText(this, "알람이 설정되었습니다.", Toast.LENGTH_LONG).show();           
-
-        } else {
-            // And cancel the alarm.
-            AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            am.cancel(mAlarmSender);
-
-            // Tell the user about what we did.
-            // Toast.makeText(this, "알람이 해재되었습니다.", Toast.LENGTH_LONG).show();
+    protected void onDestroy() {
+        super.onDestroy();
+        if (dao != null) {
+            dao.close();
         }
-        //화면으로 복귀할때 새로 등록되거나 삭제된 일정정보를 화면에 갱신한다.
-
-        lunarCalendarView.loadSchduleExistsInfo();
-
-        updateDisplay();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // 설정화면에서 sd카드 사용여부를 변경하면 dao를 지정한 위치의 db로 다시 연결한다.
+        if (dao.mSdcarduse != Prefs.getSDCardUse(this)) {
+            dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+        }
+
+        /*
+                if (Prefs.getAlarmCheck(this)) {// 알람생성
+                    long firstTime = SystemClock.elapsedRealtime();
+
+                    AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                    am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, 1000 * 60 * 5, mAlarmSender);
+                } else {// 알람해제
+                    AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                    am.cancel(mAlarmSender);
+                }
+        */
+        //화면으로 복귀할때 새로 등록되거나 삭제된 일정정보를 화면에 갱신한다.
+        lunarCalendarView.loadSchduleExistsInfo();
+
+        updateDisplay();
     }
 
     public void updateDisplay() {
-
         lunarCalendarView.setSelection(lunarCalendarView.getSelX(), lunarCalendarView.getSelY());
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see android.app.Activity#onCreateDialog(int)
+     * 날짜 선택 대화상자 생성및 표시.
+     */
+
+    private class ShowOnlineCalendar extends AsyncTask<Void, Void, Void> {
+        private ProgressDialog dialog;
+        private AlertDialog.Builder builder;
+
+        @Override
+        protected void onPreExecute() {
+            dialog = ProgressDialog.show(LunarCalendar.this, "", "구글캘린더에서 일정을 가져오고 있습니다...", true);
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            try {
+                String url = Prefs.getOnlineCalendar(LunarCalendar.this);
+
+                Calendar c = Calendar.getInstance();
+                c.set(mYear, mMonth, mDay);
+                c.add(Calendar.DAY_OF_MONTH, -1);
+
+                StringBuilder where = new StringBuilder("?start-min=");
+                where.append(Common.fmtDate(c));
+                where.append("&start-max=");
+                c.add(Calendar.DAY_OF_MONTH, 2);
+                where.append(Common.fmtDate(c));
+                url += where.toString();
+
+                if (todayEvents.size() <= 0) {
+                    GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(LunarCalendar.this));
+                    todayEvents = gu.getEvents(url);
+                    if (todayEvents.size() <= 0) {
+                        cancel(true);
+                    }
+                }
+
+                String names[] = new String[todayEvents.size()];
+                final String index[] = new String[todayEvents.size()];
+
+                for (int i = 0; i < todayEvents.size(); i++) {
+                    names[i] = todayEvents.get(i).getStartDate().substring(5, 10) + " : " + todayEvents.get(i).title;
+                    index[i] = todayEvents.get(i).content;
+                }
+
+                builder = new AlertDialog.Builder(LunarCalendar.this);
+                builder.setTitle("확인할 일정을 선택하십시오.");
+                builder.setItems(names, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+
+                        try {
+
+                            if (index[which].indexOf("bindex:") >= 0) {
+
+                                String bindex = index[which].replace("bindex:", "");
+                                String data[] = Common.tokenFn(bindex, ",");
+
+                                Intent intent = new Intent();
+                                intent.setAction("org.nilriri.webbibles.VIEW");
+                                intent.setType("vnd.org.nilriri/web-bible");
+
+                                intent.putExtra("VERSION", 0);
+                                intent.putExtra("VERSION2", 0);
+                                intent.putExtra("BOOK", Integer.parseInt(data[0]));
+                                intent.putExtra("CHAPTER", Integer.parseInt(data[1]));
+                                intent.putExtra("VERSE", 0);
+
+                                startActivity(intent);
+                            } else {
+                                Toast.makeText(LunarCalendar.this, index[which], Toast.LENGTH_LONG).show();
+                            }
+
+                        } catch (Exception e) {
+                            Toast.makeText(LunarCalendar.this, "온라인성경 앱이 설치되어있지 않거나 최신버젼이 아닙니다.", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+
+            } catch (IOException e) {
+                cancel(true);
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            dialog.dismiss();
+
+            if (todayEvents.size() > 0) {
+                builder.show();
+            } else {
+                Toast.makeText(LunarCalendar.this, "구독하는 달력에 등록된 일정이 없습니다.", Toast.LENGTH_LONG).show();
+            }
+
+        }
     }
 
     @Override
@@ -412,23 +428,6 @@ public class LunarCalendar extends Activity {
         switch (id) {
             case DATE_DIALOG_ID:
                 return new DatePickerDialog(this, mDateSetListener, mYear, mMonth, mDay);
-            case DIALOG_ACCOUNTS:
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("Select a Google account");
-                final AccountManager manager = AccountManager.get(this);
-                final Account[] accounts = manager.getAccountsByType("com.google");
-
-                final int size = accounts.length;
-                String[] names = new String[size];
-                for (int i = 0; i < size; i++) {
-                    names[i] = accounts[i].name;
-                }
-                builder.setItems(names, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        gotAccount(manager, accounts[which]);
-                    }
-                });
-                return builder.create();
         }
         return null;
     }
@@ -443,7 +442,6 @@ public class LunarCalendar extends Activity {
     }
 
     private DatePickerDialog.OnDateSetListener mDateSetListener = new DatePickerDialog.OnDateSetListener() {
-
         public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
             mYear = year;
             mMonth = monthOfYear;
@@ -454,260 +452,148 @@ public class LunarCalendar extends Activity {
         }
     };
 
+    public void onSelectTargetCalendar(int choice) {
+        
+        final int mChoice = choice;
+
+        final String names[] = Prefs.getSyncCalendarName(LunarCalendar.this);
+        final String values[] = Prefs.getSyncCalendarValue(LunarCalendar.this);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(LunarCalendar.this);
+        builder.setTitle("배치 작업을 실행할 달력을 선택하십시오.");
+        builder.setItems(names, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+
+                try {
+
+                    switch (mChoice) {
+                        case 0: // <item>음력일정 일괄생성</item>
+
+                            dao.batchMakeCalendar(LunarCalendar.this, values[which]);
+
+                            break;
+                        case 1: // <item>맥체인성경읽기 일정생성(가정)</item>
+
+                            dao.batchBibleCalendar(LunarCalendar.this, values[which], which + "");
+
+                            break;
+                        case 2: // <item>맥체인성경읽기 일정생성(개인)</item>
+                            dao.batchBibleCalendar(LunarCalendar.this, values[which], which + "");
+
+                            break;
+                        case 3: // <item>로컬일정 일괄 생성</item>
+
+                            dao.batchUpload(LunarCalendar.this, values[which]);
+
+                            break;
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(LunarCalendar.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        }).show();
+
+    }
+
+    public void onBatchJob() {
+
+        String dataworks[] = getResources().getStringArray(R.array.entries_batchjobs);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(LunarCalendar.this);
+        builder.setTitle("배치 작업을 선택하십시오.");
+        builder.setItems(dataworks, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+
+                try {
+
+                    onSelectTargetCalendar(which);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(LunarCalendar.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        }).show();
+
+    }
+
+    public void onDataWork() {
+
+        String dataworks[] = getResources().getStringArray(R.array.entries_dataworks);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(LunarCalendar.this);
+        builder.setTitle("작업을 선택하십시오.");
+        builder.setItems(dataworks, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+
+                try {
+                    switch (which) {
+                        case 0: // 백업
+
+                            DataManager.StartBackup(LunarCalendar.this);
+
+                            break;
+                        case 1: // 복원
+
+                            DataManager.StartRestore(LunarCalendar.this);
+                            AddMonth(0);
+                            updateDisplay();
+
+                            break;
+                        case 2: // csv export
+                            break;
+                        case 3: // csv import
+                            break;
+                    }
+
+                } catch (Exception e) {
+                    Toast.makeText(LunarCalendar.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        }).show();
+
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
+     * 옵션메뉴 생성.
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
 
-        // This is our one standard application action -- inserting a
-        // new note into the list.
-        MenuItem item1 = menu.add(0, MENU_ITEM_ADDSCHEDULE, 0, R.string.schedule_add_label);
-        item1.setIcon(android.R.drawable.ic_menu_add);
+        MenuItem itemAdd = menu.add(0, MENU_ITEM_ADDSCHEDULE, 0, R.string.schedule_add_label);
+        itemAdd.setIcon(android.R.drawable.ic_menu_add);
 
-        MenuItem item2 = menu.add(0, MENU_ITEM_ALLSCHEDULE, 0, R.string.schedule_alllist_label);
-        item2.setIcon(android.R.drawable.ic_menu_agenda);
+        MenuItem itemAllList = menu.add(0, MENU_ITEM_ALLSCHEDULE, 0, R.string.schedule_alllist_label);
+        itemAllList.setIcon(android.R.drawable.ic_menu_agenda);
 
-        // Generate any additional actions that can be performed on the
-        // overall list.  In a normal install, there are no additional
-        // actions found here, but this allows other applications to extend
-        // our menu with their own actions.
-        //Intent intent = new Intent(null, getIntent().getData());
-        //intent.addCategory(Intent.CATEGORY_ALTERNATIVE);
-        //menu.addIntentOptions(Menu.CATEGORY_ALTERNATIVE, 0, 0, new ComponentName(this, Keypad.class), null, intent, 0, null);
-
-        if (Prefs.getGCalendarSync(this)) {
-            MenuItem item3 = menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_menu);
-            item3.setIcon(android.R.drawable.ic_menu_rotate);
+        if (!"".equals(Prefs.getSyncCalendar(this))) {
+            MenuItem itemImport = menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_menu);
+            itemImport.setIcon(android.R.drawable.ic_popup_sync);
         }
 
-        MenuItem item5 = menu.add(0, MENU_ITEM_BACKUP, 0, R.string.backup_label);
-        item5.setIcon(android.R.drawable.ic_menu_save);
+        MenuItem itemSearch = menu.add(0, MENU_ITEM_SEARCH, 0, R.string.eventsearch_label);
+        itemSearch.setIcon(android.R.drawable.ic_menu_search);
 
-        MenuItem item6 = menu.add(0, MENU_ITEM_RESTORE, 0, R.string.restore_label);
-        item6.setIcon(android.R.drawable.ic_menu_upload);
+        /*        
+                MenuItem itemBackup = menu.add(0, MENU_ITEM_BACKUP, 0, R.string.backup_label);
+                itemBackup.setIcon(android.R.drawable.ic_menu_save);
 
-        MenuItem item4 = menu.add(0, MENU_ITEM_ABOUT, 0, R.string.about_label);
-        item4.setIcon(android.R.drawable.ic_menu_help);
+                MenuItem itemRestore = menu.add(0, MENU_ITEM_RESTORE, 0, R.string.restore_label);
+                itemRestore.setIcon(android.R.drawable.ic_menu_upload);
+
+                MenuItem itemLunarEvent = menu.add(0, MENU_ITEM_MAKECAL, 0, R.string.makecal_label);
+                itemLunarEvent.setIcon(android.R.drawable.ic_menu_my_calendar);
+        */
 
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
+        inflater.inflate(R.menu.main_menu, menu);
 
         return true;
-    }
-
-    private void gotAccount(boolean tokenExpired) {
-        SharedPreferences settings = getSharedPreferences(PREF, 0);
-        String accountName = settings.getString("accountName", null);
-        if (accountName != null) {
-            AccountManager manager = AccountManager.get(this);
-            Account[] accounts = manager.getAccountsByType("com.google");
-            int size = accounts.length;
-            for (int i = 0; i < size; i++) {
-                Account account = accounts[i];
-                if (accountName.equals(account.name)) {
-                    if (tokenExpired) {
-                        manager.invalidateAuthToken("com.google", this.authToken);
-                    }
-                    gotAccount(manager, account);
-                    return;
-                }
-            }
-        }
-        showDialog(DIALOG_ACCOUNTS);
-    }
-
-    void gotAccount(final AccountManager manager, final Account account) {
-        SharedPreferences settings = getSharedPreferences(PREF, 0);
-        SharedPreferences.Editor editor = settings.edit();
-        editor.putString("accountName", account.name);
-        editor.commit();
-        new Thread() {
-
-            @Override
-            public void run() {
-                try {
-
-                    final Bundle bundle = manager.getAuthToken(account, AUTH_TOKEN_TYPE, true, null, null).getResult();
-                    runOnUiThread(new Runnable() {
-
-                        public void run() {
-                            try {
-
-                                if (bundle.containsKey(AccountManager.KEY_INTENT)) {
-                                    Intent intent = bundle.getParcelable(AccountManager.KEY_INTENT);
-                                    int flags = intent.getFlags();
-                                    flags &= ~Intent.FLAG_ACTIVITY_NEW_TASK;
-                                    intent.setFlags(flags);
-                                    startActivityForResult(intent, REQUEST_AUTHENTICATE);
-                                } else if (bundle.containsKey(AccountManager.KEY_AUTHTOKEN)) {
-                                    authenticated(bundle.getString(AccountManager.KEY_AUTHTOKEN));
-                                }
-                            } catch (Exception e) {
-                                handleException(e);
-                            }
-                        }
-                    });
-                } catch (Exception e) {
-                    handleException(e);
-                }
-            }
-        }.start();
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        switch (requestCode) {
-            case REQUEST_AUTHENTICATE:
-                if (resultCode == RESULT_OK) {
-                    gotAccount(false);
-                } else {
-                    showDialog(DIALOG_ACCOUNTS);
-                }
-                break;
-        }
-    }
-
-    void authenticated(String authToken) throws IOException {
-        this.authToken = authToken;
-        ((GoogleHeaders) transport.defaultHeaders).setGoogleLogin(authToken);
-        //RedirectHandler.resetSessionId(transport);
-
-        Calendar c = Calendar.getInstance();
-        c.setFirstDayOfWeek(Calendar.SUNDAY);
-
-        c.set(this.mYear, this.mMonth, this.mDay);
-
-        //EventFeedDemo.LoadEvents(this, c, authToken);
-
-        executeRefreshCalendars();
-
-    }
-
-    private void executeRefreshCalendars() throws IOException {
-        String[] calendarNames;
-        List<CalendarEntry> calendars = this.calendars;
-        calendars.clear();
-        try {
-            CalendarUrl url = CalendarUrl.forOwnCalendarsFeed();
-            //CalendarUrl url = CalendarUrl.forAllCalendarsFeed();
-            // page through results
-            while (true) {
-                Log.d("XXXXXX", "forAllCalendarsFeed=" + url);
-
-                CalendarFeed feed = CalendarFeed.executeGet(transport, url);
-                if (feed.calendars != null) {
-                    calendars.addAll(feed.calendars);
-                }
-                String nextLink = feed.getNextLink();
-                if (nextLink == null) {
-                    break;
-                }
-            }
-            int numCalendars = calendars.size();
-            calendarNames = new String[numCalendars];
-            for (int i = 0; i < numCalendars; i++) {
-                calendarNames[i] = calendars.get(i).title;
-            }
-
-            for (int i = 0; i < calendars.size(); i++) {
-                // Log.d(TAG, "Calendars=" + calendars.get(i));
-                showEvents(calendars.get(i));
-            }
-
-        } catch (IOException e) {
-            handleException(e);
-            calendarNames = new String[] { e.getMessage() };
-            calendars.clear();
-        }
-
-        /*
-         EventFeed ef = EventFeed.executeGet(transport, cu);
-
-         ScheduleBean scheduleBean = null;
-         for (int i = 0; i < ef.events.size(); i++) {
-             Log.d("XXXXXX", "title=" + ef.events.get(i).title);
-             Log.d("XXXXXX", "getStartDate=" + ef.events.get(i).getStartDate());
-             Log.d("XXXXXX", "getEndDate=" + ef.events.get(i).getEndDate());
-             Log.d("XXXXXX", "events=" + ef.events.get(i).toString());
-
-             scheduleBean = new ScheduleBean();
-
-             scheduleBean.setTitle(ef.events.get(i).title);
-             scheduleBean.setDate(ef.events.get(i).getStartDate());
-
-             scheduleBean.setContents(ef.events.get(i).contents);
-             scheduleBean.setGID(ef.events.get(i).uid);
-
-             dao.insert(scheduleBean);
-         }
-        
-         */
-
-        //setListAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, calendarNames));
-    }
-
-    private void showEvents(CalendarEntry calendar) throws IOException {
-
-        String[] eventNames;
-        List<EventEntry> events = this.events;
-        events.clear();
-        try {
-            CalendarUrl url = new CalendarUrl(calendar.getEventFeedLink());
-            while (true) {
-
-                Log.d("XXXXXX", "calendar.getSelfEventFeedLink()=" + url);
-
-                EventFeed feed = EventFeed.executeGet(transport, url);
-
-                if (feed.events != null) {
-                    events.addAll(feed.events);
-                }
-                String nexturl = feed.getNextLink();
-                if (nexturl == null) {
-                    break;
-                } else {
-                    url = new CalendarUrl(nexturl);
-                }
-            }
-            int numCalendars = events.size();
-            eventNames = new String[numCalendars];
-            for (int i = 0; i < numCalendars; i++) {
-                eventNames[i] = events.get(i).title;
-                Log.d(TAG, "events.get(i).who.size()=" + events.get(i).who.size());
-            }
-
-            for (int i = 0; i < eventNames.length; i++)
-                Log.d(TAG, "events=" + eventNames[i]);
-
-        } catch (IOException e) {
-            handleException(e);
-            eventNames = new String[] { e.getMessage() };
-            events.clear();
-        }
-
-        /*
-         EventFeed ef = EventFeed.executeGet(transport, cu);
-
-         ScheduleBean scheduleBean = null;
-         for (int i = 0; i < ef.events.size(); i++) {
-             Log.d("XXXXXX", "title=" + ef.events.get(i).title);
-             Log.d("XXXXXX", "getStartDate=" + ef.events.get(i).getStartDate());
-             Log.d("XXXXXX", "getEndDate=" + ef.events.get(i).getEndDate());
-             Log.d("XXXXXX", "events=" + ef.events.get(i).toString());
-
-             scheduleBean = new ScheduleBean();
-
-             scheduleBean.setTitle(ef.events.get(i).title);
-             scheduleBean.setDate(ef.events.get(i).getStartDate());
-
-             scheduleBean.setContents(ef.events.get(i).contents);
-             scheduleBean.setGID(ef.events.get(i).uid);
-
-             dao.insert(scheduleBean);
-         }
-        
-         */
-        //setListAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, calendarNames));
     }
 
     @Override
@@ -716,20 +602,14 @@ public class LunarCalendar extends Activity {
             case MENU_ITEM_ALLSCHEDULE: {
                 Intent intent = new Intent();
                 intent.setClass(this, ScheduleList.class);
-
                 final Calendar c = Calendar.getInstance();
                 c.set(mYear, mMonth, mDay);
                 intent.putExtra("org.nilriri.gscheduler.workday", c);
-
                 intent.putExtra("ScheduleRange", "ALL");
-
                 startActivity(intent);
-
                 return true;
             }
-
             case MENU_ITEM_ADDSCHEDULE: {
-
                 Intent intent = new Intent();
                 intent.setClass(this, ScheduleEditor.class);
 
@@ -738,88 +618,52 @@ public class LunarCalendar extends Activity {
                 c.set(mYear, mMonth, mDay);
                 intent.putExtra("STODAY", c);
                 startActivity(intent);
-
                 return true;
             }
             case MENU_ITEM_GCALIMPORT: {
-
-                Calendar c = Calendar.getInstance();
-                c.setFirstDayOfWeek(Calendar.SUNDAY);
-
-                c.set(this.mYear, this.mMonth, this.mDay);
-
-                ////////////////-------------                //////////////////////////////                
-
-                //EventFeedDemo.LoadEvents(this, c, token);
-
-                ////////////////---------------////////////////// 
-
-                showDialog(DIALOG_ACCOUNTS);
-
-                AddMonth(0);
-
+                if ("".equals(Prefs.getAuthToken(this)) || Prefs.getAuthToken(this) == null) {
+                    Toast.makeText(getBaseContext(), "Google 계정을 설정하십시오.", Toast.LENGTH_LONG).show();
+                    startActivity(new Intent(this, Prefs.class));
+                } else {
+                    dao.syncImport(this);
+                }
                 return true;
-
             }
-            case MENU_ITEM_BACKUP: {
-
-                DataManager.StartBackup(LunarCalendar.this);
-
+            case MENU_ITEM_SEARCH: { // 자료검색
+                Intent intent = new Intent();
+                intent.setClass(this, SearchData.class);
+                startActivity(intent);
                 return true;
-
             }
-            case MENU_ITEM_RESTORE: {
-
-                DataManager.StartRestore(LunarCalendar.this);
-
-                this.AddMonth(0);
-                this.updateDisplay();
-
+            case R.id.datawork: { // 자료관리
+                onDataWork();
                 return true;
-
             }
-            case R.id.settings: {
+            case R.id.batchjob: { // 배치작업
+                onBatchJob();
+                return true;
+            }
+
+            case R.id.settings: { // 설정메뉴
                 startActivity(new Intent(this, Prefs.class));
                 return true;
             }
-            case MENU_ITEM_ABOUT: {
+            case R.id.about: { // 프로그램 정보
                 startActivity(new Intent(this, About.class));
-                //startActivity(new Intent(this, ContactSelector.class));
                 return true;
             }
         }
-
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        super.onPrepareOptionsMenu(menu);
-
-        final boolean haveItems = true;//this.lunaCalendarView.getBaseline() > 0;
-
-        // If there are any notes in the list (which implies that one of
-        // them is selected), then we need to generate the actions that
-        // can be performed on the current selection.  This will be a combination
-        // of our own specific actions along with any extensions that can be
-        // found.
-        if (haveItems) {
-            // 
-            // ... is followed by whatever other actions are available...
-
-            // Give a shortcut to the edit action.
-
-        } else {
-            menu.removeGroup(Menu.CATEGORY_ALTERNATIVE);
-        }
-
-        return true;
-    }
-
+    /*
+    * (non-Javadoc)
+    * @see android.app.Activity#onCreateContextMenu(android.view.ContextMenu, android.view.View, android.view.ContextMenu.ContextMenuInfo)
+    * 팝업메뉴 생성.
+    */
     @Override
     public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 
-        // Setup the menu header        
         menu.setHeaderTitle(getResources().getString(R.string.app_name));
 
         menu.add(0, MENU_ITEM_ADDSCHEDULE, 0, R.string.add_schedule);
@@ -828,8 +672,6 @@ public class LunarCalendar extends Activity {
         menu.add(0, MENU_ITEM_MONTHSCHEDULE, 0, R.string.schedule_monthlist_label);
 
         if (view.equals(this.mListView)) {
-            //Toast.makeText(getBaseContext(),"Selected id is " + this.mListView.getItemIdAtPosition(position) , Toast.LENGTH_LONG).show();
-
             AdapterView.AdapterContextMenuInfo info;
             try {
                 info = (AdapterView.AdapterContextMenuInfo) menuInfo;
@@ -841,11 +683,10 @@ public class LunarCalendar extends Activity {
             // 사용자가 등록한 일정일경우 삭제메뉴 표시
             Cursor cursor = (Cursor) this.mListView.getItemAtPosition(info.position);
             if (cursor != null && "Schedule".equals(cursor.getString(1))) {
-                // For some reason the requested item isn't available, do nothing
                 menu.add(0, MENU_ITEM_DELSCHEDULE, 0, R.string.schedule_delete_label);
             }
-
         }
+        menu.add(0, MENU_ITEM_ONLINECAL, 0, R.string.onlinecalendar_label);
 
     }
 
@@ -898,9 +739,7 @@ public class LunarCalendar extends Activity {
                 final Calendar c = Calendar.getInstance();
                 c.set(mYear, mMonth, mDay);
                 intent.putExtra("STODAY", c);
-
                 startActivity(intent);
-
                 return true;
             }
             case MENU_ITEM_DELSCHEDULE: {
@@ -911,24 +750,28 @@ public class LunarCalendar extends Activity {
                     Log.e("LunarCalendar", "bad menuInfo", e);
                     return false;
                 }
-
-                dao.delete(info.id);
-
-                this.AddMonth(0); // refresh;
+                dao.syncDelete(info.id, this);
+                return true;
+            }
+            case MENU_ITEM_ONLINECAL: {
+                if (!"".equals(Prefs.getOnlineCalendar(LunarCalendar.this))) {
+                    new ShowOnlineCalendar().execute();
+                } else {
+                    Toast.makeText(getBaseContext(), "설정화면에서 온라인 구독 달력을 지정하십시오.", Toast.LENGTH_LONG).show();
+                }
                 return true;
             }
         }
-
         return false;
     }
 
+    /*
+     * 화면 전화 효과 설정.
+     */
     private void applyRotation(int position, float start, float end) {
-        // Find the center of the container
         final float centerX = mContainer.getWidth() / 2.0f;
         final float centerY = mContainer.getHeight() / 2.0f;
 
-        // Create a new 3D rotation with the supplied parameter
-        // The animation listener is used to trigger the next animation
         final Rotate3dAnimation rotation = new Rotate3dAnimation(start, end, centerX, centerY, 310.0f, true);
         rotation.setDuration(500);
         rotation.setFillAfter(true);
@@ -970,21 +813,10 @@ public class LunarCalendar extends Activity {
             Rotate3dAnimation rotation;
 
             if (mPosition < 0) {
-                //lunarCalendarView.setVisibility(View.GONE);
-                //lunarCalendarView.setVisibility(View.VISIBLE);
-
-                //lunarCalendarView.requestFocus();
-
                 rotation = new Rotate3dAnimation(180, 360, centerX, centerY, 310.0f, false);
             } else {
-                //lunarCalendarView.setVisibility(View.GONE);
-                //lunarCalendarView.setVisibility(View.VISIBLE);
-
-                //lunarCalendarView.requestFocus();
-
                 rotation = new Rotate3dAnimation(180, 0, centerX, centerY, 310.0f, false);
             }
-
             rotation.setDuration(500);
             rotation.setFillAfter(true);
             rotation.setInterpolator(new DecelerateInterpolator());
@@ -993,35 +825,13 @@ public class LunarCalendar extends Activity {
         }
     }
 
-    void handleException(Exception e) {
-        e.printStackTrace();
-        SharedPreferences settings = getSharedPreferences(PREF, 0);
-        boolean log = settings.getBoolean("logging", LOGGING_DEFAULT);
-        if (e instanceof HttpResponseException) {
-            HttpResponse response = ((HttpResponseException) e).response;
-            int statusCode = response.statusCode;
-            try {
-                response.ignore();
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-            if (statusCode == 401 || statusCode == 403) {
-                gotAccount(true);
-                return;
-            }
-
-            if (log) {
-                try {
-                    Log.e(TAG, "statusCode=" + statusCode);
-                    Log.e(TAG, response.parseAsString());
-                } catch (IOException parseException) {
-                    parseException.printStackTrace();
-                }
-            }
-        }
-        if (log) {
-            Log.e(TAG, e.getMessage(), e);
-        }
+    /*
+     * (non-Javadoc)
+     * @see org.nilriri.LunaCalendar.RefreshManager#refresh()
+     * 싱크 작업 종료후 화면 리프레쉬.
+     */
+    public void refresh() {
+        this.AddMonth(0);
     }
 
 }
