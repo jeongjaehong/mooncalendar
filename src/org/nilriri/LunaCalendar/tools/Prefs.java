@@ -177,7 +177,7 @@ public class Prefs extends PreferenceActivity {
     public void onPause() {
         super.onPause();
 
-        Common.checkAlarmService(getBaseContext());
+        Common.startAlarmNotifyService(getBaseContext());
 
     }
 

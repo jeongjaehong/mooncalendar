@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import org.nilriri.LunaCalendar.alarm.AlarmService_Service;
+import org.nilriri.LunaCalendar.widget.WidgetRefresh_Service;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -44,8 +45,7 @@ public class Common extends Activity {
     public static final int ONLINE_WIDGET = 0;
 
     public static final int ALARM_INTERVAL = 1000 * 60 * 5; // 5분
-    //public static final int WIDGET_REFRESH_INTERVAL = 1000 * 60 * 60; // 1시간
-    public static final int WIDGET_REFRESH_INTERVAL = 1000 * 60 * 20 * 24; // 24시간 
+    public static final int WIDGET_REFRESH_INTERVAL = 1000 * 60 * 20 * 6; // 6시간 
 
     public static final String ACTION_ALARM_START = "org.nilriri.LunarCalendar.ALARM_START";
     public static final String ACTION_ALARM_STOP = "org.nilriri.LunarCalendar.ALARM_STOP";
@@ -195,17 +195,77 @@ public class Common extends Activity {
         return target;
     }
 
-    public static void checkAlarmService(Context context) {
-        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        List<RunningAppProcessInfo> proceses = am.getRunningAppProcesses();
+    public static void srartWidgetRefreshService(Context context) {
+
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<RunningAppProcessInfo> proceses = activityManager.getRunningAppProcesses();
+        boolean isRun = false;
+
+        for (RunningAppProcessInfo process : proceses) {
+            if (process.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                if (process.processName.indexOf("WidgetRefresh_Service") >= 0) {
+                    isRun = true;
+                    Log.d(Common.TAG, "isRun=" + process.processName);
+                    break;
+                } else {
+                    Log.d(Common.TAG, "process=" + process.processName);
+                }
+
+            }
+        }
+        PendingIntent mAlarmSender = PendingIntent.getService(context, 0, new Intent(context, WidgetRefresh_Service.class), 0);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (isRun) { //실행중이면..
+            if (!Prefs.getAlarmCheck(context)) {// 알람미사용
+                // 알람서비스 중지.
+                alarmManager.cancel(mAlarmSender);
+            }
+        } else { // 실행중이 아니면...
+            if (Prefs.getAlarmCheck(context)) {// 알람사용이면
+                // 알람시작.
+                //long firstTime = System.currentTimeMillis();
+                long firstTime = SystemClock.elapsedRealtime();
+                //alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, Common.ALARM_INTERVAL, mAlarmSender);
+                alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, firstTime, Common.WIDGET_REFRESH_INTERVAL, mAlarmSender);
+            }
+        }
+
+        for (RunningAppProcessInfo process : proceses) {
+            if (process.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                if (process.processName.indexOf("WidgetRefresh_Service") >= 0) {
+                    isRun = true;
+                    Log.d(Common.TAG, "isRun=" + process.processName);
+                    break;
+                } else {
+                    Log.d(Common.TAG, "process=" + process.processName);
+                }
+
+            }
+        }
+
+    }
+
+    public static void stopWidgetRefreshService(Context context) {
+
+        PendingIntent mAlarmSender = PendingIntent.getService(context, 0, new Intent(context, WidgetRefresh_Service.class), 0);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        // 알람서비스 중지.
+        alarmManager.cancel(mAlarmSender);
+    }
+
+    public static void startAlarmNotifyService(Context context) {
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<RunningAppProcessInfo> proceses = activityManager.getRunningAppProcesses();
         boolean isRun = false;
 
         for (RunningAppProcessInfo process : proceses) {
             if (process.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
                 if (process.processName.indexOf("org.nilriri.LunaCalendar:remote") >= 0) {
                     isRun = true;
-                    Log.d(Common.TAG, "isRun=" + isRun);
+                    Log.d(Common.TAG, "isRun=" + process.processName);
                     break;
+                } else {
+                    Log.d(Common.TAG, "processName=" + process.processName);
                 }
             }
         }
@@ -219,8 +279,10 @@ public class Common extends Activity {
         } else { // 실행중이 아니면...
             if (Prefs.getAlarmCheck(context)) {// 알람사용이면
                 // 알람시작.
+                //long firstTime = System.currentTimeMillis();
                 long firstTime = SystemClock.elapsedRealtime();
-                alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, Common.ALARM_INTERVAL, mAlarmSender);
+                //alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, Common.ALARM_INTERVAL, mAlarmSender);
+                alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, firstTime, Common.ALARM_INTERVAL, mAlarmSender);
             }
         }
     }

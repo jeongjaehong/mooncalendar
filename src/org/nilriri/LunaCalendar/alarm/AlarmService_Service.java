@@ -5,7 +5,6 @@ import java.util.Calendar;
 import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.schedule.AlarmViewer;
-import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 import org.nilriri.LunaCalendar.tools.Music;
 import org.nilriri.LunaCalendar.tools.Prefs;
@@ -34,18 +33,26 @@ public class AlarmService_Service extends Service {
     public void onCreate() {
         mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
+        // 3초후 서비스 자동 종료.
         Thread thr = new Thread(null, mTask, "AlarmService_Service");
-
         thr.start();
     }
 
     @Override
     public void onStart(Intent intent, int startId) {
         try {
-            showNotification();
+            if (Prefs.getAlarmCheck(this)) {// 알람 사용에 체크했으면...
+                showNotification();
+            }
         } catch (CanceledException e) {
             mNM.cancelAll();
             Toast.makeText(this, R.string.alarm_service_finished, Toast.LENGTH_SHORT).show();
+        }
+        try {
+            if (WidgetConfigure.getReceiver(getBaseContext())) {
+                WidgetUtil.refreshWidgets(getBaseContext());
+            }
+        } catch (Exception e) {
         }
     }
 
@@ -56,8 +63,7 @@ public class AlarmService_Service extends Service {
 
     Runnable mTask = new Runnable() {
         public void run() {
-            //long endTime = System.currentTimeMillis() + 1000 * 60 * 5;
-            long endTime = System.currentTimeMillis() + Common.ALARM_INTERVAL;
+            long endTime = System.currentTimeMillis() + 1000 * 3;
             while (System.currentTimeMillis() < endTime) {
                 synchronized (mBinder) {
                     try {
@@ -76,6 +82,13 @@ public class AlarmService_Service extends Service {
         return mBinder;
     }
 
+    private final IBinder mBinder = new Binder() {
+        @Override
+        protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
+            return super.onTransact(code, data, reply, flags);
+        }
+    };
+
     private void showNotification() throws CanceledException {
 
         final Calendar c = Calendar.getInstance();
@@ -84,70 +97,57 @@ public class AlarmService_Service extends Service {
 
         displayNotify(c, lDay);
 
-        if (WidgetConfigure.getReceiver(getBaseContext())) {
-            WidgetUtil.refreshWidgets(getBaseContext());
-        }
-
     }
 
     private void displayNotify(Calendar c, String lDay) {
 
-        if (Prefs.getAlarmCheck(this)) {// 알람 사용에 체크했으면...
+        ScheduleDaoImpl dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
 
-            ScheduleDaoImpl dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+        try {
+            Cursor cursor = dao.queryAlarm(c, lDay);
 
-            try {
-                Cursor cursor = dao.queryAlarm(c, lDay);
+            while (cursor.moveToNext()) {
 
-                while (cursor.moveToNext()) {
+                Long id = cursor.getLong(0);
+                CharSequence title = cursor.getString(1);
+                CharSequence content = cursor.getString(2);
 
-                    Long id = cursor.getLong(0);
-                    CharSequence title = cursor.getString(1);
-                    CharSequence content = cursor.getString(2);
+                Notification notification = new Notification(R.drawable.clock, title, System.currentTimeMillis());
+                PendingIntent contentIntent = PendingIntent.getActivity(this, id.intValue(), new Intent(this, AlarmViewer.class).putExtra("id", id), 0);
 
-                    Notification notification = new Notification(R.drawable.clock, title, System.currentTimeMillis());
-                    PendingIntent contentIntent = PendingIntent.getActivity(this, id.intValue(), new Intent(this, AlarmViewer.class).putExtra("id", id), 0);
+                notification.setLatestEventInfo(this, title, content, contentIntent);
 
-                    notification.setLatestEventInfo(this, title, content, contentIntent);
-
-                    if (Prefs.getAlarmCheck(this)) {
-                        String uri = Prefs.getRingtone(this);
-                        if (!"".equals(uri)) {
-                            notification.sound = Uri.parse(uri);
-                        } else {
-                            Music.play(this, R.raw.ding);
-                        }
-
-                        if (Prefs.getVibrate(this)) {
-
-                            long[] vibrate = { 0, 100, 200, 300 };
-                            notification.vibrate = vibrate;
-                        }
-
-                        if (Prefs.getLedlight(this)) {
-                            notification.ledARGB = 0xff00ff00;
-                            notification.ledOnMS = 300;
-                            notification.ledOffMS = 1000;
-                            notification.flags = Notification.FLAG_SHOW_LIGHTS;
-                        }
+                if (Prefs.getAlarmCheck(this)) {
+                    String uri = Prefs.getRingtone(this);
+                    if (!"".equals(uri)) {
+                        notification.sound = Uri.parse(uri);
+                    } else {
+                        Music.play(this, R.raw.ding);
                     }
 
-                    mNM.notify(id.intValue(), notification);
+                    if (Prefs.getVibrate(this)) {
+
+                        long[] vibrate = { 0, 100, 200, 300 };
+                        notification.vibrate = vibrate;
+                    }
+
+                    if (Prefs.getLedlight(this)) {
+                        notification.ledARGB = 0xff00ff00;
+                        notification.ledOnMS = 300;
+                        notification.ledOffMS = 1000;
+                        notification.flags = Notification.FLAG_SHOW_LIGHTS;
+                    }
                 }
 
-                cursor.close();
-                dao.close();
-            } catch (Exception e) {
-                dao.close();
-                e.printStackTrace();
+                mNM.notify(id.intValue(), notification);
             }
+
+            cursor.close();
+            dao.close();
+        } catch (Exception e) {
+            dao.close();
+            e.printStackTrace();
         }
     }
 
-    private final IBinder mBinder = new Binder() {
-        @Override
-        protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
-            return super.onTransact(code, data, reply, flags);
-        }
-    };
 }

@@ -38,6 +38,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -91,10 +92,11 @@ public class ScheduleEditor extends Activity implements OnClickListener, Refresh
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.schedule_editor);
 
         ArrayAdapter<CharSequence> adapter;
-
+        
         mSchedule_date = (EditText) findViewById(R.id.schedule_date);
         mSchedule_ldate = (EditText) findViewById(R.id.schedule_ldate);
         mLunaryn = (CheckBox) findViewById(R.id.check_lunar);
@@ -597,7 +599,9 @@ public class ScheduleEditor extends Activity implements OnClickListener, Refresh
     protected void onResume() {
         super.onResume();
 
-        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+        if (dao == null || dao.isClose()) {
+            dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+        }
 
         if (null == resultIntent) {
             initScheduleEditor();
@@ -698,6 +702,7 @@ public class ScheduleEditor extends Activity implements OnClickListener, Refresh
         super.onDestroy();
 
         WidgetUtil.refreshWidgets(getBaseContext());
+
     }
 
     @Override
@@ -798,9 +803,5 @@ public class ScheduleEditor extends Activity implements OnClickListener, Refresh
         if (dao != null) {
             dao.close();
         }
-
-        // TODO Auto-generated method stub
-
     }
-
 }
