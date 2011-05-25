@@ -125,9 +125,6 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         for (int i = 0; i < events.size(); i++) {
             try {
-                GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
-                gu.deleteEvent(events.get(i));
-
                 ScheduleBean scheduleBean = new ScheduleBean(events.get(i));
                 doImport(scheduleBean);
 
@@ -1511,7 +1508,7 @@ public class ScheduleDaoImpl extends AbstractDao {
             query.append("    when  " + Schedule.SCHEDULE_REPEAT + " in ('F','P') THEN " + " ' B-Plan ' ");
             query.append("    when  " + Schedule.SCHEDULE_REPEAT + " < 9 and " + Schedule.DDAY_ALARMYN + " = 1 ");
             query.append("    then " + Schedule.SCHEDULE_DATE + "||'\n'||strftime('%Y-%m-%d', DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'localtime') ");
-            query.append("    when  " + Schedule.SCHEDULE_REPEAT + " between 1 and 8 and " + Schedule.DDAY_ALARMYN + " != 1 THEN " + Schedule.ALARM_DATE + " ||'\n'|| ifnull(case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ," + Schedule.SCHEDULE_DATE + ")");
+            query.append("    when  " + Schedule.SCHEDULE_REPEAT + " between 1 and 8 and " + Schedule.DDAY_ALARMYN + " != 1 THEN " + Schedule.ALARM_DATE + " ||'\n'|| ifnull(case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 11)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ," + Schedule.SCHEDULE_DATE + ")");
             query.append("    ELSE " + Schedule.SCHEDULE_DATE + " END " + Schedule.SCHEDULE_DATE);
         } else {
             query.append("    ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 THEN '" + mContext.getResources().getString(R.string.anniversary_label) + "'");
@@ -1793,13 +1790,13 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("    ,case when " + Schedule.SCHEDULE_REPEAT + " = 9 then " + Schedule.ALARM_DATE);
         query.append("    else " + Schedule.SCHEDULE_CONTENTS + " end " + Schedule.SCHEDULE_CONTENTS);
         query.append("    ,case " + Schedule.SCHEDULE_REPEAT + " ");
-        query.append("    when 1 then  " + Schedule.ALARM_DATE + " || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
-        query.append("    when 2 then '" + mContext.getResources().getString(R.string.every_day_label) + "' || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
-        query.append("    when 3 then '" + mContext.getResources().getString(R.string.every_week_label) + "' || d.dayname || ' '|| case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
+        query.append("    when 1 then  " + Schedule.ALARM_DATE + " || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 11)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
+        query.append("    when 2 then '" + mContext.getResources().getString(R.string.every_day_label) + "' || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 11)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
+        query.append("    when 3 then '" + mContext.getResources().getString(R.string.every_week_label) + "' || d.dayname || ' '|| case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 11)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
         query.append("    when 4 then '" + mContext.getResources().getString(R.string.every_month_label) + "' || ( ");
         query.append("        case when " + Schedule.ALARM_LUNASOLAR + " = 0 then '" + mContext.getResources().getString(R.string.gregorian) + "' else '" + mContext.getResources().getString(R.string.lunar) + "' end)|| ' '|| " + Schedule.ALARM_DAY + " || '" + mContext.getResources().getString(R.string.day_label) + "' ");
         query.append("    when 5 then '" + mContext.getResources().getString(R.string.every_year_label) + "' || ( ");
-        query.append("        case when " + Schedule.ALARM_LUNASOLAR + " = 0 then '" + mContext.getResources().getString(R.string.gregorian) + "' else '" + mContext.getResources().getString(R.string.lunar) + "' end)|| ' '|| " + Schedule.ALARM_DATE + " || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
+        query.append("        case when " + Schedule.ALARM_LUNASOLAR + " = 0 then '" + mContext.getResources().getString(R.string.gregorian) + "' else '" + mContext.getResources().getString(R.string.lunar) + "' end)|| ' '|| " + Schedule.ALARM_DATE + " || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 11)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
         query.append("    else '" + mContext.getResources().getString(R.string.alarm_none) + "' end alarm_detailinfo ");
         query.append("    ,case when cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) < 0   ");
         query.append("          then 'D ' || cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) || 'day'  ");
@@ -1816,6 +1813,13 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     }
 
+    public boolean isClose() {
+        if (db != null) {
+            return !db.isOpen();
+        }
+        return false;
+    }
+
     @Override
     public void close() {
         if (db != null) {
@@ -1828,7 +1832,6 @@ public class ScheduleDaoImpl extends AbstractDao {
     public void onDestroy() {
         close();
         super.onDestroy();
-
     }
 
 }

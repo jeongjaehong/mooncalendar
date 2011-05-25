@@ -36,6 +36,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.SubMenu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -70,6 +71,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
     public static final int MENU_ITEM_MAKECAL = Menu.FIRST + 11;
     public static final int MENU_ITEM_ONLINECAL = Menu.FIRST + 12;
     public static final int MENU_ITEM_SEARCH = Menu.FIRST + 13;
+    public static final int MENU_ITEM_EDITSCHEDULE = Menu.FIRST + 14;
 
     // date and time
     public int mYear;
@@ -89,7 +91,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
         super.onCreate(savedInstanceState);
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        Common.checkAlarmService(LunarCalendar.this);
+        Common.startAlarmNotifyService(LunarCalendar.this);
 
         dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
         oldEvent = new OldEvent(-1, -1);
@@ -319,6 +321,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
     }
 
     public void updateDisplay() {
+        AddMonth(0);
         lunarCalendarView.setSelection(lunarCalendarView.getSelX(), lunarCalendarView.getSelY());
     }
 
@@ -453,7 +456,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
     };
 
     public void onSelectTargetCalendar(int choice) {
-        
+
         final int mChoice = choice;
 
         final String names[] = Prefs.getSyncCalendarName(LunarCalendar.this);
@@ -538,7 +541,6 @@ public class LunarCalendar extends Activity implements RefreshManager {
                         case 1: // 복원
 
                             DataManager.StartRestore(LunarCalendar.this);
-                            AddMonth(0);
                             updateDisplay();
 
                             break;
@@ -568,27 +570,20 @@ public class LunarCalendar extends Activity implements RefreshManager {
         MenuItem itemAdd = menu.add(0, MENU_ITEM_ADDSCHEDULE, 0, R.string.schedule_add_label);
         itemAdd.setIcon(android.R.drawable.ic_menu_add);
 
-        MenuItem itemAllList = menu.add(0, MENU_ITEM_ALLSCHEDULE, 0, R.string.schedule_alllist_label);
-        itemAllList.setIcon(android.R.drawable.ic_menu_agenda);
+        //MenuItem itemAllList = menu.add(0, MENU_ITEM_ALLSCHEDULE, 0, R.string.schedule_alllist_label);
+        //itemAllList.setIcon(android.R.drawable.ic_menu_agenda);
 
-        if (!"".equals(Prefs.getSyncCalendar(this))) {
-            MenuItem itemImport = menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_menu);
-            itemImport.setIcon(android.R.drawable.ic_popup_sync);
-        }
+        SubMenu subMenu = menu.addSubMenu("일정목록").setIcon(android.R.drawable.ic_menu_agenda);
+        subMenu.add(0, MENU_ITEM_ALLSCHEDULE, 0, R.string.schedule_alllist_label);
+        subMenu.add(0, MENU_ITEM_SCHEDULELIST, 0, R.string.schedule_todaylist_label);
+        subMenu.add(0, MENU_ITEM_WEEKSCHEDULE, 0, R.string.schedule_weeklist_label);
+        subMenu.add(0, MENU_ITEM_MONTHSCHEDULE, 0, R.string.schedule_monthlist_label);
+
+        MenuItem itemImport = menu.add(0, MENU_ITEM_GCALIMPORT, 0, R.string.schedule_gcalimport_menu);
+        itemImport.setIcon(android.R.drawable.ic_popup_sync);
 
         MenuItem itemSearch = menu.add(0, MENU_ITEM_SEARCH, 0, R.string.eventsearch_label);
         itemSearch.setIcon(android.R.drawable.ic_menu_search);
-
-        /*        
-                MenuItem itemBackup = menu.add(0, MENU_ITEM_BACKUP, 0, R.string.backup_label);
-                itemBackup.setIcon(android.R.drawable.ic_menu_save);
-
-                MenuItem itemRestore = menu.add(0, MENU_ITEM_RESTORE, 0, R.string.restore_label);
-                itemRestore.setIcon(android.R.drawable.ic_menu_upload);
-
-                MenuItem itemLunarEvent = menu.add(0, MENU_ITEM_MAKECAL, 0, R.string.makecal_label);
-                itemLunarEvent.setIcon(android.R.drawable.ic_menu_my_calendar);
-        */
 
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
@@ -599,16 +594,12 @@ public class LunarCalendar extends Activity implements RefreshManager {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case MENU_ITEM_ALLSCHEDULE: {
-                Intent intent = new Intent();
-                intent.setClass(this, ScheduleList.class);
-                final Calendar c = Calendar.getInstance();
-                c.set(mYear, mMonth, mDay);
-                intent.putExtra("org.nilriri.gscheduler.workday", c);
-                intent.putExtra("ScheduleRange", "ALL");
-                startActivity(intent);
+            case MENU_ITEM_ALLSCHEDULE:
+            case MENU_ITEM_SCHEDULELIST:
+            case MENU_ITEM_WEEKSCHEDULE:
+            case MENU_ITEM_MONTHSCHEDULE:
+                this.openScheduleList(item.getItemId());
                 return true;
-            }
             case MENU_ITEM_ADDSCHEDULE: {
                 Intent intent = new Intent();
                 intent.setClass(this, ScheduleEditor.class);
@@ -621,8 +612,8 @@ public class LunarCalendar extends Activity implements RefreshManager {
                 return true;
             }
             case MENU_ITEM_GCALIMPORT: {
-                if ("".equals(Prefs.getAuthToken(this)) || Prefs.getAuthToken(this) == null) {
-                    Toast.makeText(getBaseContext(), "Google 계정을 설정하십시오.", Toast.LENGTH_LONG).show();
+                if ("".equals(Prefs.getSyncCalendar(this)) || Prefs.getSyncCalendar(this) == null) {
+                    Toast.makeText(getBaseContext(), "Google 계정 및 동기화 정보를 확인 하십시오.", Toast.LENGTH_LONG).show();
                     startActivity(new Intent(this, Prefs.class));
                 } else {
                     dao.syncImport(this);
@@ -656,6 +647,69 @@ public class LunarCalendar extends Activity implements RefreshManager {
         return super.onOptionsItemSelected(item);
     }
 
+    private void eventAddorModity(Long itemid) {
+        Intent intent = new Intent();
+        intent.setClass(this, ScheduleEditor.class);
+        intent.putExtra("SID", itemid);
+        final Calendar c = Calendar.getInstance();
+        c.set(mYear, mMonth, mDay);
+        intent.putExtra("STODAY", c);
+        startActivity(intent);
+        return;
+    }
+
+    private void openScheduleList(int choice) {
+        switch (choice) {
+
+            case MENU_ITEM_ALLSCHEDULE: {
+                Intent intent = new Intent();
+                intent.setClass(this, ScheduleList.class);
+                final Calendar c = Calendar.getInstance();
+                c.set(mYear, mMonth, mDay);
+                intent.putExtra("org.nilriri.gscheduler.workday", c);
+                intent.putExtra("ScheduleRange", "ALL");
+                startActivity(intent);
+                return;
+            }
+            case MENU_ITEM_SCHEDULELIST: {
+                Intent intent = new Intent();
+                intent.setClass(this, ScheduleList.class);
+                final Calendar c = Calendar.getInstance();
+                c.set(mYear, mMonth, mDay);
+                intent.putExtra("workday", c);
+                intent.putExtra("ScheduleRange", "TODAY");
+
+                startActivity(intent);
+
+                return;
+            }
+            case MENU_ITEM_WEEKSCHEDULE: {
+                Intent intent = new Intent();
+                intent.setClass(this, ScheduleList.class);
+                final Calendar c = Calendar.getInstance();
+                c.set(mYear, mMonth, mDay);
+                intent.putExtra("workday", c);
+                intent.putExtra("ScheduleRange", "WEEK");
+
+                startActivity(intent);
+
+                return;
+            }
+            case MENU_ITEM_MONTHSCHEDULE: {
+                Intent intent = new Intent();
+                intent.setClass(this, ScheduleList.class);
+                final Calendar c = Calendar.getInstance();
+                c.set(mYear, mMonth, mDay);
+                intent.putExtra("workday", c);
+                intent.putExtra("ScheduleRange", "MONTH");
+
+                startActivity(intent);
+
+                return;
+            }
+        }
+    }
+
     /*
     * (non-Javadoc)
     * @see android.app.Activity#onCreateContextMenu(android.view.ContextMenu, android.view.View, android.view.ContextMenu.ContextMenuInfo)
@@ -664,13 +718,16 @@ public class LunarCalendar extends Activity implements RefreshManager {
     @Override
     public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 
+        super.onCreateContextMenu(menu, view, menuInfo);
+
         menu.setHeaderTitle(getResources().getString(R.string.app_name));
+        menu.setHeaderIcon(R.drawable.icon);
 
         menu.add(0, MENU_ITEM_ADDSCHEDULE, 0, R.string.add_schedule);
-        menu.add(0, MENU_ITEM_SCHEDULELIST, 0, R.string.schedule_todaylist_label);
-        menu.add(0, MENU_ITEM_WEEKSCHEDULE, 0, R.string.schedule_weeklist_label);
-        menu.add(0, MENU_ITEM_MONTHSCHEDULE, 0, R.string.schedule_monthlist_label);
 
+        if (view.getId() == R.id.ContentsListView) {
+            menu.add(0, MENU_ITEM_EDITSCHEDULE, 0, R.string.schedule_modify_label);
+        }
         if (view.equals(this.mListView)) {
             AdapterView.AdapterContextMenuInfo info;
             try {
@@ -686,6 +743,12 @@ public class LunarCalendar extends Activity implements RefreshManager {
                 menu.add(0, MENU_ITEM_DELSCHEDULE, 0, R.string.schedule_delete_label);
             }
         }
+
+        SubMenu subMenu = menu.addSubMenu("일정목록보기").setIcon(android.R.drawable.ic_menu_agenda);
+        subMenu.add(0, MENU_ITEM_SCHEDULELIST, 0, R.string.schedule_todaylist_label);
+        subMenu.add(0, MENU_ITEM_WEEKSCHEDULE, 0, R.string.schedule_weeklist_label);
+        subMenu.add(0, MENU_ITEM_MONTHSCHEDULE, 0, R.string.schedule_monthlist_label);
+
         menu.add(0, MENU_ITEM_ONLINECAL, 0, R.string.onlinecalendar_label);
 
     }
@@ -695,62 +758,36 @@ public class LunarCalendar extends Activity implements RefreshManager {
 
         switch (item.getItemId()) {
 
-            case MENU_ITEM_SCHEDULELIST: {
-                Intent intent = new Intent();
-                intent.setClass(this, ScheduleList.class);
-                final Calendar c = Calendar.getInstance();
-                c.set(mYear, mMonth, mDay);
-                intent.putExtra("workday", c);
-                intent.putExtra("ScheduleRange", "TODAY");
-
-                startActivity(intent);
-
+            case MENU_ITEM_ALLSCHEDULE:
+            case MENU_ITEM_SCHEDULELIST:
+            case MENU_ITEM_WEEKSCHEDULE:
+            case MENU_ITEM_MONTHSCHEDULE:
+                this.openScheduleList(item.getItemId());
                 return true;
-            }
-            case MENU_ITEM_WEEKSCHEDULE: {
-                Intent intent = new Intent();
-                intent.setClass(this, ScheduleList.class);
-                final Calendar c = Calendar.getInstance();
-                c.set(mYear, mMonth, mDay);
-                intent.putExtra("workday", c);
-                intent.putExtra("ScheduleRange", "WEEK");
-
-                startActivity(intent);
-
-                return true;
-            }
-            case MENU_ITEM_MONTHSCHEDULE: {
-                Intent intent = new Intent();
-                intent.setClass(this, ScheduleList.class);
-                final Calendar c = Calendar.getInstance();
-                c.set(mYear, mMonth, mDay);
-                intent.putExtra("workday", c);
-                intent.putExtra("ScheduleRange", "MONTH");
-
-                startActivity(intent);
-
-                return true;
-            }
             case MENU_ITEM_ADDSCHEDULE: {
-
-                Intent intent = new Intent();
-                intent.setClass(this, ScheduleEditor.class);
-                intent.putExtra("SID", new Long(0));
-                final Calendar c = Calendar.getInstance();
-                c.set(mYear, mMonth, mDay);
-                intent.putExtra("STODAY", c);
-                startActivity(intent);
+                eventAddorModity(new Long(0));
+                return true;
+            }
+            case MENU_ITEM_EDITSCHEDULE: {
+                AdapterView.AdapterContextMenuInfo info;
+                try {
+                    info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+                    eventAddorModity(info.id);
+                } catch (ClassCastException e) {
+                    Log.e("LunarCalendar", "bad menuInfo", e);
+                    return false;
+                }
                 return true;
             }
             case MENU_ITEM_DELSCHEDULE: {
                 AdapterView.AdapterContextMenuInfo info;
                 try {
                     info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+                    dao.syncDelete(info.id, this);
                 } catch (ClassCastException e) {
                     Log.e("LunarCalendar", "bad menuInfo", e);
                     return false;
                 }
-                dao.syncDelete(info.id, this);
                 return true;
             }
             case MENU_ITEM_ONLINECAL: {
