@@ -19,8 +19,10 @@
 	<color name="cal_todaybox">#ab94BA21</color>
 	
 	<color name="orange">#abff7921</color>
+	<color name="sun_background">#ffffeeee</color>
 	<color name="widget_dday">#abff7921</color>
 	<color name="cal_groupdate">#ab44D944</color>
+	<color name="disable_text">#66cccccc</color>
 	
 	
 	

@@ -28,7 +28,8 @@
 					android:src="@drawable/ic_dialog_time" />
 				<TextView android:id="@+id/alertTitle" style="?android:attr/textAppearanceLarge"
 					android:singleLine="true" android:text="음력을 선택하십시오."
-					android:layout_width="wrap_content" android:layout_height="wrap_content" />
+					android:textSize="14sp" android:layout_width="wrap_content"
+					android:layout_height="wrap_content" />
 			</LinearLayout>
 			<ImageView android:id="@+id/titleDivider"
 				android:layout_width="match_parent" android:layout_height="1dip"
