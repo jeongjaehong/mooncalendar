@@ -23,6 +23,12 @@ public class DaoCreator {
 
         onInsertAnniversary(context, db);
 
+        onCreateDumy(db);
+
+        onCreateTargetView(db);
+
+        onCreateCalendarView(db);
+
     }
 
     public void onCreateSchedule(SQLiteDatabase db) {
@@ -39,7 +45,7 @@ public class DaoCreator {
             query.append("    ," + Schedule.ALARM_LUNASOLAR + " INTEGER ");
             query.append("    ," + Schedule.ALARM_DATE + " VARCHR ");
             query.append("    ," + Schedule.ALARM_TIME + " VARCHR ");
-            query.append("    ," + Schedule.ALARM_DAYS + " INTEGER ");
+            query.append("    ," + Schedule.ALARM_DAYOFWEEK + " INTEGER ");
             query.append("    ," + Schedule.ALARM_DAY + " INTEGER ");
             query.append("    ," + Schedule.DDAY_ALARMYN + " INTEGER ");
             query.append("    ," + Schedule.DDAY_ALARMDAY + " INTEGER ");
@@ -71,6 +77,109 @@ public class DaoCreator {
         }
     }
 
+    public void onCreateTargetView(SQLiteDatabase db) {
+        try {
+            StringBuffer query = new StringBuffer("create  view  if not exists vw_target as ");
+
+            query.append("select /* 일정, 기념일, 반복일정 - 음력 */ ");
+            query.append("        _id, ");
+            query.append("        case when anniversary = 'Y' then  ");
+            query.append("                case when strftime('%m-', date(schedule_date)) < '03' then strftime('%Y-', date('now', '-1 years'))  ");
+            query.append("                        else strftime('%Y-', date('now')) end || substr(schedule_ldate, -5)  ");
+            query.append("            when schedule_repeat = 1 then null ");
+            query.append("            when schedule_repeat = 2 then null ");
+            query.append("            when schedule_repeat = 3 then null ");
+            query.append("            when schedule_repeat = 4 then strftime('%Y-%m-', date('now')) || alarm_day ");
+            query.append("            when schedule_repeat = 5 then strftime('%Y-', date('now')) || substr(alarm_date, -5) ");
+            query.append("            when schedule_repeat = 6 then null ");
+            query.append("            when anniversary = 'N' and schedule_repeat = 0 then schedule_ldate ");
+            query.append("            else schedule_ldate end as ltarget_date , ");
+            query.append("        null starget_date, ");
+            query.append("        case when schedule_repeat = 1 then null ");
+            query.append("            when schedule_repeat = 2 then null ");
+            query.append("            when schedule_repeat = 3 then null ");
+            query.append("            when schedule_repeat = 4 then strftime('%Y-%m-', date('now')) || alarm_day ");
+            query.append("            when schedule_repeat = 5 then strftime('%Y-', date('now')) || substr(alarm_date, -5) ");
+            query.append("            when schedule_repeat = 6 then null ");
+            query.append("            else null end as alarm_date , ");
+            query.append("        case when schedule_repeat between 1 and 5 then alarm_time  ");
+            query.append("            when schedule_repeat = 6 and  ");
+            query.append("                cast (julianday('now', 'localtime') -  julianday(schedule_date, 'localtime') as integer) % alarm_day = 0  ");
+            query.append("            then alarm_time  ");
+            query.append("            else null end as alarm_time ");
+            query.append("from schedule   ");
+            query.append("where schedule_date > '1900-01-01'  ");
+            query.append("    and (alarm_lunasolar = 1 or lunaryn = 'Y') ");
+            query.append("union all ");
+            query.append("select  /* 일정, 기념일, 반복일정 - 양력 */ ");
+            query.append("        _id, ");
+            query.append("        null ltarget_date, ");
+            query.append("        case when anniversary = 'Y' then strftime('%Y-', date('now'))  || substr(schedule_date, -5)  ");
+            query.append("            when schedule_repeat = 1 then alarm_date ");
+            query.append("            when schedule_repeat = 2 then strftime('%Y-%m-%d', date('now'))  ");
+            query.append("            when schedule_repeat = 3 then strftime('%Y-%m-%d', date('now', 'weekday '||alarm_days))  ");
+            query.append("            when schedule_repeat = 4 then strftime('%Y-%m-', date('now')) || alarm_day ");
+            query.append("            when schedule_repeat = 5 then strftime('%Y-', date('now')) || substr(alarm_date, -5) ");
+            query.append("            when schedule_repeat = 6 and  ");
+            query.append("                    cast (julianday('now', 'localtime') -  julianday(schedule_date, 'localtime') as integer) % alarm_day = 0  ");
+            query.append("            then strftime('%Y-%m-%d', date('now'))  ");
+            query.append("            when anniversary = 'N' and schedule_repeat = 0 then schedule_date ");
+            query.append("            else schedule_date end as starget_date , ");
+            query.append("        case when schedule_repeat = 1 then alarm_date ");
+            query.append("            when schedule_repeat = 2 then strftime('%Y-%m-%d', date('now'))  ");
+            query.append("            when schedule_repeat = 3 then strftime('%Y-%m-%d', date('now', 'weekday '||alarm_days))  ");
+            query.append("            when schedule_repeat = 4 then strftime('%Y-%m-', date('now')) || alarm_day ");
+            query.append("            when schedule_repeat = 5 then strftime('%Y-', date('now')) || substr(alarm_date, -5) ");
+            query.append("            when schedule_repeat = 6 and  ");
+            query.append("                    cast (julianday('now', 'localtime') -  julianday(schedule_date, 'localtime') as integer) % alarm_day = 0  ");
+            query.append("            then strftime('%Y-%m-%d', date('now'))  ");
+            query.append("            else null end as alarm_date , ");
+            query.append("        case when schedule_repeat between 1 and 5 then alarm_time  ");
+            query.append("            when schedule_repeat = 6 and  ");
+            query.append("                    cast (julianday('now', 'localtime') -  julianday(schedule_date, 'localtime') as integer) % alarm_day = 0  ");
+            query.append("            then alarm_time  ");
+            query.append("            else null end as alarm_time ");
+            query.append("from schedule   ");
+            query.append("where schedule_date > '1900-01-01'  ");
+            query.append("    and alarm_lunasolar = 0  ");
+            query.append("    and lunaryn = 'N' ");
+
+            db.execSQL(query.toString());
+        } catch (Exception e) {
+            Log.e("onCreateTargetView", e.getMessage(), e);
+        }
+    }
+
+    public void onCreateCalendarView(SQLiteDatabase db) {
+        try {
+            StringBuffer query = new StringBuffer("create  view  if not exists vw_calendar as ");
+
+            query.append("    select  ");
+            query.append("        strftime('%Y', y.yyyy||'-01-01', 'localtime') year, ");
+            query.append("        strftime('%m', y.yyyy||'-01-01', '+'||c.idx||' day', 'localtime') month, ");
+            query.append("        strftime('%d', y.yyyy||'-01-01', '+'||c.idx||' day', 'localtime') dayofmonth, ");
+            query.append("        strftime('%Y-%m-%d', y.yyyy||'-01-01', '+'||c.idx || ' day', 'localtime') basedate, ");
+            query.append("        strftime('%W', y.yyyy||'-01-01', '+'||c.idx || ' day', 'localtime') weekofyear, ");
+            query.append("        strftime('%w', y.yyyy||'-01-01', '+'||c.idx || ' day', 'localtime') dayofweek, ");
+            query.append("        strftime('%j', y.yyyy||'-01-01', '+'||c.idx || ' day', 'localtime') dayofyear, ");
+            query.append("        n.dayname, ");
+            query.append("        n.dayname || '요일' as dayfullname, ");
+            query.append("        c.idx ");
+            query.append("    from dumy c ");
+            query.append("        inner join ( ");
+            query.append("            select ");
+            query.append("                idx,  ");
+            query.append("                strftime('%Y', '1900-01-01', 'start of year', '+'||d.idx || ' year', 'localtime') as yyyy, ");
+            query.append("                strftime('%j', '1900-01-01', '+'||(d.idx+1)|| ' year', '-1 day', 'localtime') as dayofyear ");
+            query.append("            from dumy d ) y on c.idx < y.dayofyear ");
+            query.append("        inner join days n on n.days = strftime('%w', y.yyyy||'-01-01', '+'||c.idx || ' day', 'localtime') ");
+
+            db.execSQL(query.toString());
+        } catch (Exception e) {
+            Log.e("onCreateTargetView", e.getMessage(), e);
+        }
+    }
+
     public void onCreateDays(SQLiteDatabase db) {
         try {
             db.execSQL(" DROP TABLE IF EXISTS days ");
@@ -78,14 +187,31 @@ public class DaoCreator {
 
             db.beginTransaction();
 
-            db.execSQL(" insert into days values (1, 'Sun') ");
-            db.execSQL(" insert into days values (2, 'Mon') ");
-            db.execSQL(" insert into days values (3, 'Thu') ");
-            db.execSQL(" insert into days values (4, 'Wed') ");
-            db.execSQL(" insert into days values (5, 'Thu') ");
-            db.execSQL(" insert into days values (6, 'Fri') ");
-            db.execSQL(" insert into days values (7, 'Sat') ");
+            db.execSQL(" insert into days values (0, '일') ");
+            db.execSQL(" insert into days values (1, '월') ");
+            db.execSQL(" insert into days values (2, '화') ");
+            db.execSQL(" insert into days values (3, '수') ");
+            db.execSQL(" insert into days values (4, '목') ");
+            db.execSQL(" insert into days values (5, '금') ");
+            db.execSQL(" insert into days values (6, '토') ");
 
+            db.setTransactionSuccessful();
+
+            db.endTransaction();
+        } catch (Exception e) {
+            Log.e("onCreate", e.getMessage(), e);
+        }
+    }
+
+    public void onCreateDumy(SQLiteDatabase db) {
+        try {
+            db.execSQL(" CREATE  TABLE  IF NOT EXISTS dumy (_id INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL, idx INTEGER , str VARCHAR) ");
+
+            db.beginTransaction();
+
+            for (int i = 0; i <= 366; i++) {
+                db.execSQL(" insert into dumy (idx, str) values (" + i + ", '" + i + "') ");
+            }
             db.setTransactionSuccessful();
 
             db.endTransaction();
@@ -335,10 +461,15 @@ public class DaoCreator {
             case 31:
             case 32:
             case 33:
+            case 34:
                 onAlterTable3(db);
                 //google gdata sync를 위한 etag컬럼 추가.
                 onAlterTable4(db);
                 onDeleteBiblePlan(context, db);
+                onCreateDumy(db);
+                onCreateDays(db);
+                onCreateTargetView(db);
+                onCreateCalendarView(db);
                 break;
         }
 

@@ -33,7 +33,7 @@ public class ScheduleContentValues {
         }
 
         value.put(Schedule.ALARM_TIME, scheduleBean.getAlarm_time());
-        value.put(Schedule.ALARM_DAYS, scheduleBean.getAlarm_days());
+        value.put(Schedule.ALARM_DAYOFWEEK, scheduleBean.getAlarm_days());
         value.put(Schedule.ALARM_DAY, scheduleBean.getAlarm_day());
         value.put(Schedule.DDAY_ALARMYN, scheduleBean.getDday_alarmyn());
         value.put(Schedule.DDAY_ALARMDAY, scheduleBean.getDday_alarmday());

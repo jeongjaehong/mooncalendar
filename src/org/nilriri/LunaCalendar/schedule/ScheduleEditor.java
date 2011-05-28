@@ -337,10 +337,13 @@ public class ScheduleEditor extends Activity implements OnClickListener, Refresh
         mLunaAlarm_day.setVisibility(View.GONE);
         mAlarm_repeatday.setVisibility(View.GONE);
 
+
         switch (pos) {
             case 1: // 한번:날짜, 시간   yyyy.mm.dd.hh.mm
                 mAlarm_date.setVisibility(View.VISIBLE);
                 mAlarm_time.setVisibility(View.VISIBLE);
+
+                mAlarm_date.setText(Common.fmtDate());
                 break;
             case 2: // 매일 : 시간        hh.mm
                 mAlarm_time.setVisibility(View.VISIBLE);
@@ -354,11 +357,15 @@ public class ScheduleEditor extends Activity implements OnClickListener, Refresh
                 mAlarm_DayofMonth.setVisibility(scheduleBean.getAlarm_lunasolar() == 0 ? View.VISIBLE : View.GONE);
                 mLunaAlarm_day.setVisibility(scheduleBean.getAlarm_lunasolar() == 1 ? View.VISIBLE : View.GONE);
                 mAlarm_time.setVisibility(View.VISIBLE);
+                
+                mAlarm_DayofMonth.setText(Common.fmtDate().substring(8));
                 break;
             case 5: // 매년:음/양, 날짜, 시간  +-.mm.dd.hh.mm
                 mAlarm_lunasolar.setVisibility(View.VISIBLE);
                 mAlarm_date.setVisibility(View.VISIBLE);
                 mAlarm_time.setVisibility(View.VISIBLE);
+                
+                mAlarm_date.setText(Common.fmtDate().substring(5));
                 break;
             case 6: // 지정된 일수마다  +-.mm.dd.hh.mm
                 mAlarm_repeatday.setVisibility(View.VISIBLE);
@@ -400,16 +407,6 @@ public class ScheduleEditor extends Activity implements OnClickListener, Refresh
 
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.check_lunar:
-                // 음력을 선택하면 기념일 여부도 자동선택한다.
-                mAnniversary.setChecked(true);
-                break;
-            case R.id.check_anniversary:
-                //  기념일 여부
-                if (!mAnniversary.isChecked()) {
-                    mLunaryn.setChecked(false);
-                }
-                break;
             case R.id.schedule_date:
                 activecontrol = R.id.schedule_date;
                 showDialog(DATE_DIALOG_ID);

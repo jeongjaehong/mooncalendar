@@ -24,6 +24,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -127,8 +128,10 @@ public class LunarCalendarView extends View {
         Cursor cursor2 = lunarCalendar.dao.queryExistsSchedule2(queryMonth.substring(0, 7));
         while (cursor2.moveToNext()) {
             String date[] = Common.tokenFn(cursor2.getString(0), "-");
+            
+            Log.d(Common.TAG, "Lunar===>" + cursor2.getString(0));
 
-            boolean isChange = (queryMonth.substring(0, 7).compareTo(cursor2.getString(0).substring(0, 7)) > 0);
+            boolean isChange = (queryMonth.substring(0, 7).compareTo(cursor2.getString(0).substring(0, 7)) >= 0);
             String sDay = "";
             if (!isChange) {
                 int preYear = Integer.parseInt(queryMonth.substring(0, 4)) - 1;
@@ -136,8 +139,13 @@ public class LunarCalendarView extends View {
             } else {
                 sDay = Lunar2Solar.l2s(date[0], date[1], date[2]);
             }
+            Log.d(Common.TAG, "Solar===>" + sDay);
+
             int day = Integer.parseInt(sDay.substring(6));
             mScheduleMap.put(day, 1);
+            
+            Log.d(Common.TAG, "Map===>" + mScheduleMap.toString());
+ 
         }
         cursor2.close();
 
@@ -201,7 +209,7 @@ public class LunarCalendarView extends View {
             int day = cursor.getInt(0);
             //음력날짜인 경우는 양력날짜로 변환하여 저장한다.
             if (day > 31) {
-                String lday = (day > 999 ? "" + day : "0" + day);
+                String lday = (day > 9 ? "" + day : "0" + day);
                 for (int i = 1; i < mLunadays.length; i++) {
                     if (mLunadays[i].substring(4).equals(lday)) {
                         if (mAnniversaryMap.containsKey(i)) {
@@ -859,7 +867,7 @@ public class LunarCalendarView extends View {
          *      android.view.ViewGroup)
          */
         public View getView(int position, View convertView, ViewGroup parent) {
-            // A ViewHolder keeps references to children views to avoid unneccessary calls
+            // A ChildHolder keeps references to children views to avoid unneccessary calls
             // to findViewById() on each row.
             ViewHolder holder;
 
@@ -869,7 +877,7 @@ public class LunarCalendarView extends View {
             if (convertView == null) {
                 convertView = mInflater.inflate(R.layout.shcedule_item, null);
 
-                // Creates a ViewHolder and store references to the two children views
+                // Creates a ChildHolder and store references to the two children views
                 // we want to bind data to.
                 holder = new ViewHolder();
                 holder.text = (TextView) convertView.findViewById(R.id.schedule_title);
@@ -878,7 +886,7 @@ public class LunarCalendarView extends View {
 
                 convertView.setTag(holder);
             } else {
-                // Get the ViewHolder back to get fast access to the TextView
+                // Get the ChildHolder back to get fast access to the TextView
                 // and the ImageView.
                 holder = (ViewHolder) convertView.getTag();
             }
