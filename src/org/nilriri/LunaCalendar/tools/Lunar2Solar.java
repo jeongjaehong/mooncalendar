@@ -23,6 +23,10 @@ public class Lunar2Solar {
     /*2031*/{ 2, 1, 2, 3, 2, 1, 2, 2, 1, 2, 1, 2, 1 }, { 2, 1, 1, 2, 1, 2, 2, 1, 2, 2, 1, 2, 0 }, { 1, 2, 1, 1, 2, 1, 2, 3, 2, 2, 2, 1, 2 }, { 1, 2, 1, 1, 2, 1, 2, 1, 2, 2, 2, 1, 0 }, { 2, 1, 2, 1, 1, 2, 1, 1, 2, 2, 1, 2, 0 }, { 2, 2, 1, 2, 1, 1, 4, 1, 1, 2, 1, 2, 2 }, { 2, 2, 1, 2, 1, 1, 2, 1, 1, 2, 1, 2, 0 }, { 2, 2, 1, 2, 1, 2, 1, 2, 1, 1, 2, 1, 0 }, { 2, 2, 1, 2, 2, 3, 2, 1, 2, 1, 2, 1, 1 }, { 2, 1, 2, 2, 1, 2, 2, 1, 2, 1, 2, 1, 0 },
     /*2041*/{ 2, 1, 1, 2, 1, 2, 2, 1, 2, 2, 1, 2, 0 }, { 1, 2, 3, 1, 2, 1, 2, 1, 2, 2, 2, 1, 2 }, { 1, 2, 1, 1, 2, 1, 1, 2, 2, 1, 2, 2, 0 } };
 
+    public static String s2l(String date) {
+        return s2l(Integer.parseInt(date.substring(0, 4)), Integer.parseInt(date.substring(5, 7)), Integer.parseInt(date.substring(8, 10)));
+    }
+
     public static String s2l(Calendar c) {
         c.setFirstDayOfWeek(Calendar.SUNDAY);
         return s2l(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
