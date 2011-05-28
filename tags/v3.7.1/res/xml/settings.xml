@@ -11,10 +11,6 @@
 			android:title="@string/lunadays_title" android:summary="@string/lunadays_summary"
 			android:defaultValue="true" />
 
-		<CheckBoxPreference android:key="useanimation"
-			android:title="@string/animation_title" android:summary="@string/animation_summary"
-			android:defaultValue="false" />
-
 		<CheckBoxPreference android:key="anniversary"
 			android:title="@string/anniversary_title" android:summary="@string/anniversary_summary"
 			android:defaultValue="false" />
