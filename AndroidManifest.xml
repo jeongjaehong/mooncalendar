@@ -13,7 +13,10 @@
 		android:killAfterRestore="true" android:restoreAnyVersion="true">
 
 		<!-- Service -->
-		<service android:name=".alarm.AlarmService_Service"
+		<service android:name=".alarm.CalendarAlarmService"
+			android:process=":remote" />
+
+		<service android:name=".widget.WidgetRefreshService"
 			android:process=":remote" />
 
 		<!-- Receiver -->
@@ -75,6 +78,11 @@
 		<activity android:name=".tools.About" android:label="@string/about_title"
 			android:screenOrientation="user" android:configChanges="keyboardHidden|orientation"
 			android:theme="@android:style/Theme.Dialog">
+		</activity>
+
+		<activity android:name=".schedule.SearchResult"
+			android:label="@string/schedule_list_label"
+			android:screenOrientation="user" android:configChanges="keyboardHidden|orientation">
 		</activity>
 
 		<activity android:name=".schedule.ScheduleList"
