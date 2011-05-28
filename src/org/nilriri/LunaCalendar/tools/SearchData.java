@@ -3,7 +3,7 @@ package org.nilriri.LunaCalendar.tools;
 import java.util.Calendar;
 
 import org.nilriri.LunaCalendar.R;
-import org.nilriri.LunaCalendar.schedule.ScheduleList;
+import org.nilriri.LunaCalendar.schedule.SearchResult;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -86,7 +86,7 @@ public class SearchData extends Activity implements OnClickListener {
             case R.id.btn_search:
                 Intent intent = new Intent();
 
-                intent.setClass(this, ScheduleList.class);
+                intent.setClass(this, SearchResult.class);
                 final Calendar c = Calendar.getInstance();
 
                 intent.putExtra("org.nilriri.gscheduler.workday", c);

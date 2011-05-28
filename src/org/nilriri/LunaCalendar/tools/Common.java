@@ -5,8 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.nilriri.LunaCalendar.alarm.AlarmService_Service;
-import org.nilriri.LunaCalendar.widget.WidgetRefresh_Service;
+import org.nilriri.LunaCalendar.alarm.CalendarAlarmService;
+import org.nilriri.LunaCalendar.widget.WidgetRefreshService;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -203,7 +203,7 @@ public class Common extends Activity {
 
         for (RunningAppProcessInfo process : proceses) {
             if (process.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-                if (process.processName.indexOf("WidgetRefresh_Service") >= 0) {
+                if (process.processName.indexOf("WidgetRefreshService") >= 0) {
                     isRun = true;
                     Log.d(Common.TAG, "isRun=" + process.processName);
                     break;
@@ -213,7 +213,7 @@ public class Common extends Activity {
 
             }
         }
-        PendingIntent mAlarmSender = PendingIntent.getService(context, 0, new Intent(context, WidgetRefresh_Service.class), 0);
+        PendingIntent mAlarmSender = PendingIntent.getService(context, 0, new Intent(context, WidgetRefreshService.class), 0);
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (isRun) { //실행중이면..
             if (!Prefs.getAlarmCheck(context)) {// 알람미사용
@@ -232,7 +232,7 @@ public class Common extends Activity {
 
         for (RunningAppProcessInfo process : proceses) {
             if (process.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-                if (process.processName.indexOf("WidgetRefresh_Service") >= 0) {
+                if (process.processName.indexOf("WidgetRefreshService") >= 0) {
                     isRun = true;
                     Log.d(Common.TAG, "isRun=" + process.processName);
                     break;
@@ -247,7 +247,7 @@ public class Common extends Activity {
 
     public static void stopWidgetRefreshService(Context context) {
 
-        PendingIntent mAlarmSender = PendingIntent.getService(context, 0, new Intent(context, WidgetRefresh_Service.class), 0);
+        PendingIntent mAlarmSender = PendingIntent.getService(context, 0, new Intent(context, WidgetRefreshService.class), 0);
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         // 알람서비스 중지.
         alarmManager.cancel(mAlarmSender);
@@ -269,7 +269,7 @@ public class Common extends Activity {
                 }
             }
         }
-        PendingIntent mAlarmSender = PendingIntent.getService(context, 0, new Intent(context, AlarmService_Service.class), 0);
+        PendingIntent mAlarmSender = PendingIntent.getService(context, 0, new Intent(context, CalendarAlarmService.class), 0);
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (isRun) { //실행중이면..
             if (!Prefs.getAlarmCheck(context)) {// 알람미사용

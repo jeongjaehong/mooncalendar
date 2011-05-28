@@ -56,9 +56,6 @@ public class Prefs extends PreferenceActivity {
     private static final String OPT_LEDLIGHT = "ledlight";
     private static final boolean OPT_LEDLIGHT_DEF = false;
 
-    private static final String OPT_ANIMATION = "useanimation";
-    private static final boolean OPT_ANIMATION_DEF = false;
-
     private static final String OPT_ANNIVERSARY = "anniversary";
     private static final boolean OPT_ANNIVERSARY_DEF = false;
 
@@ -83,6 +80,7 @@ public class Prefs extends PreferenceActivity {
     private static final String OPT_SYNCMETHOD = "syncmethod";
     private static final String OPT_SYNCMETHOD_DEF = "stop";
 
+ 
     private ListPreference accounts;
     private ListPreference calendars;
     private ListPreference onlinecalendars;
@@ -477,10 +475,6 @@ public class Prefs extends PreferenceActivity {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OPT_LEDLIGHT, OPT_LEDLIGHT_DEF);
     }
 
-    public static boolean getAnimation(Context context) {
-        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OPT_ANIMATION, OPT_ANIMATION_DEF);
-    }
-
     public static boolean getAnniversary(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(OPT_ANNIVERSARY, OPT_ANNIVERSARY_DEF);
     }
@@ -584,4 +578,8 @@ public class Prefs extends PreferenceActivity {
     public static String getWidgetColor(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getString(OPT_WIDGETCOLOR, OPT_WIDGETCOLOR_DEF);
     }
+    
+    
+   
+    
 }
