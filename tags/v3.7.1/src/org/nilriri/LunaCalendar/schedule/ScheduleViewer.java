@@ -26,7 +26,6 @@ import org.nilriri.LunaCalendar.tools.Prefs;
 import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;

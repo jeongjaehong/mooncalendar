@@ -1,16 +1,19 @@
 package org.nilriri.LunaCalendar.widget;
 
 import org.nilriri.LunaCalendar.R;
+import org.nilriri.LunaCalendar.tools.Common;
 
 import android.app.NotificationManager;
 import android.app.Service;
+import android.appwidget.AppWidgetManager;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.RemoteException;
+import android.util.Log;
 
-public class WidgetRefresh_Service extends Service {
+public class WidgetRefreshService extends Service {
 
     public NotificationManager mNM;
 
@@ -19,17 +22,29 @@ public class WidgetRefresh_Service extends Service {
         mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
         // 3초후 서비스 자동 종료.
-        Thread thr = new Thread(null, mTask, "AlarmService_Service");
+        Thread thr = new Thread(null, mTask, "WidgetAlarmService");
         thr.start();
     }
 
     @Override
     public void onStart(Intent intent, int startId) {
         try {
-            WidgetUtil.refreshWidgets(getBaseContext());
+            Log.d(Common.TAG, "onStart=" + intent);
+            if (AppWidgetManager.ACTION_APPWIDGET_UPDATE.equals(intent.getAction())) {
+                //WidgetUtil.refreshWidgets(context);
+                AppWidgetManager awm = AppWidgetManager.getInstance(getBaseContext());
+
+                int appWidgetId = intent.getIntExtra("WidgetId", AppWidgetManager.INVALID_APPWIDGET_ID);
+
+                WidgetProvider.updateAppWidget(getBaseContext(), awm, appWidgetId);
+
+                Log.d(Common.TAG, "Refresh Call=" + appWidgetId);
+            } else {
+                WidgetUtil.refreshWidgets(getBaseContext());
+            }
         } catch (Exception e) {
         } finally {
-            WidgetRefresh_Service.this.stopSelf();
+            WidgetRefreshService.this.stopSelf();
         }
     }
 
@@ -49,7 +64,7 @@ public class WidgetRefresh_Service extends Service {
                     }
                 }
             }
-            WidgetRefresh_Service.this.stopSelf();
+            WidgetRefreshService.this.stopSelf();
         }
     };
 

@@ -7,7 +7,6 @@ import java.util.List;
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Lunar2Solar;
-import org.nilriri.LunaCalendar.tools.Prefs;
 
 import android.app.ProgressDialog;
 import android.database.Cursor;

@@ -10,15 +10,14 @@ import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.gcal.EventEntry;
 import org.nilriri.LunaCalendar.gcal.GoogleUtil;
 import org.nilriri.LunaCalendar.schedule.ScheduleEditor;
-import org.nilriri.LunaCalendar.schedule.ScheduleList;
 import org.nilriri.LunaCalendar.schedule.ScheduleViewer;
+import org.nilriri.LunaCalendar.schedule.SearchResult;
 import org.nilriri.LunaCalendar.tools.About;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.DataManager;
 import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 import org.nilriri.LunaCalendar.tools.OldEvent;
 import org.nilriri.LunaCalendar.tools.Prefs;
-import org.nilriri.LunaCalendar.tools.Rotate3dAnimation;
 import org.nilriri.LunaCalendar.tools.SearchData;
 
 import android.app.Activity;
@@ -38,12 +37,8 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.SubMenu;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.Animation;
-import android.view.animation.DecelerateInterpolator;
 import android.widget.AdapterView;
 import android.widget.DatePicker;
 import android.widget.ListView;
@@ -78,13 +73,11 @@ public class LunarCalendar extends Activity implements RefreshManager {
     public int mMonth;
     public int mDay;
     public ListView mListView;
-    private int mAddMonthOffset = 0;
     public List<EventEntry> todayEvents = new ArrayList<EventEntry>();
 
     public ScheduleDaoImpl dao = null;
 
     private LunarCalendarView lunarCalendarView;
-    private ViewGroup mContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,8 +126,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
         }
 
         setContentView(R.layout.animations_main_screen);
-
-        mContainer = (ViewGroup) findViewById(R.id.container);
+        
         lunarCalendarView = (LunarCalendarView) findViewById(R.id.lunaCalendarView);
         lunarCalendarView.requestFocus();
 
@@ -163,24 +155,10 @@ public class LunarCalendar extends Activity implements RefreshManager {
                         } else if (lunarCalendarView.titleRect.contains((int) event.getX(), (int) event.getY())) {
                             showDialog(LunarCalendar.DATE_DIALOG_ID);
                         } else {
-                            if (event.getX() - oldEvent.getX() > 50) {//Right
-                                if (Prefs.getAnimation(LunarCalendar.this)) {
-                                    applyRotation(-1, 0, 180);
-                                    mAddMonthOffset = -1;
-                                } else {
-                                    AddMonth(-1);
-                                }
-                            } else if (event.getX() - oldEvent.getX() < -50) {
-                                if (Prefs.getAnimation(LunarCalendar.this)) {
-                                    applyRotation(1, 360, 180);
-                                    mAddMonthOffset = 1;
-                                } else {
-                                    AddMonth(1);
-                                }
-                            } else if (event.getY() - oldEvent.getY() > 50) {
-                                mAddMonthOffset = -12;
-                            } else if (event.getY() - oldEvent.getY() < -50) {
-                                mAddMonthOffset = 12;
+                            if (event.getX() - oldEvent.getX() > 50 && Math.abs(event.getY() - oldEvent.getY()) < 90) {//Right
+                                AddMonth(-1);
+                            } else if (event.getX() - oldEvent.getX() < -50 && Math.abs(event.getY() - oldEvent.getY()) < 90) {
+                                AddMonth(1);
                             } else {
                                 lunarCalendarView.setSelection((int) (event.getX() / lunarCalendarView.getTileWidth()), (int) (event.getY() / lunarCalendarView.getTileHeight()));
                             }
@@ -303,17 +281,6 @@ public class LunarCalendar extends Activity implements RefreshManager {
             dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
         }
 
-        /*
-                if (Prefs.getAlarmCheck(this)) {// 알람생성
-                    long firstTime = SystemClock.elapsedRealtime();
-
-                    AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-                    am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, 1000 * 60 * 5, mAlarmSender);
-                } else {// 알람해제
-                    AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-                    am.cancel(mAlarmSender);
-                }
-        */
         //화면으로 복귀할때 새로 등록되거나 삭제된 일정정보를 화면에 갱신한다.
         lunarCalendarView.loadSchduleExistsInfo();
 
@@ -663,7 +630,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
 
             case MENU_ITEM_ALLSCHEDULE: {
                 Intent intent = new Intent();
-                intent.setClass(this, ScheduleList.class);
+                intent.setClass(this, SearchResult.class);
                 final Calendar c = Calendar.getInstance();
                 c.set(mYear, mMonth, mDay);
                 intent.putExtra("org.nilriri.gscheduler.workday", c);
@@ -673,7 +640,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
             }
             case MENU_ITEM_SCHEDULELIST: {
                 Intent intent = new Intent();
-                intent.setClass(this, ScheduleList.class);
+                intent.setClass(this, SearchResult.class);
                 final Calendar c = Calendar.getInstance();
                 c.set(mYear, mMonth, mDay);
                 intent.putExtra("workday", c);
@@ -685,7 +652,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
             }
             case MENU_ITEM_WEEKSCHEDULE: {
                 Intent intent = new Intent();
-                intent.setClass(this, ScheduleList.class);
+                intent.setClass(this, SearchResult.class);
                 final Calendar c = Calendar.getInstance();
                 c.set(mYear, mMonth, mDay);
                 intent.putExtra("workday", c);
@@ -697,7 +664,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
             }
             case MENU_ITEM_MONTHSCHEDULE: {
                 Intent intent = new Intent();
-                intent.setClass(this, ScheduleList.class);
+                intent.setClass(this, SearchResult.class);
                 final Calendar c = Calendar.getInstance();
                 c.set(mYear, mMonth, mDay);
                 intent.putExtra("workday", c);
@@ -803,70 +770,10 @@ public class LunarCalendar extends Activity implements RefreshManager {
     }
 
     /*
-     * 화면 전화 효과 설정.
-     */
-    private void applyRotation(int position, float start, float end) {
-        final float centerX = mContainer.getWidth() / 2.0f;
-        final float centerY = mContainer.getHeight() / 2.0f;
-
-        final Rotate3dAnimation rotation = new Rotate3dAnimation(start, end, centerX, centerY, 310.0f, true);
-        rotation.setDuration(500);
-        rotation.setFillAfter(true);
-        rotation.setInterpolator(new AccelerateInterpolator());
-        rotation.setAnimationListener(new DisplayNextView(position));
-
-        mContainer.startAnimation(rotation);
-    }
-
-    private final class DisplayNextView implements Animation.AnimationListener {
-        private final int mPosition;
-
-        private DisplayNextView(int position) {
-            mPosition = position;
-        }
-
-        public void onAnimationStart(Animation animation) {
-            AddMonth(mAddMonthOffset);
-        }
-
-        public void onAnimationEnd(Animation animation) {
-            mContainer.post(new SwapViews(mPosition));
-        }
-
-        public void onAnimationRepeat(Animation animation) {
-        }
-    }
-
-    private final class SwapViews implements Runnable {
-        private final int mPosition;
-
-        public SwapViews(int position) {
-            mPosition = position;
-        }
-
-        public void run() {
-            final float centerX = mContainer.getWidth() / 2.0f;
-            final float centerY = mContainer.getHeight() / 2.0f;
-            Rotate3dAnimation rotation;
-
-            if (mPosition < 0) {
-                rotation = new Rotate3dAnimation(180, 360, centerX, centerY, 310.0f, false);
-            } else {
-                rotation = new Rotate3dAnimation(180, 0, centerX, centerY, 310.0f, false);
-            }
-            rotation.setDuration(500);
-            rotation.setFillAfter(true);
-            rotation.setInterpolator(new DecelerateInterpolator());
-
-            mContainer.startAnimation(rotation);
-        }
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.nilriri.LunaCalendar.RefreshManager#refresh()
-     * 싱크 작업 종료후 화면 리프레쉬.
-     */
+    * (non-Javadoc)
+    * @see org.nilriri.LunaCalendar.RefreshManager#refresh()
+    * 싱크 작업 종료후 화면 리프레쉬.
+    */
     public void refresh() {
         this.AddMonth(0);
     }

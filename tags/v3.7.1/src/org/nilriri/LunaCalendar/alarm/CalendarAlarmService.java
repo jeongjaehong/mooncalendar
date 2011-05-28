@@ -25,7 +25,7 @@ import android.os.Parcel;
 import android.os.RemoteException;
 import android.widget.Toast;
 
-public class AlarmService_Service extends Service {
+public class CalendarAlarmService extends Service {
 
     public NotificationManager mNM;
 
@@ -34,7 +34,7 @@ public class AlarmService_Service extends Service {
         mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
         // 3초후 서비스 자동 종료.
-        Thread thr = new Thread(null, mTask, "AlarmService_Service");
+        Thread thr = new Thread(null, mTask, "CalendarAlarmService");
         thr.start();
     }
 
@@ -73,7 +73,7 @@ public class AlarmService_Service extends Service {
                 }
             }
 
-            AlarmService_Service.this.stopSelf();
+            CalendarAlarmService.this.stopSelf();
         }
     };
 
@@ -100,52 +100,55 @@ public class AlarmService_Service extends Service {
     }
 
     private void displayNotify(Calendar c, String lDay) {
-
-        ScheduleDaoImpl dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
-
         try {
-            Cursor cursor = dao.queryAlarm(c, lDay);
+            ScheduleDaoImpl dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
 
-            while (cursor.moveToNext()) {
+            try {
+                Cursor cursor = dao.queryAlarm(c, lDay);
 
-                Long id = cursor.getLong(0);
-                CharSequence title = cursor.getString(1);
-                CharSequence content = cursor.getString(2);
+                while (cursor.moveToNext()) {
 
-                Notification notification = new Notification(R.drawable.clock, title, System.currentTimeMillis());
-                PendingIntent contentIntent = PendingIntent.getActivity(this, id.intValue(), new Intent(this, AlarmViewer.class).putExtra("id", id), 0);
+                    Long id = cursor.getLong(0);
+                    CharSequence title = cursor.getString(1);
+                    CharSequence content = cursor.getString(2);
 
-                notification.setLatestEventInfo(this, title, content, contentIntent);
+                    Notification notification = new Notification(R.drawable.clock, title, System.currentTimeMillis());
+                    PendingIntent contentIntent = PendingIntent.getActivity(this, id.intValue(), new Intent(this, AlarmViewer.class).putExtra("id", id), 0);
 
-                if (Prefs.getAlarmCheck(this)) {
-                    String uri = Prefs.getRingtone(this);
-                    if (!"".equals(uri)) {
-                        notification.sound = Uri.parse(uri);
-                    } else {
-                        Music.play(this, R.raw.ding);
+                    notification.setLatestEventInfo(this, title, content, contentIntent);
+
+                    if (Prefs.getAlarmCheck(this)) {
+                        String uri = Prefs.getRingtone(this);
+                        if (!"".equals(uri)) {
+                            notification.sound = Uri.parse(uri);
+                        } else {
+                            Music.play(this, R.raw.ding);
+                        }
+
+                        if (Prefs.getVibrate(this)) {
+
+                            long[] vibrate = { 0, 100, 200, 300 };
+                            notification.vibrate = vibrate;
+                        }
+
+                        if (Prefs.getLedlight(this)) {
+                            notification.ledARGB = 0xff00ff00;
+                            notification.ledOnMS = 300;
+                            notification.ledOffMS = 1000;
+                            notification.flags = Notification.FLAG_SHOW_LIGHTS;
+                        }
                     }
 
-                    if (Prefs.getVibrate(this)) {
-
-                        long[] vibrate = { 0, 100, 200, 300 };
-                        notification.vibrate = vibrate;
-                    }
-
-                    if (Prefs.getLedlight(this)) {
-                        notification.ledARGB = 0xff00ff00;
-                        notification.ledOnMS = 300;
-                        notification.ledOffMS = 1000;
-                        notification.flags = Notification.FLAG_SHOW_LIGHTS;
-                    }
+                    mNM.notify(id.intValue(), notification);
                 }
 
-                mNM.notify(id.intValue(), notification);
+                cursor.close();
+                dao.close();
+            } catch (Exception e) {
+                dao.close();
+                e.printStackTrace();
             }
-
-            cursor.close();
-            dao.close();
         } catch (Exception e) {
-            dao.close();
             e.printStackTrace();
         }
     }

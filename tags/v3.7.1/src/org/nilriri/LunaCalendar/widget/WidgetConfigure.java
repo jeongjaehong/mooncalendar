@@ -19,6 +19,7 @@ package org.nilriri.LunaCalendar.widget;
 import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
+import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Prefs;
 
 import android.app.Activity;
@@ -29,14 +30,19 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CheckedTextView;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.AdapterView.OnItemSelectedListener;
 
 /**
@@ -48,6 +54,7 @@ public class WidgetConfigure extends Activity {
     private static final String PREF_KIND_KEY = "kind_";
     private static final String PREF_COLOR_KEY = "color_";
     private static final String PREF_PK_KEY = "pk_";
+    private static final String PREF_URL_KEY = "url_";
     private static final String PREF_RECEIVER_KEY = "receiver";
 
     private int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
@@ -58,6 +65,7 @@ public class WidgetConfigure extends Activity {
     private Button btn_cancel;
     private ListView mListView;
     private CheckBox chk_reveiver;
+    private int mPos = -1;
 
     public ScheduleDaoImpl dao = null;
 
@@ -115,20 +123,99 @@ public class WidgetConfigure extends Activity {
             finish();
         }
         mListView = (ListView) findViewById(R.id.ContentsListView);
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            public void onItemClick(AdapterView<?> adapterView, View view, int pos, long id) {
+                mPos = pos;
+            }
+        });
+
     }
 
     public void loadData(int kind) {
         Cursor cursor = dao.queryWidget(kind);
-        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, //
-                android.R.layout.simple_list_item_single_choice, cursor, //
-                new String[] { Schedule.SCHEDULE_TITLE },//
-                new int[] { android.R.id.text1 });
+        SimpleCursorAdapter adapter = new MySimpleCursorAdapter(this, //
+                R.layout.list_item_single_choice, cursor, //
+                new String[] { Schedule.SCHEDULE_DATE, Schedule.SCHEDULE_TITLE, "url" },//
+                new int[] { R.id.schedule_date, android.R.id.text1, R.id.url });
 
         mListView.setAdapter(adapter);
 
         if (cursor.getCount() > 0) {
             mListView.setItemChecked(0, true);
         }
+    }
+
+    private class MySimpleCursorAdapter extends SimpleCursorAdapter {
+        private Cursor mCursor;
+        private int mLayout;
+
+        public MySimpleCursorAdapter(//
+                Context context, int layout, Cursor c, String from[], int to[]) {
+            super(context, layout, c, from, to);
+            mCursor = c;
+
+            mLayout = layout;
+
+        }
+
+        class GroupHolder {
+            CheckedTextView title;
+            TextView date;
+            TextView url;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+
+            mCursor.moveToPosition(position);
+
+            GroupHolder groupHolder;
+
+            if (convertView == null) {
+
+                LayoutInflater vi = getLayoutInflater();//(LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                convertView = vi.inflate(mLayout, parent, false);
+
+                groupHolder = new GroupHolder();
+                groupHolder.title = (CheckedTextView) convertView.findViewById(android.R.id.text1);
+                groupHolder.date = (TextView) convertView.findViewById(R.id.schedule_date);
+                groupHolder.url = (TextView) convertView.findViewById(R.id.url);
+
+                convertView.setTag(groupHolder);
+            } else {
+                groupHolder = (GroupHolder) convertView.getTag();
+            }
+
+            String date = mCursor.getString(mCursor.getColumnIndexOrThrow(Schedule.SCHEDULE_DATE));
+            String title = mCursor.getString(mCursor.getColumnIndexOrThrow(Schedule.SCHEDULE_TITLE));
+            String url = mCursor.getString(mCursor.getColumnIndexOrThrow("url"));
+
+            if ("".equals(date)) {
+                groupHolder.date.setVisibility(View.GONE);
+            } else {
+                groupHolder.date.setVisibility(View.VISIBLE);
+            }
+            if ("".equals(title)) {
+                groupHolder.title.setVisibility(View.GONE);
+            } else {
+                groupHolder.title.setVisibility(View.VISIBLE);
+            }
+            if ("".equals(url)) {
+                groupHolder.url.setVisibility(View.GONE);
+            } else {
+                groupHolder.url.setVisibility(View.VISIBLE);
+            }
+
+            groupHolder.date.setText(date);
+            groupHolder.title.setText(title);
+            groupHolder.url.setText(url);
+
+            groupHolder.title.setChecked(mPos == position);
+
+            return convertView;
+        }
+
     }
 
     @Override
@@ -170,6 +257,19 @@ public class WidgetConfigure extends Activity {
 
                     if (4 == spin_widgetkind.getSelectedItemPosition()) {
                         setDataPk(getBaseContext(), mAppWidgetId, new Long(-1));
+
+                        try {
+                            Cursor c = (Cursor) mListView.getItemAtPosition(mListView.getCheckedItemPosition());
+
+                            if (c != null && c.getCount() > 0) {
+                                setWidgetUrl(getBaseContext(), mAppWidgetId, c.getString(c.getColumnIndexOrThrow("url")));
+                            }
+                        } catch (Exception e) {
+
+                            Log.d(Common.TAG, "error=" + e.getMessage());
+
+                        }
+
                     } else {
                         setDataPk(getBaseContext(), mAppWidgetId, mListView.getItemIdAtPosition(mListView.getCheckedItemPosition()));
 
@@ -254,6 +354,17 @@ public class WidgetConfigure extends Activity {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         Long pk = prefs.getLong(PREF_PK_KEY + appWidgetId, new Long(0));
         return pk;
+    }
+
+    static void setWidgetUrl(Context context, int appWidgetId, String url) {
+        SharedPreferences.Editor prefs = PreferenceManager.getDefaultSharedPreferences(context).edit();
+        prefs.putString(PREF_URL_KEY + appWidgetId, url);
+        prefs.commit();
+    }
+
+    static String getWidgetUrl(Context context, int appWidgetId) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        return prefs.getString(PREF_URL_KEY + appWidgetId, "");
     }
 
     static void removePrefData(Context context, int appWidgetId) {

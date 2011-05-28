@@ -121,10 +121,11 @@ public class ScheduleDaoImpl extends AbstractDao {
         new googleImport().execute();
     }
 
-    public void doImport(List<EventEntry> events) {
+    public void doImport(List<EventEntry> events, ProgressDialog dialog) {
 
         for (int i = 0; i < events.size(); i++) {
             try {
+                dialog.setProgress(i);
                 ScheduleBean scheduleBean = new ScheduleBean(events.get(i));
                 doImport(scheduleBean);
 
@@ -422,7 +423,13 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         @Override
         protected void onPreExecute() {
-            dialog = ProgressDialog.show(mContext, "", "구글캘린더에서 일정을 가져오고 있습니다...", true);
+            //dialog = ProgressDialog.show(mContext, "", "구글캘린더에서 일정을 가져오고 있습니다...", true);
+            dialog = new ProgressDialog(mContext);
+            dialog.setTitle("일정 가져오기");
+            dialog.setMessage("구글캘린더에서 일정을 가져오고 있습니다...");
+            dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            dialog.setMax(100);
+            dialog.show();
         }
 
         @Override
@@ -432,6 +439,8 @@ public class ScheduleDaoImpl extends AbstractDao {
                 String url = Prefs.getSyncCalendar(mContext);
                 events = gu.getEvents(url);
 
+                dialog.setMax(events.size());
+                doImport(events, dialog);
             } catch (IOException e) {
                 cancel(true);
                 e.printStackTrace();
@@ -441,7 +450,6 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         @Override
         protected void onPostExecute(Void result) {
-            doImport(events);
             CallerRefresh();
             dialog.dismiss();
         }
@@ -479,7 +487,6 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     }
 
-    @SuppressWarnings("unused")
     private class googleMakeCalendar extends AsyncTask<String, Void, Void> {
         private ProgressDialog dialog;
 
@@ -529,7 +536,6 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     }
 
-    @SuppressWarnings("unused")
     private class googleUploadCalendar extends AsyncTask<String, Void, Void> {
         private ProgressDialog dialog;
 
@@ -580,7 +586,6 @@ public class ScheduleDaoImpl extends AbstractDao {
 
     }
 
-    @SuppressWarnings("unused")
     private class googleMakeBiblePlan extends AsyncTask<String, Void, Void> {
         private ProgressDialog dialog;
 
@@ -697,7 +702,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("    ," + Schedule.ALARM_LUNASOLAR);
         query.append("    ," + Schedule.ALARM_DATE);
         query.append("    ," + Schedule.ALARM_TIME);
-        query.append("    ," + Schedule.ALARM_DAYS);
+        query.append("    ," + Schedule.ALARM_DAYOFWEEK);
         query.append("    ," + Schedule.ALARM_DAY);
         query.append("    ," + Schedule.DDAY_ALARMYN);
         query.append("    ," + Schedule.DDAY_ALARMDAY);
@@ -821,7 +826,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("   ," + Schedule.ALARM_LUNASOLAR);
         query.append("   ," + Schedule.ALARM_DATE);
         query.append("   ," + Schedule.ALARM_TIME);
-        query.append("   ," + Schedule.ALARM_DAYS);
+        query.append("   ," + Schedule.ALARM_DAYOFWEEK);
         query.append("   ," + Schedule.ALARM_DAY);
         query.append("   ," + Schedule.DDAY_ALARMYN);
         query.append("   ," + Schedule.DDAY_ALARMDAY);
@@ -864,7 +869,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("   ," + Schedule.ALARM_LUNASOLAR);
         query.append("   ," + Schedule.ALARM_DATE);
         query.append("   ," + Schedule.ALARM_TIME);
-        query.append("   ," + Schedule.ALARM_DAYS);
+        query.append("   ," + Schedule.ALARM_DAYOFWEEK);
         query.append("   ," + Schedule.ALARM_DAY);
         query.append("   ," + Schedule.DDAY_ALARMYN);
         query.append("   ," + Schedule.DDAY_ALARMDAY);
@@ -920,7 +925,7 @@ public class ScheduleDaoImpl extends AbstractDao {
             buf.append("\t" + Schedule.ALARM_LUNASOLAR);
             buf.append("\t" + Schedule.ALARM_DATE);
             buf.append("\t" + Schedule.ALARM_TIME);
-            buf.append("\t" + Schedule.ALARM_DAYS);
+            buf.append("\t" + Schedule.ALARM_DAYOFWEEK);
             buf.append("\t" + Schedule.ALARM_DAY);
             buf.append("\t" + Schedule.DDAY_ALARMYN);
             buf.append("\t" + Schedule.DDAY_ALARMDAY);
@@ -1001,7 +1006,7 @@ public class ScheduleDaoImpl extends AbstractDao {
             buf.append("\t" + Schedule.ALARM_LUNASOLAR);
             buf.append("\t" + Schedule.ALARM_DATE);
             buf.append("\t" + Schedule.ALARM_TIME);
-            buf.append("\t" + Schedule.ALARM_DAYS);
+            buf.append("\t" + Schedule.ALARM_DAYOFWEEK);
             buf.append("\t" + Schedule.ALARM_DAY);
             buf.append("\t" + Schedule.DDAY_ALARMYN);
             buf.append("\t" + Schedule.DDAY_ALARMDAY);
@@ -1120,6 +1125,8 @@ public class ScheduleDaoImpl extends AbstractDao {
             if (isFirst) {
                 StringBuilder query = new StringBuilder();
                 query.append("DELETE FROM schedule ");
+                query.append("WHERE schedule_date > '1900-01-01' ");
+                query.append("and schedule_repeat = 9 and alarm_time = '00:00' ");
                 db.execSQL(query.toString());
             }
 
@@ -1201,11 +1208,11 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         StringBuilder query = new StringBuilder();
 
-        String sDate[] = Common.tokenFn(month + "-01", "-");
-        Calendar c = Calendar.getInstance();
-        c.setFirstDayOfWeek(Calendar.SUNDAY);
-        c.set(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1);
-        c.add(Calendar.DAY_OF_MONTH, -1);
+        //   String sDate[] = Common.tokenFn(month + "-01", "-");
+        //  Calendar c = Calendar.getInstance();
+        //  c.setFirstDayOfWeek(Calendar.SUNDAY);
+        //   c.set(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]) -1, 1);
+        //  c.add(Calendar.DAY_OF_MONTH, -1);
 
         // 양력일정
         query.append("SELECT  ");
@@ -1238,33 +1245,38 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         String sDate[] = Common.tokenFn(month + "-01", "-");
         String lStart = Common.fmtDate(Lunar2Solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1));
+
         Calendar c = Calendar.getInstance();
         c.setFirstDayOfWeek(Calendar.SUNDAY);
         c.set(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1);
         c.add(Calendar.DAY_OF_MONTH, -1);
+
         int lastDay = c.get(Calendar.DAY_OF_MONTH);
         String lEnd = Common.fmtDate(Lunar2Solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), lastDay));
-        boolean isChange = (lStart.substring(5).compareTo(lEnd.substring(5)) > 0);
+
+        //양력 한달 범위내에 음력 두개 달이 걸쳐 있는지...
+
+        boolean isChange = lStart.substring(5).equals(lEnd.substring(5));
 
         // 음력일정
         query.append("SELECT  ");
         //query.append("    DISTINCT CAST(STRFTIME('%d', " + Schedule.SCHEDULE_LDATE + ", 'LOCALTIME') AS INTEGER) DAY  ");
-        query.append("  STRFTIME('%Y', '" + month + "-01" + "', 'LOCALTIME')||'-'|| substr(" + Schedule.SCHEDULE_LDATE + ", 6, 5) DAY  ");
+        query.append(" STRFTIME('%Y', '" + month + "-01" + "', 'LOCALTIME')||'-'|| substr(" + Schedule.SCHEDULE_LDATE + ", -5) DAY  ");
         query.append("FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
         query.append("WHERE 1 = 1 ");
         query.append(" AND " + Schedule.ANNIVERSARY + " <> 'Y' ");
         query.append(" AND " + Schedule.LUNARYN + " = 'Y' ");
         if (isChange) {
-            query.append(" AND (" + Schedule.SCHEDULE_LDATE + " between '" + lStart.substring(5) + "' and '12-31'");
-            query.append(" OR " + Schedule.SCHEDULE_LDATE + " between '01-01' and '" + lEnd.substring(5) + "')");
+            query.append(" AND (" + Schedule.SCHEDULE_LDATE + " between '" + lStart + "' and '" + lStart.substring(0, 4) + "-12-31'");
+            query.append(" OR " + Schedule.SCHEDULE_LDATE + " between '" + lEnd.substring(0, 4) + "-01-01' and '" + lEnd + "')");
         } else {
-            query.append(" AND ( " + Schedule.SCHEDULE_LDATE + " between '" + lStart.substring(5) + "' and '" + lEnd.substring(5) + "')");
+            query.append(" AND ( " + Schedule.SCHEDULE_LDATE + " between '" + lStart + "' and '" + lEnd + "')");
         }
         // 음력기념일
         query.append(" UNION ALL  ");
         query.append("SELECT  ");
         //query.append("    DISTINCT CAST(STRFTIME('%d', " + Schedule.SCHEDULE_LDATE + ", 'LOCALTIME') AS INTEGER) DAY  ");
-        query.append("  STRFTIME('%Y', '" + month + "-01" + "', 'LOCALTIME')||'-'|| substr(" + Schedule.SCHEDULE_LDATE + ", 6, 5) DAY  ");
+        query.append("  STRFTIME('%Y', '" + month + "-01" + "', 'LOCALTIME')||'-'|| substr(" + Schedule.SCHEDULE_LDATE + ", -5) DAY  ");
         query.append("FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
         query.append("WHERE 1 = 1 ");
         query.append(" AND " + Schedule.ANNIVERSARY + " = 'Y' ");
@@ -1324,9 +1336,11 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         query.append("SELECT ");
         query.append(" " + Schedule._ID + " ");
-        query.append(",DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME') " + Schedule.SCHEDULE_DATE + " ");
+        //query.append(",DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME') " + Schedule.SCHEDULE_DATE + " ");
+        query.append(" ," + Schedule.SCHEDULE_DATE);
         query.append(" ," + Schedule.SCHEDULE_TITLE + " ");
         query.append(",cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) dday  ");
+        query.append(" ,'' url ");
         query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
         query.append(" WHERE 1 = 1 ");
 
@@ -1346,12 +1360,22 @@ public class ScheduleDaoImpl extends AbstractDao {
             case 3: // 모든일정
                 break;
             case 4: // 온라인구독일정 
-                query.append(" AND 1 = 0 ");
+                query = new StringBuilder("select -1 _id, '' schedule_date, '기본 온라인 구독 캘린더' schedule_title, 0 dday, '' url ");
+
+                String calArrays[] = Prefs.getCalendars(mContext);
+
+                for (int i = 0; i < calArrays.length; i++) {
+                    String items[] = Common.tokenFn(calArrays[i], "|");
+                    if (items.length > 1) {
+                        query.append(" union all select -1, '', '" + items[0] + "', 0, '" + items[1] + "' ");
+                    }
+                }
+
                 break;
             default:
                 break;
         }
-        if (3 != kind) {
+        if (3 > kind) {
             query.append(" AND " + Schedule.SCHEDULE_DATE + " > '1900-01-01' ");
             query.append(" AND " + Schedule.SCHEDULE_REPEAT + " not in ('F','P', '9') ");
         }
@@ -1380,7 +1404,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append(", case when " + Schedule.ANNIVERSARY + " = 'Y' then 3 ");
         query.append("       when " + Schedule.DDAY_ALARMYN + " = 1 then 5 ");
         query.append("       when " + Schedule.SCHEDULE_DATE + " <= '1900-01-01' then " + Schedule.ALARM_DAY);
-        query.append("       else 6 end as kind ");
+        query.append("       else 6 end as " + Schedule.SCHEDULE_KIND);
         query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
         query.append(" WHERE 1 = 1 ");
         //query.append(" WHERE " + Schedule.DDAY_DISPLAYYN + " = 1 ");
@@ -1436,7 +1460,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("," + Schedule.SCHEDULE_CONTENTS + " ");
         query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
         query.append(" WHERE " + Schedule.SCHEDULE_REPEAT + "=3"); // 매주 ㅇ요일 ㅇ시 ㅇ분
-        query.append(" AND " + Schedule.ALARM_DAYS + " = " + c.get(Calendar.DAY_OF_WEEK));
+        query.append(" AND " + Schedule.ALARM_DAYOFWEEK + " = " + c.get(Calendar.DAY_OF_WEEK));
         query.append(" AND " + Schedule.ALARM_TIME + " >= '" + time + ":0'");
         query.append(" AND " + Schedule.ALARM_TIME + " <= '" + time + ":59'");
         query.append(" AND " + Schedule.SCHEDULE_CHECK + " != '" + date + "'");
@@ -1503,30 +1527,31 @@ public class ScheduleDaoImpl extends AbstractDao {
         }
 
         query.append("SELECT " + Schedule._ID);
-        if ("TODAY".equals(range)) {
-            query.append("    ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 THEN '" + mContext.getResources().getString(R.string.anniversary_label) + "'");
-            query.append("    when  " + Schedule.SCHEDULE_REPEAT + " in ('F','P') THEN " + " ' B-Plan ' ");
-            query.append("    when  " + Schedule.SCHEDULE_REPEAT + " < 9 and " + Schedule.DDAY_ALARMYN + " = 1 ");
-            query.append("    then " + Schedule.SCHEDULE_DATE + "||'\n'||strftime('%Y-%m-%d', DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'localtime') ");
-            query.append("    when  " + Schedule.SCHEDULE_REPEAT + " between 1 and 8 and " + Schedule.DDAY_ALARMYN + " != 1 THEN " + Schedule.ALARM_DATE + " ||'\n'|| ifnull(case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 11)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ," + Schedule.SCHEDULE_DATE + ")");
-            query.append("    ELSE " + Schedule.SCHEDULE_DATE + " END " + Schedule.SCHEDULE_DATE);
-        } else {
-            query.append("    ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 THEN '" + mContext.getResources().getString(R.string.anniversary_label) + "'");
-            query.append("    when  " + Schedule.SCHEDULE_REPEAT + " in ('F','P') THEN " + " ' B-Plan ' ");
-            query.append("    when  " + Schedule.SCHEDULE_REPEAT + " < 9 and " + Schedule.DDAY_ALARMYN + " = 1 THEN " + Schedule.SCHEDULE_DATE + "||'\n'||strftime('%Y-%m-%d', DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'localtime') ");
-            query.append("    ELSE " + Schedule.SCHEDULE_DATE + " END " + Schedule.SCHEDULE_DATE);
-        }
-        query.append("    ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " IN ('F','P','9') THEN " + Schedule.SCHEDULE_TITLE + "||'('||" + Schedule.ALARM_DATE + "||')'");
-        query.append("    when  " + Schedule.SCHEDULE_REPEAT + " < 9 and " + Schedule.DDAY_ALARMYN + " = 1 THEN ");
-        query.append("   substr(" + Schedule.SCHEDULE_TITLE + ", 1, 15) ||'('|| ");
-        query.append("case when cast(JULIANDAY('" + baseDate + "', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) > 0  ");
-        query.append("then 'D + ' || cast(JULIANDAY('" + baseDate + "', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer)  ");
+        query.append(" ," + Schedule.SCHEDULE_DATE);
+        query.append(" ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " IN ('F','P','9') THEN " + Schedule.SCHEDULE_TITLE + "||'('||" + Schedule.ALARM_DATE + "||')'");
+        query.append(" when  " + Schedule.SCHEDULE_REPEAT + " < 9 and " + Schedule.DDAY_ALARMYN + " = 1 THEN ");
+        query.append(" substr(" + Schedule.SCHEDULE_TITLE + ", 1, 15) ||'('|| ");
+        query.append(" case when cast(JULIANDAY('" + baseDate + "', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) > 0  ");
+        query.append(" then 'D + ' || cast(JULIANDAY('" + baseDate + "', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer)  ");
         query.append(" when cast(JULIANDAY('" + baseDate + "', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) = 0  ");
-        query.append("then 'D day' else 'D ' ||  cast(JULIANDAY('" + baseDate + "', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) end ");
+        query.append(" then 'D day' else 'D ' ||  cast(JULIANDAY('" + baseDate + "', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) end ");
         query.append("    ||')' ");
         query.append("    ELSE " + Schedule.SCHEDULE_TITLE + " END " + Schedule.SCHEDULE_TITLE);
-        query.append("    , " + Schedule.SCHEDULE_REPEAT);
-        query.append("    , " + Schedule.BIBLE_BOOK + ", " + Schedule.BIBLE_CHAPTER + " ");
+        query.append(" ," + Schedule.SCHEDULE_LDATE);
+        query.append(" ," + Schedule.LUNARYN);
+        query.append(" ,cast(strftime('%w', date(" + Schedule.SCHEDULE_DATE + ")) as integer) as dayindex ");
+        query.append(" ,cast(strftime('%W', date(" + Schedule.SCHEDULE_DATE + ")) as integer) as weekindex ");
+        query.append(" ," + Schedule.ALARM_DATE);
+        query.append(" ," + Schedule.ALARM_TIME);
+        query.append(" ," + Schedule.ALARM_LUNASOLAR);
+        query.append(" ," + Schedule.ALARM_DAY);
+        query.append(" ," + Schedule.ALARM_DAYOFWEEK);
+        query.append(" ," + Schedule.SCHEDULE_REPEAT);
+        query.append(" ,case when " + Schedule.ANNIVERSARY + " = 'Y' and " + Schedule.SCHEDULE_REPEAT + " < 9 then 'Y' else 'N' end as " + Schedule.ANNIVERSARY);
+        query.append(" ,case when " + Schedule.ANNIVERSARY + " = 'Y' then 3 ");
+        query.append("       when " + Schedule.DDAY_ALARMYN + " = 1 then 5 ");
+        query.append("       when " + Schedule.SCHEDULE_DATE + " <= '1900-01-01' then " + Schedule.ALARM_DAY);
+        query.append("       else 6 end as " + Schedule.SCHEDULE_KIND);
         query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME);
         query.append(" WHERE 1 = 1 ");
 
@@ -1551,15 +1576,14 @@ public class ScheduleDaoImpl extends AbstractDao {
                 query.append(" AND " + Schedule.ANNIVERSARY + " <> 'Y' )");
 
                 //양력기념일
-                query.append(" or ( " + Schedule.SCHEDULE_DATE + " = '" + date + "' ");
-                query.append(" AND " + Schedule.ANNIVERSARY + " = 'Y' ");
+                query.append(" or ( " + Schedule.ANNIVERSARY + " = 'Y' ");
                 query.append(" AND " + Schedule.LUNARYN + " <> 'Y' ");
-                query.append(" AND " + Schedule.SCHEDULE_DATE + " <= STRFTIME('%Y', '" + date.substring(0, 7) + "-01" + "', 'LOCALTIME')||'-12-31') ");
+                query.append(" AND substr(" + Schedule.SCHEDULE_DATE + ", -5) = '" + date.substring(5) + "' ) ");
 
                 //음력일정
                 query.append(" or ( " + Schedule.ANNIVERSARY + " <> 'Y' ");
                 query.append(" AND " + Schedule.LUNARYN + " = 'Y' ");
-                query.append(" AND ( " + Schedule.SCHEDULE_LDATE + " between '" + lStart.substring(5) + "' and '" + lEnd.substring(5) + "'))");
+                query.append(" AND " + Schedule.SCHEDULE_LDATE + " between '" + lStart + "' and '" + lEnd + "')");
 
                 // 음력기념일
                 query.append(" or( " + Schedule.ANNIVERSARY + " = 'Y' ");
@@ -1624,12 +1648,7 @@ public class ScheduleDaoImpl extends AbstractDao {
                 //음력일정
                 query.append(" or ( " + Schedule.ANNIVERSARY + " <> 'Y' ");
                 query.append(" AND " + Schedule.LUNARYN + " = 'Y' ");
-                if (isChange) {
-                    query.append(" AND (" + Schedule.SCHEDULE_LDATE + " between '" + lStart.substring(5) + "' and '12-31'");
-                    query.append(" OR " + Schedule.SCHEDULE_LDATE + " between '01-01' and '" + lEnd.substring(5) + "'))");
-                } else {
-                    query.append(" AND ( " + Schedule.SCHEDULE_LDATE + " between '" + lStart.substring(5) + "' and '" + lEnd.substring(5) + "'))");
-                }
+                query.append(" AND ( " + Schedule.SCHEDULE_LDATE + " between '" + lStart + "' and '" + lEnd + "'))");
 
                 // 음력기념일
                 query.append(" or( " + Schedule.ANNIVERSARY + " = 'Y' ");
@@ -1674,7 +1693,7 @@ public class ScheduleDaoImpl extends AbstractDao {
                 String lStart = Common.fmtDate(Lunar2Solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1));
                 Calendar c = Calendar.getInstance();
                 c.setFirstDayOfWeek(Calendar.SUNDAY);
-                c.set(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]) - 1, 1);
+                c.set(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), 1);
                 c.add(Calendar.DAY_OF_MONTH, -1);
                 int lastDay = c.get(Calendar.DAY_OF_MONTH);
                 String lEnd = Common.fmtDate(Lunar2Solar.s2l(Integer.parseInt(sDate[0]), Integer.parseInt(sDate[1]), lastDay));
@@ -1695,12 +1714,7 @@ public class ScheduleDaoImpl extends AbstractDao {
                 //음력일정
                 query.append(" or ( " + Schedule.ANNIVERSARY + " <> 'Y' ");
                 query.append(" AND " + Schedule.LUNARYN + " = 'Y' ");
-                if (isChange) {
-                    query.append(" AND (" + Schedule.SCHEDULE_LDATE + " between '" + lStart.substring(5) + "' and '12-31'");
-                    query.append(" OR " + Schedule.SCHEDULE_LDATE + " between '01-01' and '" + lEnd.substring(5) + "'))");
-                } else {
-                    query.append(" AND ( " + Schedule.SCHEDULE_LDATE + " between '" + lStart.substring(5) + "' and '" + lEnd.substring(5) + "'))");
-                }
+                query.append(" AND " + Schedule.SCHEDULE_LDATE + " between '" + lStart + "' and '" + lEnd + "')");
 
                 // 음력기념일
                 query.append(" or ( " + Schedule.ANNIVERSARY + " = 'Y' ");
@@ -1771,39 +1785,42 @@ public class ScheduleDaoImpl extends AbstractDao {
             }
         }
 
-        query.append(" ORDER BY 1 ASC ");
+        query.append(" ORDER BY 2 ASC ");
         //query.append(" ORDER BY " + Schedule.SCHEDULE_DATE + " ASC ");
 
         return getReadableDatabase().rawQuery(query.toString(), null);
 
     }
 
-    public Cursor queryChild(Long id) {
+    public Cursor querySearchChild(Long id) {
 
         String selectionArgs[] = new String[] { id.toString() };
 
-        StringBuilder query;
-
-        query = new StringBuilder();
+        StringBuilder query = new StringBuilder();
 
         query.append("SELECT " + Schedule._ID);
         query.append("    ,case when " + Schedule.SCHEDULE_REPEAT + " = 9 then " + Schedule.ALARM_DATE);
-        query.append("    else " + Schedule.SCHEDULE_CONTENTS + " end " + Schedule.SCHEDULE_CONTENTS);
-        query.append("    ,case " + Schedule.SCHEDULE_REPEAT + " ");
-        query.append("    when 1 then  " + Schedule.ALARM_DATE + " || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 11)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
-        query.append("    when 2 then '" + mContext.getResources().getString(R.string.every_day_label) + "' || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 11)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
-        query.append("    when 3 then '" + mContext.getResources().getString(R.string.every_week_label) + "' || d.dayname || ' '|| case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 11)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
+        query.append("    else ifnull(" + Schedule.SCHEDULE_CONTENTS + ", '') end as " + Schedule.SCHEDULE_CONTENTS);
+        query.append("    ,ifnull(case " + Schedule.SCHEDULE_REPEAT + " ");
+        query.append("    when 1 then  " + Schedule.ALARM_DATE + " || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) > '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
+        query.append("    when 2 then '" + mContext.getResources().getString(R.string.every_day_label) + "' || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) > '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
+        query.append("    when 3 then '" + mContext.getResources().getString(R.string.every_week_label) + "' || d.dayname || ' '|| case when substr(" + Schedule.ALARM_TIME + ",1,2) > '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
         query.append("    when 4 then '" + mContext.getResources().getString(R.string.every_month_label) + "' || ( ");
         query.append("        case when " + Schedule.ALARM_LUNASOLAR + " = 0 then '" + mContext.getResources().getString(R.string.gregorian) + "' else '" + mContext.getResources().getString(R.string.lunar) + "' end)|| ' '|| " + Schedule.ALARM_DAY + " || '" + mContext.getResources().getString(R.string.day_label) + "' ");
         query.append("    when 5 then '" + mContext.getResources().getString(R.string.every_year_label) + "' || ( ");
-        query.append("        case when " + Schedule.ALARM_LUNASOLAR + " = 0 then '" + mContext.getResources().getString(R.string.gregorian) + "' else '" + mContext.getResources().getString(R.string.lunar) + "' end)|| ' '|| " + Schedule.ALARM_DATE + " || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) >= '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 11)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
-        query.append("    else '" + mContext.getResources().getString(R.string.alarm_none) + "' end alarm_detailinfo ");
-        query.append("    ,case when cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) < 0   ");
+        query.append("        case when " + Schedule.ALARM_LUNASOLAR + " = 0 then '" + mContext.getResources().getString(R.string.gregorian) + "' else '" + mContext.getResources().getString(R.string.lunar) + "' end)|| ' '|| " + Schedule.ALARM_DATE + " || ' ' || case when substr(" + Schedule.ALARM_TIME + ",1,2) > '12' then 'PM ' || (cast(substr(" + Schedule.ALARM_TIME + ",  1, 2) as int) - 12)  || substr(" + Schedule.ALARM_TIME + ",  3) else 'AM ' || " + Schedule.ALARM_TIME + " end ");
+        query.append("    else '' end, '') alarm_detailinfo ");
+        query.append("    ,ifnull(case when cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) < 0   ");
         query.append("          then 'D ' || cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) || 'day'  ");
         query.append("          when cast (JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) = 0 then 'D day'  ");
-        query.append("          else 'D +' || cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) || 'day' end " + Schedule.DDAY_DETAILINFO + "  ");
+        query.append("          else 'D +' || cast(JULIANDAY('now', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) || 'day' end, '') " + Schedule.DDAY_DETAILINFO + "  ");
         query.append("    , " + Schedule.SCHEDULE_REPEAT);
         query.append("    , " + Schedule.BIBLE_BOOK + ", " + Schedule.BIBLE_CHAPTER + " ");
+        query.append("    , case when " + Schedule.ANNIVERSARY + " = 'Y' then 3 ");
+        query.append("       when " + Schedule.DDAY_ALARMYN + " = 1 then 5 ");
+        query.append("       when " + Schedule.SCHEDULE_DATE + " <= '1900-01-01' then " + Schedule.ALARM_DAY);
+        query.append("       else 6 end as " + Schedule.SCHEDULE_KIND);
+        query.append("    ," + Schedule.SCHEDULE_TITLE);
         query.append(" FROM " + Schedule.SCHEDULE_DAYS_JOIN_TABLE);
         query.append(" WHERE _id = ? ");
 

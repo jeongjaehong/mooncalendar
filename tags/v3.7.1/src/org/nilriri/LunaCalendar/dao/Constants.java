@@ -9,7 +9,7 @@ import android.provider.BaseColumns;
 public final class Constants {
 
     private static final String DATABASE_NAME = "lunacalendar.sqlite";
-    public static final int DATABASE_VERSION = 33;
+    public static final int DATABASE_VERSION = 34;
 
     public static final String DEFAULT_SORT_ORDER = "_id DESC";
 
@@ -23,7 +23,7 @@ public final class Constants {
             Schedule.ALARM_LUNASOLAR, //6
             Schedule.ALARM_DATE, //7
             Schedule.ALARM_TIME, //8
-            Schedule.ALARM_DAYS, //9
+            Schedule.ALARM_DAYOFWEEK, //9
             Schedule.ALARM_DAY, //10
             Schedule.DDAY_ALARMYN, //11
             Schedule.DDAY_ALARMDAY, //12
@@ -81,7 +81,7 @@ public final class Constants {
         public static final String ALARM_LUNASOLAR = "alarm_lunasolar";
         public static final String ALARM_DATE = "alarm_date";
         public static final String ALARM_TIME = "alarm_time";
-        public static final String ALARM_DAYS = "alarm_days";
+        public static final String ALARM_DAYOFWEEK = "alarm_days";
         public static final String ALARM_DAY = "alarm_day";
         public static final String DDAY_ALARMYN = "dday_alarmyn";
         public static final String DDAY_ALARMDAY = "dday_alarmday";
@@ -108,6 +108,7 @@ public final class Constants {
         public static final String EVENTSTATUS = "eventstatus";
 
         public static final String SCHEDULE_MMDD = "schedule_mmdd";
+        public static final String SCHEDULE_KIND = "kind";
 
         public static final int COL_ID = 0;
         public static final int COL_SCHEDULE_DATE = 1;
