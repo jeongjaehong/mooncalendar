@@ -18,6 +18,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -312,7 +313,20 @@ public class SearchResult extends ExpandableListActivity implements OnTouchListe
                 groupHolder.glass.setVisibility(View.GONE);
             }
 
-            String sdate = c.getString(c.getColumnIndexOrThrow(Schedule.SCHEDULE_DATE));
+            String lunaryn = c.getString(c.getColumnIndexOrThrow(Schedule.LUNARYN));
+            Log.d(Common.TAG, "lunaryn=" + lunaryn);
+            String sdate = "";
+            String ldate = "";
+            if ("Y".equals(lunaryn)) {
+                Log.d(Common.TAG, "lunaryn=" + lunaryn);
+                ldate = c.getString(c.getColumnIndexOrThrow(Schedule.SCHEDULE_LDATE));
+                sdate = Common.fmtDate(Lunar2Solar.l2s(ldate));
+                Log.d(Common.TAG, "sdate=" + sdate);
+                Log.d(Common.TAG, "ldate=" + ldate);
+            } else {
+                sdate = c.getString(c.getColumnIndexOrThrow(Schedule.SCHEDULE_DATE));
+                ldate = Lunar2Solar.s2l(sdate);
+            }
             String schedule_date = "";
 
             String title = c.getString(c.getColumnIndexOrThrow(Schedule.SCHEDULE_TITLE));
@@ -327,19 +341,31 @@ public class SearchResult extends ExpandableListActivity implements OnTouchListe
 
             } else if ("MONTH".equals(mSearchRange)) {
                 schedule_date += sdate.substring(8);
+                if ("Y".equals(lunaryn)) {
 
-                int dayindex = c.getInt(c.getColumnIndexOrThrow("dayindex"));
-                schedule_date += " [" + DAYNAMES[dayindex] + "]";
+                    schedule_date += " [" + DAYNAMES[Common.getCalValue(Calendar.DAY_OF_WEEK, sdate)] + "]";
 
-                schedule_date += "\n (" + Common.fmtDate(Lunar2Solar.s2l(sdate)).substring(5) + ")";
+                } else {
+
+                    int dayindex = c.getInt(c.getColumnIndexOrThrow("dayindex"));
+                    schedule_date += " [" + DAYNAMES[dayindex] + "]";
+
+                }
+                schedule_date += "\n (" + Common.fmtDate(ldate).substring(5) + ")";
 
             } else if ("WEEK".equals(mSearchRange)) {
                 schedule_date += sdate.substring(8);
 
-                int dayindex = c.getInt(c.getColumnIndexOrThrow("dayindex"));
-                schedule_date += " [" + DAYNAMES[dayindex] + "]";
+                if ("Y".equals(lunaryn)) {
 
-                schedule_date += "\n (" + Common.fmtDate(Lunar2Solar.s2l(sdate)).substring(5) + ")";
+                    schedule_date += " [" + DAYNAMES[Common.getCalValue(Calendar.DAY_OF_WEEK, sdate)] + "]";
+
+                } else {
+                    int dayindex = c.getInt(c.getColumnIndexOrThrow("dayindex"));
+                    schedule_date += " [" + DAYNAMES[dayindex] + "]";
+                }
+
+                schedule_date += "\n (" + Common.fmtDate(ldate).substring(5) + ")";
 
             } else if ("TODAY".equals(mSearchRange)) {
                 String time = c.getString(c.getColumnIndexOrThrow(Schedule.ALARM_TIME));

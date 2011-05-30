@@ -200,6 +200,7 @@ public class LunarCalendarView extends View {
 
         }
 
+        Log.d(Common.TAG, "ldaysource=" + ldaysource);
         mLunadays = Common.tokenFn(ldaysource.toString(), ",");
 
         // 음력기념일 정보를 보관한다.
@@ -209,7 +210,7 @@ public class LunarCalendarView extends View {
             int day = cursor.getInt(0);
             //음력날짜인 경우는 양력날짜로 변환하여 저장한다.
             if (day > 31) {
-                String lday = (day > 9 ? "" + day : "0" + day);
+                String lday = (day > 999 ? "" + day : "0" + day);
                 for (int i = 1; i < mLunadays.length; i++) {
                     if (mLunadays[i].substring(4).equals(lday)) {
                         if (mAnniversaryMap.containsKey(i)) {
@@ -224,6 +225,7 @@ public class LunarCalendarView extends View {
 
             } else {
                 if (mAnniversaryMap.containsKey(day)) {
+                    //기념일과 휴일이 중복하여 있을경우에는 휴일정보를 위한 깃발을 우선표시하도록 한다.
                     if (mAnniversaryMap.get(day) > cursor.getInt(1)) {
                         mAnniversaryMap.put(day, cursor.getInt(1));
                     }

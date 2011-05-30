@@ -142,6 +142,7 @@ public class WidgetConfigure extends Activity {
         mListView.setAdapter(adapter);
 
         if (cursor.getCount() > 0) {
+            mPos = 0;
             mListView.setItemChecked(0, true);
         }
     }

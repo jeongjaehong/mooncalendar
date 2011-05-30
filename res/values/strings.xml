@@ -145,6 +145,7 @@
 	</string>
 
 	<string name="widget_label_1x1">Calendar Widget(1x1)</string>
+	<string name="widget_label_1x2">Calendar Widget(1x2)</string>
 	<string name="widget_label_2x2">Calendar Widget(2x2)</string>
 
 	<string name="sdcarduse">메모리사용</string>

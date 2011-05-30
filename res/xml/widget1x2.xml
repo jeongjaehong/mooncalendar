@@ -3,6 +3,6 @@
 	android:updatePeriodMillis="21600000" 
 	android:configure="org.nilriri.LunaCalendar.widget.WidgetConfigure"
 	android:minWidth="135dip" 
-	android:minHeight="135dip"
-	android:initialLayout="@layout/widget2x2_transparent">
+	android:minHeight="65dip"
+	android:initialLayout="@layout/widget1x2_transparent">
 </appwidget-provider>
