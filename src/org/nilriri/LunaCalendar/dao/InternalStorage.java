@@ -8,10 +8,13 @@ import android.database.sqlite.SQLiteDatabase.CursorFactory;
 public class InternalStorage extends SQLiteOpenHelper implements StorageSelector {
 
     private Context mContext;
+    private SQLiteDatabase db;
 
     public InternalStorage(Context context, String name, CursorFactory factory, int version) {
         super(context, name, factory, version);
         mContext = context;
+
+        db = getWritableDatabase();
     }
 
     public Context getContext() {
@@ -25,20 +28,43 @@ public class InternalStorage extends SQLiteOpenHelper implements StorageSelector
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
         new DaoCreator().onUpgrade(this.mContext, db, oldVersion, newVersion);
-
     }
 
-    @Override
     public SQLiteDatabase getReadableDatabase() {
-        return super.getReadableDatabase();
+        if (db == null) {
+            db = super.getReadableDatabase();
+        } else if (!db.isOpen()) {
+            db = super.getReadableDatabase();
+        }
+        return db;
+    }
 
+    public SQLiteDatabase getWritableDatabase() {
+        if (db == null) {
+            db = super.getWritableDatabase();
+        } else if (db.isReadOnly()) {
+            close();
+            db = super.getWritableDatabase();
+        } else if (!db.isOpen()) {
+            db = super.getWritableDatabase();
+        }
+        return db;
     }
 
     @Override
-    public SQLiteDatabase getWritableDatabase() {
-        return super.getWritableDatabase();
+    public void close() {
+        if (db != null) {
+            db.close();
+        }
+        super.close();
+    }
+
+    public void onDestroy() {
+        if (db != null) {
+            db.close();
+        }
+        super.close();
     }
 
 }

@@ -14,24 +14,27 @@
 
 package org.nilriri.LunaCalendar.gcal;
 
-
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.google.api.client.googleapis.xml.atom.AtomPatchRelativeToOriginalContent;
+import com.google.api.client.googleapis.xml.atom.GoogleAtom;
 import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.util.DataUtil;
 import com.google.api.client.util.Key;
 import com.google.api.client.xml.atom.AtomContent;
-
 
 /**
  * @author Yaniv Inbar
  */
 public class Entry implements Cloneable {
 
- 
+    @Key
+    public String id;
+
     @Key
     public String summary;
 
@@ -41,31 +44,54 @@ public class Entry implements Cloneable {
     @Key
     public String updated;
 
+    @Key("@gd:etag")
+    public String etag;
+
     @Key("link")
-    public List<Link> links;
+    public List<Link> links = new ArrayList<Link>();
 
     @Override
     protected Entry clone() {
         return DataUtil.clone(this);
     }
 
-    public void executeDelete(HttpTransport transport) throws IOException {
+    public int executeDelete(HttpTransport transport) throws IOException {
         HttpRequest request = transport.buildDeleteRequest();
+        if ("".equals(getEditLink()) || getEditLink() == null) {
+            return 0;
+        }
+        request.headers.ifMatch = this.etag;
         request.setUrl(getEditLink());
-        RedirectHandler.execute(request).ignore();
+        return RedirectHandler.execute(request).statusCode;
     }
 
-    Entry executeInsert(HttpTransport transport, CalendarUrl url) throws IOException {
+    public Entry executeInsert(HttpTransport transport, CalendarUrl url) throws IOException {
         HttpRequest request = transport.buildPostRequest();
         request.url = url;
         AtomContent content = new AtomContent();
         content.namespaceDictionary = Util.DICTIONARY;
         content.entry = this;
         request.content = content;
-        return RedirectHandler.execute(request).parseAs(getClass());
+
+        HttpResponse response = RedirectHandler.execute(request);
+
+        // HTTP 리턴코드가 200 OK.일 경우 Google UID를 UPDATE한다.
+        // HTTP 리턴코드가 201 CREATED.일 경우 Google UID를 UPDATE한다.
+        if (200 == response.statusCode || 201 == response.statusCode) {
+            return response.parseAs(getClass());
+        } else {
+            return this;
+        }
     }
 
-    Entry executePatchRelativeToOriginal(HttpTransport transport, Entry original) throws IOException {
+    static Entry executeGetOriginalEntry(HttpTransport transport, CalendarUrl url, Class<? extends Entry> entryClass) throws IOException {
+        url.fields = GoogleAtom.getFieldsFor(entryClass);
+        HttpRequest request = transport.buildGetRequest();
+        request.url = url;
+        return RedirectHandler.execute(request).parseAs(entryClass);
+    }
+
+    public Entry executePatchRelativeToOriginal(HttpTransport transport, Entry original) throws IOException {
         HttpRequest request = transport.buildPatchRequest();
         request.setUrl(getEditLink());
         AtomPatchRelativeToOriginalContent content = new AtomPatchRelativeToOriginalContent();
@@ -76,7 +102,20 @@ public class Entry implements Cloneable {
         return RedirectHandler.execute(request).parseAs(getClass());
     }
 
-    private String getEditLink() {
-        return Link.find(links, "edit");
+    public String getEditLink() {
+        String link = Link.find(links, "edit");
+        if ("".equals(link) || link == null) {
+            link = (this.id == null ? "" :this.id);
+        }
+        return link;
+    }
+
+    public String getWebContentsLink() {
+        String link = Link.find(links, "http://schemas.google.com/gCal/2005/webContent");
+        return (link == null ? "" : link);
+    }
+
+    public String getSelfLink() {
+        return Link.find(links, "self");
     }
 }
