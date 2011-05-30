@@ -110,6 +110,11 @@ public class Entry implements Cloneable {
         return link;
     }
 
+    public String getWebContentsLink() {
+        String link = Link.find(links, "http://schemas.google.com/gCal/2005/webContent");
+        return (link == null ? "" : link);
+    }
+
     public String getSelfLink() {
         return Link.find(links, "self");
     }

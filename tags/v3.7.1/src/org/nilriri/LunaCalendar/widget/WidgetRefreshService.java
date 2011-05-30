@@ -20,6 +20,7 @@ public class WidgetRefreshService extends Service {
     @Override
     public void onCreate() {
         mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        Log.d(Common.TAG, "WidgetRefreshService Create...");
 
         // 3초후 서비스 자동 종료.
         Thread thr = new Thread(null, mTask, "WidgetAlarmService");

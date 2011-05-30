@@ -45,7 +45,7 @@ public class Common extends Activity {
     public static final int ONLINE_WIDGET = 0;
 
     public static final int ALARM_INTERVAL = 1000 * 60 * 5; // 5분
-    public static final int WIDGET_REFRESH_INTERVAL = 1000 * 60 * 20 * 6; // 6시간 
+    public static final int WIDGET_REFRESH_INTERVAL = 1000 * 60 * 20 * 4; // 4시간 
 
     public static final String ACTION_ALARM_START = "org.nilriri.LunarCalendar.ALARM_START";
     public static final String ACTION_ALARM_STOP = "org.nilriri.LunarCalendar.ALARM_STOP";
@@ -107,6 +107,15 @@ public class Common extends Activity {
 
         return DateTime.parseRfc3339(Common.fmtDate(nowCal));
 
+    }
+
+    public static int getCalValue(int field, String sdate) {
+        Calendar cc = Calendar.getInstance();
+        cc.set(Calendar.YEAR, Integer.parseInt(sdate.substring(0, 4)));
+        cc.set(Calendar.MONTH, Integer.parseInt(sdate.substring(5, 7)));
+        cc.set(Calendar.DAY_OF_MONTH, Integer.parseInt(sdate.substring(8)));
+
+        return cc.get(field);
     }
 
     public static String fmtDate() {

@@ -811,6 +811,8 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         String selectionArgs[] = new String[] { date, date, date, date, date, date, };
 
+        Log.d(Common.TAG, "query=" + query.toString());
+
         return getReadableDatabase().rawQuery(query.toString(), selectionArgs);
 
     }
@@ -853,7 +855,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("   ," + Schedule.EVENTSTATUS);
         query.append(" FROM  schedule ");
         query.append(" WHERE " + Schedule.SCHEDULE_DATE + " > '1900-01-01' ");
-        query.append("   AND " + Schedule.SCHEDULE_REPEAT + " not in ('F','P', '9') ");
+        query.append("   AND " + Schedule.SCHEDULE_REPEAT + " < 9 ");
         return getReadableDatabase().rawQuery(query.toString(), null);
 
     }
@@ -896,7 +898,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("   ," + Schedule.EVENTSTATUS);
         query.append(" FROM  schedule ");
         query.append(" WHERE " + Schedule.SCHEDULE_DATE + " > '1900-01-01' ");
-        query.append("   AND " + Schedule.SCHEDULE_REPEAT + " not in ('F','P', '9') ");
+        query.append("   AND " + Schedule.SCHEDULE_REPEAT + " < 9 ");
         query.append("   AND trim(" + Schedule.GID + ") = ''");
         return getReadableDatabase().rawQuery(query.toString(), null);
 
@@ -1124,9 +1126,10 @@ public class ScheduleDaoImpl extends AbstractDao {
 
             if (isFirst) {
                 StringBuilder query = new StringBuilder();
+                // 시스템기념일을 제외한 일정을 모두 삭제한다.
                 query.append("DELETE FROM schedule ");
                 query.append("WHERE schedule_date > '1900-01-01' ");
-                query.append("and schedule_repeat = 9 and alarm_time = '00:00' ");
+                query.append("and schedule_repeat < 9 ");
                 db.execSQL(query.toString());
             }
 
@@ -1157,10 +1160,12 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         StringBuilder query = new StringBuilder();
 
+        Log.d(Common.TAG, "month=" + month + ", lfromday=" + lfromday + ", ltoday=" + ltoday);
+
         lfromday = lfromday.substring(4, 8);
         ltoday = ltoday.substring(4, 8);
 
-        boolean isChange = (lfromday.compareTo(ltoday) > 0);
+        boolean isChange = (Integer.parseInt(lfromday.substring(0, 2)) != Integer.parseInt(ltoday.substring(0, 2)));
 
         lfromday = String.format("%2s-%2s", lfromday.substring(0, 2), lfromday.substring(2));
         ltoday = String.format("%2s-%2s", ltoday.substring(0, 2), ltoday.substring(2));
@@ -1180,6 +1185,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         }
         query.append("and " + Schedule.ALARM_TIME + " = '00:00' ");
 
+        Log.d(Common.TAG, "query=" + query.toString());
         return getReadableDatabase().rawQuery(query.toString(), null);
 
     }
@@ -1377,7 +1383,7 @@ public class ScheduleDaoImpl extends AbstractDao {
         }
         if (3 > kind) {
             query.append(" AND " + Schedule.SCHEDULE_DATE + " > '1900-01-01' ");
-            query.append(" AND " + Schedule.SCHEDULE_REPEAT + " not in ('F','P', '9') ");
+            query.append(" AND " + Schedule.SCHEDULE_REPEAT + " < 9 ");
         }
         query.append(" ORDER BY " + Schedule.SCHEDULE_DATE + " DESC ");
 
@@ -1395,9 +1401,9 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         query.append("SELECT ");
         query.append(" " + Schedule.SCHEDULE_TITLE + " ");
-        query.append(", " + Schedule.SCHEDULE_DATE + " || ");
+        query.append(",case when schedule_repeat = 9 then (case when alarm_lunasolar = 1 then '음력 ' else '' end)|| alarm_date else (" + Schedule.SCHEDULE_DATE + " || ");
         query.append(" case when " + Schedule.LUNARYN + " = 'Y' then '\n(음력 '||substr(" + Schedule.SCHEDULE_LDATE + ",6,5)||')'");
-        query.append("  else ' ' end as " + Schedule.SCHEDULE_DATE);
+        query.append("  else ' ' end)end as " + Schedule.SCHEDULE_DATE);
         query.append(",cast(JULIANDAY('now', 'LOCALTIME') -   ");
         query.append("  JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " ||  ");
         query.append("  " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) dday  ");
@@ -1405,7 +1411,9 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("       when " + Schedule.DDAY_ALARMYN + " = 1 then 5 ");
         query.append("       when " + Schedule.SCHEDULE_DATE + " <= '1900-01-01' then " + Schedule.ALARM_DAY);
         query.append("       else 6 end as " + Schedule.SCHEDULE_KIND);
-        query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
+        query.append(", " + Schedule.SCHEDULE_REPEAT);
+        query.append(", case when schedule_repeat < 9 and " + Schedule.ANNIVERSARY + " = 'Y' then cast(strftime('%Y', date('now')) as int) - cast(strftime('%Y', date(schedule_date)) as int) else '' end as years ");
+          query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
         query.append(" WHERE 1 = 1 ");
         //query.append(" WHERE " + Schedule.DDAY_DISPLAYYN + " = 1 ");
         query.append(" AND " + Schedule._ID + " = " + id);
@@ -1506,7 +1514,7 @@ public class ScheduleDaoImpl extends AbstractDao {
 
         String selectionArgs[] = null;
 
-        Log.d(Common.TAG, query.toString());
+        Log.d(Common.TAG, "qroup query=" + query.toString());
 
         return getReadableDatabase().rawQuery(query.toString(), selectionArgs);
 
@@ -1526,9 +1534,15 @@ public class ScheduleDaoImpl extends AbstractDao {
             baseDate += "-01";
         }
 
+        int lYear = Integer.parseInt(Lunar2Solar.s2l(baseDate.substring(0, 7) + "-01").substring(0, 4));
+
         query.append("SELECT " + Schedule._ID);
-        query.append(" ," + Schedule.SCHEDULE_DATE);
-        query.append(" ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " IN ('F','P','9') THEN " + Schedule.SCHEDULE_TITLE + "||'('||" + Schedule.ALARM_DATE + "||')'");
+        query.append(" ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 AND " + Schedule.ALARM_LUNASOLAR + " = 1 THEN ");
+        query.append("      null ");
+        query.append("   WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 AND " + Schedule.ALARM_LUNASOLAR + " = 0 THEN ");
+        query.append("      '" + baseDate.substring(0, 4) + "-'||" + Schedule.ALARM_DATE);
+        query.append("   ELSE " + Schedule.SCHEDULE_DATE + " END " + Schedule.SCHEDULE_DATE);
+        query.append(" ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 THEN " + Schedule.SCHEDULE_TITLE + "||'('||" + Schedule.ALARM_DATE + "||')'");
         query.append(" when  " + Schedule.SCHEDULE_REPEAT + " < 9 and " + Schedule.DDAY_ALARMYN + " = 1 THEN ");
         query.append(" substr(" + Schedule.SCHEDULE_TITLE + ", 1, 15) ||'('|| ");
         query.append(" case when cast(JULIANDAY('" + baseDate + "', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) > 0  ");
@@ -1537,8 +1551,14 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append(" then 'D day' else 'D ' ||  cast(JULIANDAY('" + baseDate + "', 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) end ");
         query.append("    ||')' ");
         query.append("    ELSE " + Schedule.SCHEDULE_TITLE + " END " + Schedule.SCHEDULE_TITLE);
-        query.append(" ," + Schedule.SCHEDULE_LDATE);
-        query.append(" ," + Schedule.LUNARYN);
+        query.append(" ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 AND " + Schedule.ALARM_LUNASOLAR + " = 1 THEN ");
+        query.append("      '" + lYear + "-'||" + Schedule.ALARM_DATE);
+        query.append("   WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 AND " + Schedule.ALARM_LUNASOLAR + " = 0 THEN ");
+        query.append("     null ");
+        query.append("   ELSE " + Schedule.SCHEDULE_LDATE + " END " + Schedule.SCHEDULE_LDATE);
+        query.append(" ,CASE WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 AND " + Schedule.ALARM_LUNASOLAR + " = 1 THEN 'Y' ");
+        query.append("       WHEN " + Schedule.SCHEDULE_REPEAT + " = 9 AND " + Schedule.ALARM_LUNASOLAR + " = 0 THEN 'N' ");
+        query.append("       ELSE " + Schedule.LUNARYN + " END " + Schedule.LUNARYN);
         query.append(" ,cast(strftime('%w', date(" + Schedule.SCHEDULE_DATE + ")) as integer) as dayindex ");
         query.append(" ,cast(strftime('%W', date(" + Schedule.SCHEDULE_DATE + ")) as integer) as weekindex ");
         query.append(" ," + Schedule.ALARM_DATE);
@@ -1571,7 +1591,7 @@ public class ScheduleDaoImpl extends AbstractDao {
                 String lEnd = lDay;
 
                 //양력일정
-                query.append(" AND ( " + Schedule.SCHEDULE_DATE + " = '" + date + "' ");
+                query.append(" AND (( " + Schedule.SCHEDULE_DATE + " = '" + date + "' ");
                 query.append(" AND " + Schedule.LUNARYN + " <> 'Y' ");
                 query.append(" AND " + Schedule.ANNIVERSARY + " <> 'Y' )");
 
@@ -1604,13 +1624,12 @@ public class ScheduleDaoImpl extends AbstractDao {
                     query.append("or ( " + Schedule.SCHEDULE_REPEAT + " = 9 ");
                     query.append("and " + Schedule.SCHEDULE_DATE + " = '1900-01-01' ");
                     query.append("and (   (" + Schedule.ALARM_LUNASOLAR + " = 0 and " + Schedule.ALARM_DATE + " like '" + date.substring(5, 10) + "%') ");
-                    //query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + lStart + "' and '" + lEnd + "') ) ");
-                    query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " = '" + lDay + "') ) ");
-                    query.append("and " + Schedule.ALARM_TIME + " = '00:00' )");
+                    query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " = '" + lDay.substring(5) + "') ) ");
+                    query.append("and " + Schedule.ALARM_TIME + " = '00:00' ))");
 
                 } else {
                     // 시스템 기념일
-                    query.append("and " + Schedule.SCHEDULE_REPEAT + " < 8 ");
+                    query.append(") and " + Schedule.SCHEDULE_REPEAT + " < 8 ");
                     query.append("and " + Schedule.SCHEDULE_DATE + " > '1900-01-01' ");
                 }
 
@@ -1635,7 +1654,7 @@ public class ScheduleDaoImpl extends AbstractDao {
                 boolean isChange = (lStart.substring(5).compareTo(lEnd.substring(5)) > 0);
 
                 //양력일정
-                query.append(" AND ( " + Schedule.SCHEDULE_DATE + " between '" + Start + "' and '" + End + "'");
+                query.append(" AND (( " + Schedule.SCHEDULE_DATE + " between '" + Start + "' and '" + End + "'");
                 query.append(" AND " + Schedule.LUNARYN + " <> 'Y' ");
                 query.append(" AND " + Schedule.ANNIVERSARY + " <> 'Y' )");
 
@@ -1674,18 +1693,18 @@ public class ScheduleDaoImpl extends AbstractDao {
                     // 시스템 기념일
                     query.append("or ( " + Schedule.SCHEDULE_REPEAT + " = 9 ");
                     query.append("and " + Schedule.SCHEDULE_DATE + " = '1900-01-01' ");
-                    query.append("and (" + Schedule.ALARM_LUNASOLAR + " = 0 and " + Schedule.ALARM_DATE + " between '" + Start.substring(5, 10) + "' and '" + End.substring(5, 10) + "') ");
+                    query.append("and ((" + Schedule.ALARM_LUNASOLAR + " = 0 and " + Schedule.ALARM_DATE + " between '" + Start.substring(5, 10) + "' and '" + End.substring(5, 10) + "') ");
                     if (isChange) {
-                        query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + lStart + "' and '" + "12-31')  ");
-                        query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + "01-01' and '" + lEnd + "')  ");
+                        query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + lStart.substring(5) + "' and '" + "12-31')  ");
+                        query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + "01-01' and '" + lEnd.substring(5) + "'))  ");
                     } else {
-                        query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + lStart + "' and '" + lEnd + "')  ");
+                        query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + lStart.substring(5) + "' and '" + lEnd.substring(5) + "'))  ");
                     }
-                    query.append("and " + Schedule.ALARM_TIME + " = '00:00' )");
+                    query.append("and " + Schedule.ALARM_TIME + " = '00:00' ))");
 
                 } else {
                     // 시스템 기념일
-                    query.append("and " + Schedule.SCHEDULE_REPEAT + " < 8 ");
+                    query.append(") and " + Schedule.SCHEDULE_REPEAT + " < 8 ");
                     query.append("and " + Schedule.SCHEDULE_DATE + " > '1900-01-01' ");
                 }
 
@@ -1701,7 +1720,7 @@ public class ScheduleDaoImpl extends AbstractDao {
                 boolean isChange = (lStart.substring(5).compareTo(lEnd.substring(5)) > 0);
 
                 //양력일정
-                query.append(" AND ( " + Schedule.SCHEDULE_DATE + " LIKE '" + date.substring(0, 7) + "%' ");
+                query.append(" AND (( " + Schedule.SCHEDULE_DATE + " LIKE '" + date.substring(0, 7) + "%' ");
                 query.append(" AND " + Schedule.LUNARYN + " <> 'Y' ");
                 query.append(" AND " + Schedule.ANNIVERSARY + " <> 'Y' )");
 
@@ -1737,19 +1756,19 @@ public class ScheduleDaoImpl extends AbstractDao {
 
                 if (Prefs.getAnniversary(this.mContext)) {
                     // 시스템 기념일
-                    query.append("or ( " + Schedule.SCHEDULE_REPEAT + " in ('F','P','9') ");
+                    query.append("or ( " + Schedule.SCHEDULE_REPEAT + " = 9 ");
                     query.append("and " + Schedule.SCHEDULE_DATE + " = '1900-01-01' ");
-                    query.append("and    (" + Schedule.ALARM_LUNASOLAR + " = 0 and " + Schedule.ALARM_DATE + " like '" + date.substring(5, 7) + "%') ");
+                    query.append("and   ( (" + Schedule.ALARM_LUNASOLAR + " = 0 and " + Schedule.ALARM_DATE + " like '" + date.substring(5, 7) + "%') ");
                     if (isChange) {
-                        query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + lStart + "' and '" + "12-31')  ");
-                        query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + "01-01' and '" + lEnd + "') ");
+                        query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + lStart.substring(5) + "' and '" + "12-31')  ");
+                        query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + "01-01' and '" + lEnd.substring(5) + "')) ");
                     } else {
-                        query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + lStart + "' and '" + lEnd + "')  ");
+                        query.append("     or (" + Schedule.ALARM_LUNASOLAR + " = 1 and " + Schedule.ALARM_DATE + " between '" + lStart.substring(5) + "' and '" + lEnd.substring(5) + "'))  ");
                     }
-                    query.append("and " + Schedule.ALARM_TIME + " = '00:00' )");
+                    query.append("and " + Schedule.ALARM_TIME + " = '00:00' ))");
                 } else {
                     // 시스템 기념일
-                    query.append("and " + Schedule.SCHEDULE_REPEAT + " < 8 ");
+                    query.append(") and " + Schedule.SCHEDULE_REPEAT + " < 8 ");
                     query.append("and " + Schedule.SCHEDULE_DATE + " > '1900-01-01' ");
                 }
             } else {
@@ -1786,7 +1805,8 @@ public class ScheduleDaoImpl extends AbstractDao {
         }
 
         query.append(" ORDER BY 2 ASC ");
-        //query.append(" ORDER BY " + Schedule.SCHEDULE_DATE + " ASC ");
+
+        Log.d(Common.TAG, query.toString());
 
         return getReadableDatabase().rawQuery(query.toString(), null);
 

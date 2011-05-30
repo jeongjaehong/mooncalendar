@@ -132,6 +132,10 @@ public class Lunar2Solar {
 
     }
 
+    public static String l2s(String date) {
+        return s2l(Integer.parseInt(date.substring(0, 4)), Integer.parseInt(date.substring(5, 7)), Integer.parseInt(date.substring(8, 10)));
+    }
+
     public static String l2s(String LunarYear, String LunarMonth, String LunarDay) {
         return l2s(Integer.parseInt(LunarYear), Integer.parseInt(LunarMonth), Integer.parseInt(LunarDay));
     }
