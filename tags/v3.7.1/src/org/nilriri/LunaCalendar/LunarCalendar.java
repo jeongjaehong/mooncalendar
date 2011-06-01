@@ -1,5 +1,7 @@
 package org.nilriri.LunaCalendar;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -52,7 +54,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
     private OldEvent oldEvent;
 
     // Menu item ids    
-    public static final int MENU_ITEM_SCHEDULELIST = Menu.FIRST;
+    public static final int MENU_ITEM_TODAYSCHEDULE = Menu.FIRST;
     public static final int MENU_ITEM_ADDSCHEDULE = Menu.FIRST + 1;
     public static final int MENU_ITEM_ALLSCHEDULE = Menu.FIRST + 2;
     public static final int MENU_ITEM_WEEKSCHEDULE = Menu.FIRST + 3;
@@ -94,14 +96,13 @@ public class LunarCalendar extends Activity implements RefreshManager {
         final Calendar c = Calendar.getInstance();
         if (intent.hasExtra("DataPk")) {
 
-            Bundle data = intent.getExtras();
-            Long dataPK = (Long) data.get("DataPk");
+            Long dataPK = intent.getLongExtra("DataPk", new Long(0));
             Log.d(Common.TAG, "dataPK=" + dataPK);
             ScheduleBean s = new ScheduleBean(dao.query(dataPK));
 
             if (dataPK > 0) {
                 if (s.getLunaryn()) {
-                    String sdate = Lunar2Solar.l2s(c.get(Calendar.YEAR) + "", s.getLMonth() + "", s.getLDay() + "");
+                    String sdate = Lunar2Solar.l2s(s.getYear() + "", s.getLMonth() + "", s.getLDay() + "");
 
                     Log.d(Common.TAG, "sdate=" + sdate);
 
@@ -110,7 +111,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
                     mDay = Integer.parseInt(sdate.substring(6, 8));
 
                 } else {
-                    mYear = c.get(Calendar.YEAR);
+                    mYear = s.getYear();
                     mMonth = s.getMonth() - 1;
                     mDay = s.getDay();
                 }
@@ -126,7 +127,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
         }
 
         setContentView(R.layout.animations_main_screen);
-        
+
         lunarCalendarView = (LunarCalendarView) findViewById(R.id.lunaCalendarView);
         lunarCalendarView.requestFocus();
 
@@ -489,13 +490,33 @@ public class LunarCalendar extends Activity implements RefreshManager {
 
     }
 
+    class BackupFileSearchFilter implements FilenameFilter {
+        private String fileName;
+        private String delimiter;
+
+        public BackupFileSearchFilter() {
+            this.fileName = "lunarcalendar";
+            this.delimiter = "backup";
+        }
+
+        public boolean accept(File dir, String name) {
+            if (name != null) {
+                return name.startsWith(fileName) && name.contains(delimiter);// .startsWith(name);
+            }
+            return false;
+        }
+
+    }
+
     public void onDataWork() {
 
         String dataworks[] = getResources().getStringArray(R.array.entries_dataworks);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(LunarCalendar.this);
         builder.setTitle("작업을 선택하십시오.");
+
         builder.setItems(dataworks, new DialogInterface.OnClickListener() {
+
             public void onClick(DialogInterface dialog, int which) {
 
                 try {
@@ -507,8 +528,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
                             break;
                         case 1: // 복원
 
-                            DataManager.StartRestore(LunarCalendar.this);
-                            updateDisplay();
+                            onSelectBackupFile();
 
                             break;
                         case 2: // csv export
@@ -523,6 +543,37 @@ public class LunarCalendar extends Activity implements RefreshManager {
             }
         }).show();
 
+    }
+
+    public void onSelectBackupFile() {
+
+        String backupPath = android.os.Environment.getExternalStorageDirectory().toString() + "/";
+
+        File dir = new File(backupPath);
+        FilenameFilter filenameFilter = new BackupFileSearchFilter();
+        File[] files = dir.listFiles(filenameFilter);
+
+        final String names[] = new String[files.length];
+        int i = 0;
+        for (File file : files) {
+            names[i++] = file.getName();
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(LunarCalendar.this);
+        builder.setTitle("복원할 백업파일을 선택하십시오.");
+        builder.setItems(names, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                try {
+                    String targetFile = names[which];
+
+                    DataManager.StartRestore(LunarCalendar.this, targetFile);
+                    updateDisplay();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(LunarCalendar.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        }).show();
     }
 
     /*
@@ -542,7 +593,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
 
         SubMenu subMenu = menu.addSubMenu("일정목록").setIcon(android.R.drawable.ic_menu_agenda);
         subMenu.add(0, MENU_ITEM_ALLSCHEDULE, 0, R.string.schedule_alllist_label);
-        subMenu.add(0, MENU_ITEM_SCHEDULELIST, 0, R.string.schedule_todaylist_label);
+        subMenu.add(0, MENU_ITEM_TODAYSCHEDULE, 0, R.string.schedule_todaylist_label);
         subMenu.add(0, MENU_ITEM_WEEKSCHEDULE, 0, R.string.schedule_weeklist_label);
         subMenu.add(0, MENU_ITEM_MONTHSCHEDULE, 0, R.string.schedule_monthlist_label);
 
@@ -562,7 +613,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case MENU_ITEM_ALLSCHEDULE:
-            case MENU_ITEM_SCHEDULELIST:
+            case MENU_ITEM_TODAYSCHEDULE:
             case MENU_ITEM_WEEKSCHEDULE:
             case MENU_ITEM_MONTHSCHEDULE:
                 this.openScheduleList(item.getItemId());
@@ -638,7 +689,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
                 startActivity(intent);
                 return;
             }
-            case MENU_ITEM_SCHEDULELIST: {
+            case MENU_ITEM_TODAYSCHEDULE: {
                 Intent intent = new Intent();
                 intent.setClass(this, SearchResult.class);
                 final Calendar c = Calendar.getInstance();
@@ -712,7 +763,8 @@ public class LunarCalendar extends Activity implements RefreshManager {
         }
 
         SubMenu subMenu = menu.addSubMenu("일정목록보기").setIcon(android.R.drawable.ic_menu_agenda);
-        subMenu.add(0, MENU_ITEM_SCHEDULELIST, 0, R.string.schedule_todaylist_label);
+        subMenu.add(0, MENU_ITEM_ALLSCHEDULE, 0, R.string.schedule_alllist_label);
+        subMenu.add(0, MENU_ITEM_TODAYSCHEDULE, 0, R.string.schedule_todaylist_label);
         subMenu.add(0, MENU_ITEM_WEEKSCHEDULE, 0, R.string.schedule_weeklist_label);
         subMenu.add(0, MENU_ITEM_MONTHSCHEDULE, 0, R.string.schedule_monthlist_label);
 
@@ -726,7 +778,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
         switch (item.getItemId()) {
 
             case MENU_ITEM_ALLSCHEDULE:
-            case MENU_ITEM_SCHEDULELIST:
+            case MENU_ITEM_TODAYSCHEDULE:
             case MENU_ITEM_WEEKSCHEDULE:
             case MENU_ITEM_MONTHSCHEDULE:
                 this.openScheduleList(item.getItemId());

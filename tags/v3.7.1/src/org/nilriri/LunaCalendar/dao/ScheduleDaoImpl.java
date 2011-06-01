@@ -181,11 +181,53 @@ public class ScheduleDaoImpl extends AbstractDao {
             }
 
         } else {
-            c.close();
 
-            // etag와 uid가 동일한 자료가 
-            // local db에 없는 일정이므로 신규등록한다.
-            localInsert(scheduleBean);
+            WhereClause whereClause2 = new WhereClause();
+
+            whereClause2.put(Schedule.GID, scheduleBean.getGID());
+
+            String sql2 = "SELECT _id FROM " + Schedule.SCHEDULE_TABLE_NAME + " WHERE " + whereClause2.getClause();
+
+            Cursor c2 = getReadableDatabase().rawQuery(sql2, null);
+
+            int updateCnt2 = 0;
+            if (c2.moveToNext()) {// uid만 동일한 자료가 존해하면...
+                ScheduleBean localBean = new ScheduleBean(c2, true);
+
+                scheduleBean.setId(c2.getLong(Schedule.COL_ID));
+                c2.close();
+                Log.d(Common.TAG, "GUID동일건 UPDATE..");
+
+                // 로컬에 없는 정보를 동기화 요청 결과로 변경하여 로컬에 저장한다.
+                localBean.setTitle(scheduleBean.getSchedule_title());
+                localBean.setDate(scheduleBean.getSchedule_date());
+                localBean.setContents(scheduleBean.getSchedule_contents());
+                localBean.setGID(scheduleBean.getGID());
+                localBean.setEtag(scheduleBean.getEtag());
+                localBean.setPublished(scheduleBean.getPublished());
+                localBean.setUpdated(scheduleBean.getUpdated());
+                localBean.setWhen(scheduleBean.getWhen());
+                localBean.setWho(scheduleBean.getWho());
+                localBean.setRecurrence(scheduleBean.getRecurrence());
+                localBean.setSelfUrl(scheduleBean.getSelfurl());
+                localBean.setEditurl(scheduleBean.getEditurl());
+                localBean.setOriginalevent(scheduleBean.getOriginalevent());
+                localBean.setEventstatus(scheduleBean.getEventstatus());
+
+                updateCnt2 = localUpdate(localBean);
+
+                // 업데이트된 기존 자료가 없으면 ...
+                if (updateCnt2 <= 0) {
+                    // 서버에서 변경된 자료를 로컬에 생성한다.
+                    localInsert(scheduleBean);
+                }
+            } else {
+                c.close();
+
+                // etag와 uid가 동일한 자료가 
+                // local db에 없는 일정이므로 신규등록한다.
+                localInsert(scheduleBean);
+            }
         }
 
     }
@@ -1054,12 +1096,13 @@ public class ScheduleDaoImpl extends AbstractDao {
         }
     }
 
-    public boolean importdata() {
+    public boolean importdata(String backupFile) {
 
         String path = android.os.Environment.getExternalStorageDirectory().toString() + "/";
         Calendar c = Calendar.getInstance();
         c.setFirstDayOfWeek(Calendar.SUNDAY);
-        File file = new File(path + "lunarcalendar.backup");
+        //File file = new File(path + "lunarcalendar.backup");
+        File file = new File(path + backupFile);
 
         if (!file.exists()) {
             return true;
@@ -1412,8 +1455,9 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("       when " + Schedule.SCHEDULE_DATE + " <= '1900-01-01' then " + Schedule.ALARM_DAY);
         query.append("       else 6 end as " + Schedule.SCHEDULE_KIND);
         query.append(", " + Schedule.SCHEDULE_REPEAT);
+        query.append(", " + Schedule.SCHEDULE_CONTENTS);
         query.append(", case when schedule_repeat < 9 and " + Schedule.ANNIVERSARY + " = 'Y' then cast(strftime('%Y', date('now')) as int) - cast(strftime('%Y', date(schedule_date)) as int) else '' end as years ");
-          query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
+        query.append(" FROM " + Schedule.SCHEDULE_TABLE_NAME + " ");
         query.append(" WHERE 1 = 1 ");
         //query.append(" WHERE " + Schedule.DDAY_DISPLAYYN + " = 1 ");
         query.append(" AND " + Schedule._ID + " = " + id);

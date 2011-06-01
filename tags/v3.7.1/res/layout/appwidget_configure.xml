@@ -13,7 +13,7 @@
 			android:layout_marginRight="5dip">
 
 			<TextView android:id="@+id/schedule_date_label"
-				android:textSize="16sp" android:layout_width="wrap_content"
+				android:textSize="16sp" android:layout_width="100dip"
 				android:paddingRight="5dip" android:layout_height="wrap_content"
 				android:text="■ 색상/종류" />
 
@@ -22,6 +22,19 @@
 
 			<Spinner android:id="@+id/widgetkind" android:layout_height="wrap_content"
 				android:layout_width="wrap_content" />
+		</LinearLayout>
+		<LinearLayout android:id="@+id/font_colors"
+			android:layout_width="fill_parent" android:layout_height="wrap_content"
+			android:orientation="horizontal" android:layout_marginLeft="5dip"
+			android:layout_marginRight="5dip">
+
+			<TextView android:id="@+id/schedule_date_label"
+				android:textSize="16sp" android:layout_width="100dip"
+				android:paddingRight="5dip" android:layout_height="wrap_content"
+				android:text="■ 글자 색상" />
+
+			<Spinner android:id="@+id/fontcolor" android:layout_height="wrap_content"
+				android:layout_width="fill_parent" />
 		</LinearLayout>
 		<LinearLayout android:id="@+id/title_template"
 			android:layout_width="fill_parent" android:layout_height="wrap_content"

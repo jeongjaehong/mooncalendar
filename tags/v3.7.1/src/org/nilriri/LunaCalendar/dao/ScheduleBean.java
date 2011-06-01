@@ -313,7 +313,9 @@ public class ScheduleBean {
             if (event.originalEvent != null) {
                 this.setOriginalevent(event.originalEvent.parseAsString());
             }
-            this.setEventstatus(event.eventStatus.getValue());
+            if (event.eventStatus != null) {
+                this.setEventstatus(event.eventStatus.getValue());
+            }
         } catch (Exception e) {
             e.printStackTrace();
             Log.d(Common.TAG, "event is " + event.toString());

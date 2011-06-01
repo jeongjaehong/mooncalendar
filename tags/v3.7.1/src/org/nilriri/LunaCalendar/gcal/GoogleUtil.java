@@ -93,7 +93,13 @@ public class GoogleUtil {
                 }
             }
         } catch (IOException e) {
+            EventEntry event = new EventEntry();
+            event.title = "Sync error...";
+            event.when.startTime = Common.toDateTime("");
+            event.content = e.getMessage();
             events.clear();
+            
+            events.add(event);
         }
         return events;
     }
