@@ -28,6 +28,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -56,11 +57,13 @@ public class WidgetConfigure extends Activity {
     private static final String PREF_PK_KEY = "pk_";
     private static final String PREF_URL_KEY = "url_";
     private static final String PREF_RECEIVER_KEY = "receiver";
+    private static final String PREF_FONTCOLOR_KEY = "fontcolor";
 
     private int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
 
     private Spinner spin_widgetkind;
     private Spinner spin_widgetcolor;
+    private Spinner spin_fontcolor;
     private Button btn_ok;
     private Button btn_cancel;
     private ListView mListView;
@@ -90,6 +93,7 @@ public class WidgetConfigure extends Activity {
 
         spin_widgetkind = (Spinner) findViewById(R.id.widgetkind);
         spin_widgetcolor = (Spinner) findViewById(R.id.widgetcolor);
+        spin_fontcolor = (Spinner) findViewById(R.id.fontcolor);
         chk_reveiver = (CheckBox) findViewById(R.id.check_receiver);
         btn_ok = (Button) findViewById(R.id.save_button);
         btn_cancel = (Button) findViewById(R.id.cancel_button);
@@ -105,6 +109,19 @@ public class WidgetConfigure extends Activity {
         adp_color.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spin_widgetcolor.setAdapter(adp_color);
         spin_widgetcolor.setSelection(getWidgetColor(getBaseContext(), AppWidgetManager.INVALID_APPWIDGET_ID));
+
+        ArrayAdapter<CharSequence> adp_fcolor = ArrayAdapter.createFromResource(this, R.array.widget_font_colors, android.R.layout.simple_spinner_item);
+        adp_fcolor.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spin_fontcolor.setAdapter(adp_fcolor);
+        spin_fontcolor.setSelection(0);
+
+        /*
+        <color name="white_font">#ffffffFF</color>  
+        <color name="black_font">#ff000000</color>
+        <color name="orange_color">#abff7921</color>        
+        <color name="skyblue_color">#ff528EFF</color>   
+        <color name="versestr_color">#ffEF9221</color>  
+        */
 
         // Bind the action for the save button.
         btn_ok.setOnClickListener(mOnClickListener);
@@ -273,19 +290,62 @@ public class WidgetConfigure extends Activity {
 
                     } else {
                         setDataPk(getBaseContext(), mAppWidgetId, mListView.getItemIdAtPosition(mListView.getCheckedItemPosition()));
+                    }
 
+                    setReceiver(getBaseContext(), chk_reveiver.isChecked());
+
+                    switch (spin_fontcolor.getSelectedItemPosition()) {
+                        default:
+                        case 0: { // LTGRAY
+                            setFontColor(getBaseContext(), Color.LTGRAY);
+                            break;
+                        }
+                        case 1: { // DKGRAY
+                            setFontColor(getBaseContext(), Color.DKGRAY);
+                            break;
+                        }
+                        case 2: { // GRAY
+                            setFontColor(getBaseContext(), Color.GRAY);
+                            break;
+                        }
+                        case 3: { // WHITE
+                            setFontColor(getBaseContext(), Color.WHITE);
+                            break;
+                        }
+                        case 4: { // RED
+                            setFontColor(getBaseContext(), Color.RED);
+                            break;
+                        }
+                        case 5: { // GREEN
+                            setFontColor(getBaseContext(), Color.GREEN);
+                            break;
+                        }
+                        case 6: { // BLUE
+                            setFontColor(getBaseContext(), Color.BLUE);
+                            break;
+                        }
+                        case 7: { // YELLOW
+                            setFontColor(getBaseContext(), Color.YELLOW);
+                            break;
+                        }
+                        case 8: { // CYAN
+                            setFontColor(getBaseContext(), Color.CYAN);
+                            break;
+                        }
+                        case 9: { // MAGENTA
+                            setFontColor(getBaseContext(), Color.MAGENTA);
+                            break;
+                        }
+                        case 10: { // BLACK
+                            setFontColor(getBaseContext(), Color.BLACK);
+                            break;
+                        }
                     }
 
                     // Push widget update to surface with newly set prefix
                     AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(getBaseContext());
+
                     WidgetProvider.updateAppWidget(getBaseContext(), appWidgetManager, mAppWidgetId);
-
-                    //IntentFilter filter = new IntentFilter();
-                    //filter.addAction(Intent.ACTION_TIME_TICK);
-                    //filter.addCategory(Intent.CATEGORY_DEFAULT);
-                    //registerReceiver(new WidgetProvider(), filter);
-
-                    setReceiver(getBaseContext(), chk_reveiver.isChecked());
 
                     // Make sure we pass back the original appWidgetId
                     Intent resultValue = new Intent();
@@ -374,6 +434,17 @@ public class WidgetConfigure extends Activity {
         if (prefs.contains(PREF_PK_KEY + appWidgetId)) {
             prefs.edit().remove(PREF_PK_KEY + appWidgetId).commit();
         }
+    }
+
+    static void setFontColor(Context context, int fontcolor) {
+        SharedPreferences.Editor prefs = PreferenceManager.getDefaultSharedPreferences(context).edit();
+        prefs.putInt(PREF_FONTCOLOR_KEY, fontcolor);
+        prefs.commit();
+    }
+
+    public static int getFontColor(Context context) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        return prefs.getInt(PREF_FONTCOLOR_KEY, android.R.color.darker_gray);
     }
 
 }

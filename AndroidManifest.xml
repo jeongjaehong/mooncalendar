@@ -2,7 +2,7 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="org.nilriri.LunaCalendar" android:installLocation="auto"
-	android:versionName="3.7.4" android:versionCode="126">
+	android:versionName="3.7.5" android:versionCode="127">
 
 	<meta-data android:name="PublisherId" android:value="PE08TRFN03" />
 	<meta-data android:name="SlotID" android:value="PE08TRFN03" />
@@ -16,7 +16,8 @@
 		<service android:name=".alarm.CalendarAlarmService"
 			android:process=":remote" />
 
-		<service android:name=".widget.WidgetRefreshService" />
+		<service android:name=".widget.WidgetRefreshService"
+			android:process=":remote" />
 
 		<!-- Receiver -->
 		<receiver android:enabled="true" android:name=".BootUpReceiver"
@@ -59,14 +60,6 @@
 				<action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
 			</intent-filter>
 		</activity>
-
-		<receiver android:name=".widget.WidgetBroadcastReceiver"
-			android:enabled="false">
-			<intent-filter>
-				<action android:name="android.intent.ACTION_TIMEZONE_CHANGED" />
-				<action android:name="android.intent.ACTION_TIME_CHANGED" />
-			</intent-filter>
-		</receiver>
 
 		<!-- Activity -->
 		<activity android:name=".LunarCalendar" android:label="@string/calendar_title"
@@ -150,7 +143,6 @@
 	<uses-permission android:name="android.permission.VIBRATE" />
 	<!--
 		<uses-permission android:name="android.permission.BIND_APPWIDGET" />
-
 		<uses-permission
 		android:name="android.permission.READ_CONTACTS"></uses-permission>
 		<uses-permission
@@ -170,6 +162,4 @@
 		<uses-permission
 		android:name="android.permission.ACCESS_COARSE_LOCATION"></uses-permission>
 	-->
-
-
 </manifest>

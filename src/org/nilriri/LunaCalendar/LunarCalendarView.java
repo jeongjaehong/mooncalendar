@@ -378,8 +378,9 @@ public class LunarCalendarView extends View {
         drawableTitle.draw(canvas);
 
         // 띠별 동물아이콘 그리기
+        // TODO:
         Rect all = new Rect();
-        all.set(getWidth() - 28, getHeight() - 35, getWidth() - 3, getHeight() - 1);
+        all.set(getWidth() - (getWidth()/7), getHeight() - (getHeight()/8), getWidth() - 3, getHeight() - 1);
         //Drawable drawableAnimal = getResources().getDrawable(ARRAY_DDI[num2]);
         drawableAnimal.setBounds(all);
         drawableAnimal.setAlpha(100);
@@ -565,8 +566,8 @@ public class LunarCalendarView extends View {
 
         Drawable drawICON;
         if (Prefs.getLunaIcon(getContext())) {
-            iconLeft = (int) (dayname * getTileWidth() + (getTileWidth() * 0.6f));
-            iconTop = (int) (week * getTileHeight() + (getTileHeight() * 0.6f));
+            iconLeft = (int) (dayname * getTileWidth() + (getTileWidth() * 0.68f));
+            iconTop = (int) (week * getTileHeight() + (getTileHeight() * 0.68f));
 
             // switch (Lunar2Solar.getLunarID(getLunaday(day))) {
             switch (ilday) {
@@ -668,55 +669,9 @@ public class LunarCalendarView extends View {
                     break;
             }
 
-            /*
-            switch (ilday) {
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                    drawICON = getResources().getDrawable(R.drawable.day3_6);
-                    break;
-                case 7:
-                case 8:
-                case 9:
-                    drawICON = getResources().getDrawable(R.drawable.day7_9);
-                    break;
-                case 10:
-                case 11:
-                case 12:
-                    drawICON = getResources().getDrawable(R.drawable.day10_12);
-                    break;
-                case 13:
-                case 14:
-                case 15:
-                case 16:
-                    drawICON = getResources().getDrawable(R.drawable.day13_16);
-                    break;
-                case 17:
-                case 18:
-                case 19:
-                case 20:
-                    drawICON = getResources().getDrawable(R.drawable.day17_20);
-                    break;
-                case 21:
-                case 22:
-                case 23:
-                case 24:
-                    drawICON = getResources().getDrawable(R.drawable.day21_24);
-                    break;
-                case 25:
-                case 26:
-                case 27:
-                case 28:
-                    drawICON = getResources().getDrawable(R.drawable.day25_28);
-                    break;
-                default:
-                    drawICON = getResources().getDrawable(R.drawable.day29_02);
-                    break;
-            }
-            */
+           //TODO: 
             Rect rectMoon = new Rect();
-            rectMoon.set(iconLeft, iconTop, iconLeft + 24, iconTop + 24);
+            rectMoon.set(iconLeft, iconTop, iconLeft + (getWidth()/7/3), iconTop + (getWidth()/7/3)     );
             drawICON.setBounds(rectMoon);
             drawICON.draw(canvas);
         }

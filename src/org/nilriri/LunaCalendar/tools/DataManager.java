@@ -66,7 +66,7 @@ public class DataManager {
         }).start();
     }
 
-    public static void StartRestore(Context context) {
+    public static void StartRestore(Context context, final String backupFile) {
         mContext = context;
 
         daoTarget = new ScheduleDaoImpl(mContext, null, Prefs.getSDCardUse(context));
@@ -80,7 +80,7 @@ public class DataManager {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    if (!daoTarget.importdata()) {
+                    if (!daoTarget.importdata(backupFile)) {
                         Error = "복구 실패!";
                     } else {
                         Error = "";
