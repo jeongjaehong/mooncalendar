@@ -18,7 +18,7 @@
 				android:text="■ 색상/종류" />
 
 			<Spinner android:id="@+id/widgetcolor" android:layout_height="wrap_content"
-				android:layout_width="wrap_content" />
+				android:layout_width="100dip" />
 
 			<Spinner android:id="@+id/widgetkind" android:layout_height="wrap_content"
 				android:layout_width="wrap_content" />

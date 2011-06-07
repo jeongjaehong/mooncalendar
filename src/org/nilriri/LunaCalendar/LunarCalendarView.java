@@ -6,8 +6,10 @@ import java.util.TimeZone;
 
 import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 import org.nilriri.LunaCalendar.tools.Common;
-import org.nilriri.LunaCalendar.tools.Prefs;
+import org.nilriri.LunaCalendar.tools.ContactEvent;
+import org.nilriri.LunaCalendar.tools.ContactManager;
 import org.nilriri.LunaCalendar.tools.Lunar2Solar;
+import org.nilriri.LunaCalendar.tools.Prefs;
 
 import android.content.Context;
 import android.content.res.Resources.NotFoundException;
@@ -66,6 +68,8 @@ public class LunarCalendarView extends View {
     //public Cursor mCur_Schedules;
     //public Cursor mCur_Ddays;
     public String mDday_msg;
+    private ContactEvent[] mMonthlyEvent = null;
+    private ContactManager mContactManager = null;
 
     HashMap<Integer, Integer> mScheduleMap;
     HashMap<Integer, Integer> mDdaysMap;
@@ -89,6 +93,8 @@ public class LunarCalendarView extends View {
     public LunarCalendarView(Context context, AttributeSet attrs) {
         super(context, attrs);
         this.lunarCalendar = (LunarCalendar) context;
+
+        mContactManager = new ContactManager(context);
 
         ARRAY_SIPGAN = context.getResources().getStringArray(R.array.array_sipgan);
         ARRAY_SIPEJIJI = context.getResources().getStringArray(R.array.array_sipejiji);
@@ -125,10 +131,22 @@ public class LunarCalendarView extends View {
         }
         cursor.close();
 
+        // 주소록 생일 정보를 조회한다.
+        mMonthlyEvent = mContactManager.getRecentContactDisplayName(queryMonth);
+
+        // 주소록 생일정보 유무를 map에 저장한다.
+        for (int i = 0; i < mMonthlyEvent.length; i++) {
+            if (mScheduleMap.containsKey(mMonthlyEvent[i].getDay())) {
+                mScheduleMap.put(mMonthlyEvent[i].getDay(), 9);
+            } else {
+                mScheduleMap.put(mMonthlyEvent[i].getDay(), 2);
+            }
+        }
+
         Cursor cursor2 = lunarCalendar.dao.queryExistsSchedule2(queryMonth.substring(0, 7));
         while (cursor2.moveToNext()) {
             String date[] = Common.tokenFn(cursor2.getString(0), "-");
-            
+
             Log.d(Common.TAG, "Lunar===>" + cursor2.getString(0));
 
             boolean isChange = (queryMonth.substring(0, 7).compareTo(cursor2.getString(0).substring(0, 7)) >= 0);
@@ -143,9 +161,9 @@ public class LunarCalendarView extends View {
 
             int day = Integer.parseInt(sDay.substring(6));
             mScheduleMap.put(day, 1);
-            
+
             Log.d(Common.TAG, "Map===>" + mScheduleMap.toString());
- 
+
         }
         cursor2.close();
 
@@ -380,7 +398,7 @@ public class LunarCalendarView extends View {
         // 띠별 동물아이콘 그리기
         // TODO:
         Rect all = new Rect();
-        all.set(getWidth() - (getWidth()/7), getHeight() - (getHeight()/8), getWidth() - 3, getHeight() - 1);
+        all.set(getWidth() - (getWidth() / 7), getHeight() - (getHeight() / 8), getWidth() - 3, getHeight() - 1);
         //Drawable drawableAnimal = getResources().getDrawable(ARRAY_DDI[num2]);
         drawableAnimal.setBounds(all);
         drawableAnimal.setAlpha(100);
@@ -466,10 +484,29 @@ public class LunarCalendarView extends View {
                     if (mScheduleMap.containsKey(day) || mDdaysMap.containsKey(day)) {
 
                         getRect(dayname, week, r);
+
                         if (mScheduleMap.containsKey(day) && mDdaysMap.containsKey(day)) {
                             drawableICON = getResources().getDrawable(R.drawable.dpen);
                         } else if (mScheduleMap.containsKey(day)) {
-                            drawableICON = getResources().getDrawable(R.drawable.colorpen);
+
+                            if (mScheduleMap.get(day) == 2) {
+                                drawableICON = getResources().getDrawable(R.drawable.contactevent);
+
+                            } else if (mScheduleMap.get(day) == 9) {
+
+                                drawableICON = getResources().getDrawable(R.drawable.contactevent);
+
+                                iconLeft = (int) (dayname * getTileWidth() + (getTileWidth() * 0.5f));
+                                iconTop = (int) (week * getTileHeight() - (getTileHeight() * 0.02f));
+
+                                drawableICON.setBounds(iconLeft, iconTop, iconLeft + mColorPenSize, iconTop + mColorPenSize);
+                                drawableICON.draw(canvas);
+
+                                drawableICON = getResources().getDrawable(R.drawable.colorpen);
+
+                            } else {
+                                drawableICON = getResources().getDrawable(R.drawable.colorpen);
+                            }
                         } else {//if (mDdaysMap.containsKey(day)) {
                             drawableICON = getResources().getDrawable(R.drawable.dday);
                         }
@@ -669,9 +706,9 @@ public class LunarCalendarView extends View {
                     break;
             }
 
-           //TODO: 
+            //TODO: 
             Rect rectMoon = new Rect();
-            rectMoon.set(iconLeft, iconTop, iconLeft + (getWidth()/7/3), iconTop + (getWidth()/7/3)     );
+            rectMoon.set(iconLeft, iconTop, iconLeft + (getWidth() / 7 / 3), iconTop + (getWidth() / 7 / 3));
             drawICON.setBounds(rectMoon);
             drawICON.draw(canvas);
         }
@@ -769,6 +806,7 @@ public class LunarCalendarView extends View {
         private Bitmap flag4;
         private Bitmap dday;
         private Bitmap pen;
+        private Bitmap event;
 
         public EfficientAdapter(Context context, int layout, Cursor c, String from[], int to[]) {
             // Cache the LayoutInflate to avoid asking for a new one each time.
@@ -783,6 +821,7 @@ public class LunarCalendarView extends View {
             flag4 = BitmapFactory.decodeResource(context.getResources(), R.drawable.flag4);
             dday = BitmapFactory.decodeResource(context.getResources(), R.drawable.dday);
             pen = BitmapFactory.decodeResource(context.getResources(), R.drawable.pen);
+            event = BitmapFactory.decodeResource(context.getResources(), R.drawable.contactevent);
         }
 
         /**
@@ -869,14 +908,17 @@ public class LunarCalendarView extends View {
                 case 6:
                     holder.icon.setImageBitmap(pen);
                     break;
+                case 9:
+                    holder.icon.setImageBitmap(this.event);
+                    break;
                 default:
                     holder.icon.setImageBitmap(flag4);
             }
-            
+
             int clock = ((Cursor) super.getItem(position)).getInt(6);
-            if(clock > 0) {
+            if (clock > 0) {
                 holder.clock.setVisibility(View.VISIBLE);
-            }else {
+            } else {
                 holder.clock.setVisibility(View.GONE);
             }
 
@@ -907,7 +949,12 @@ public class LunarCalendarView extends View {
 
             getRect(getSelX(), getSelY(), selRect);
 
-            Cursor cursor = lunarCalendar.dao.query(Common.fmtDate(lunarCalendar.mYear, lunarCalendar.mMonth + 1, lunarCalendar.mDay), this.getLunaday(lunarCalendar.mDay));
+            Cursor cursor = null;
+            if (this.mMonthlyEvent.length > 0) {
+                cursor = lunarCalendar.dao.query(mMonthlyEvent, Common.fmtDate(lunarCalendar.mYear, lunarCalendar.mMonth + 1, lunarCalendar.mDay), this.getLunaday(lunarCalendar.mDay));
+            } else {
+                cursor = lunarCalendar.dao.query(Common.fmtDate(lunarCalendar.mYear, lunarCalendar.mMonth + 1, lunarCalendar.mDay), this.getLunaday(lunarCalendar.mDay));
+            }
             SimpleCursorAdapter adapter = new EfficientAdapter(getContext(), R.layout.shcedule_item, cursor, new String[] { Schedule.SCHEDULE_TYPE, Schedule.SCHEDULE_TITLE }, new int[] { R.id.schedule_date, R.id.schedule_title });
 
             lunarCalendar.mListView.setAdapter(adapter);

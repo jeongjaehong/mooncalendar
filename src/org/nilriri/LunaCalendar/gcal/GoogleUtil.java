@@ -92,9 +92,10 @@ public class GoogleUtil {
                     url = new CalendarUrl(nexturl);
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             EventEntry event = new EventEntry();
-            event.title = "Sync error...";
+            event.id = "0";
+            event.title = "Sync fail...\n"+e.getMessage();
             event.when.startTime = Common.toDateTime("");
             event.content = e.getMessage();
             events.clear();

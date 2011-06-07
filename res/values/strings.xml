@@ -29,6 +29,8 @@
 	<string name="schedule_dayname2_viewer">일마다</string>
 	<string name="dday_info_label">D-day를</string>
 	<string name="dday_fromto_label">일 부터 </string>
+	<string name="goto_today">오늘로 이동</string>
+	
 
 	<string name="every_day_label">매일</string>
 	<string name="every_week_label">매주</string>
@@ -145,7 +147,8 @@
 	</string>
 
 	<string name="widget_label_1x1">Calendar Widget(1x1)</string>
-	<string name="widget_label_1x2">Calendar Widget(1x2)</string>
+	<string name="widget_label_1x2">Calendar Widget(2x1)</string>
+	<string name="widget_label_3x1">Calendar Widget(3x1)</string>
 	<string name="widget_label_2x2">Calendar Widget(2x2)</string>
 
 	<string name="sdcarduse">메모리사용</string>

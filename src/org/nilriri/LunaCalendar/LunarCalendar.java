@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
+import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 import org.nilriri.LunaCalendar.gcal.EventEntry;
 import org.nilriri.LunaCalendar.gcal.GoogleUtil;
 import org.nilriri.LunaCalendar.schedule.ScheduleEditor;
@@ -21,6 +22,7 @@ import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 import org.nilriri.LunaCalendar.tools.OldEvent;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.SearchData;
+import org.nilriri.LunaCalendar.tools.QuickContactViewer;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -29,8 +31,10 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -69,6 +73,8 @@ public class LunarCalendar extends Activity implements RefreshManager {
     public static final int MENU_ITEM_ONLINECAL = Menu.FIRST + 12;
     public static final int MENU_ITEM_SEARCH = Menu.FIRST + 13;
     public static final int MENU_ITEM_EDITSCHEDULE = Menu.FIRST + 14;
+    public static final int MENU_ITEM_GOTOTODAY = Menu.FIRST + 15;
+    public static final int MENU_ITEM_NEXTYEAR = Menu.FIRST + 16;
 
     // date and time
     public int mYear;
@@ -193,28 +199,24 @@ public class LunarCalendar extends Activity implements RefreshManager {
             Cursor c = (Cursor) parent.getItemAtPosition(pos);
 
             if (c != null) {
-                Intent intent = new Intent();
 
-                try {
+                if ("Contact".equals(c.getString(c.getColumnIndexOrThrow(Schedule.SCHEDULE_TYPE)))) {
 
-                    if ("B-Plan".equals(c.getString(1))) {
-                        intent.setAction("org.nilriri.webbibles.VIEW");
-                        intent.setType("vnd.org.nilriri/web-bible");
+                    Uri uri = Uri.parse(c.getString(c.getColumnIndexOrThrow("uri")));
 
-                        intent.putExtra("VERSION", 0);
-                        intent.putExtra("VERSION2", 0);
-                        intent.putExtra("BOOK", c.getInt(4));
-                        intent.putExtra("CHAPTER", c.getInt(5));
-                        intent.putExtra("VERSE", 0);
-                    } else {
-                        intent.setClass(getBaseContext(), ScheduleViewer.class);
-                        intent.putExtra("id", new Long(id));
-                    }
+                    Intent intent = new Intent(LunarCalendar.this, QuickContactViewer.class);
+                    intent.setAction(QuickContactViewer.ACTION_QUICKVIEW);
+                    intent.setData(uri);
+                    intent.putExtra(ContactsContract.Contacts.DISPLAY_NAME, c.getString(c.getColumnIndexOrThrow("displayname")));
 
                     startActivity(intent);
-                } catch (Exception e) {
-                    Toast.makeText(getBaseContext(), "온라인성경 앱이 설치되어있지 않거나 최신버젼이 아닙니다.", Toast.LENGTH_LONG).show();
 
+                } else {
+
+                    Intent intent = new Intent();
+                    intent.setClass(getBaseContext(), ScheduleViewer.class);
+                    intent.putExtra("id", new Long(id));
+                    startActivity(intent);
                 }
             }
 
@@ -768,6 +770,9 @@ public class LunarCalendar extends Activity implements RefreshManager {
         subMenu.add(0, MENU_ITEM_WEEKSCHEDULE, 0, R.string.schedule_weeklist_label);
         subMenu.add(0, MENU_ITEM_MONTHSCHEDULE, 0, R.string.schedule_monthlist_label);
 
+        menu.add(0, MENU_ITEM_GOTOTODAY, 0, R.string.goto_today);
+        menu.add(0, MENU_ITEM_NEXTYEAR, 0, (this.mYear + 1) + "년 " + (this.mMonth + 1) + "월 보기");
+
         menu.add(0, MENU_ITEM_ONLINECAL, 0, R.string.onlinecalendar_label);
 
     }
@@ -777,6 +782,22 @@ public class LunarCalendar extends Activity implements RefreshManager {
 
         switch (item.getItemId()) {
 
+            case MENU_ITEM_GOTOTODAY: {
+
+                Calendar c = Calendar.getInstance();
+                mYear = c.get(Calendar.YEAR);
+                mMonth = c.get(Calendar.MONTH);
+                mDay = c.get(Calendar.DAY_OF_MONTH);
+                this.AddMonth(0);
+
+                return true;
+            }
+            case MENU_ITEM_NEXTYEAR: {
+                ++mYear;
+                this.AddMonth(0);
+
+                return true;
+            }
             case MENU_ITEM_ALLSCHEDULE:
             case MENU_ITEM_TODAYSCHEDULE:
             case MENU_ITEM_WEEKSCHEDULE:
