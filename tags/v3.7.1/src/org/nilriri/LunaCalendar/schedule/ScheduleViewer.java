@@ -21,6 +21,8 @@ import java.util.Calendar;
 import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
+import org.nilriri.LunaCalendar.tools.Common;
+import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 import org.nilriri.LunaCalendar.tools.Prefs;
 
 import android.app.Activity;
@@ -34,12 +36,14 @@ import android.widget.TextView;
 
 public class ScheduleViewer extends Activity implements OnClickListener {
 
+    static final String DAYNAMES[] = { "토", "일", "월", "화", "수", "목", "금", "토" };
     static final int TIME_DIALOG_ID = 0;
     static final int DATE_DIALOG_ID = 1;
     private ScheduleDaoImpl dao = null;
 
     ScheduleBean scheduleBean = new ScheduleBean();
 
+    private TextView mSchedule_date;
     private TextView mSchedule_conents;
     private TextView mSchedule_repeat;
     private TextView mSpecialday_displayyn;
@@ -51,6 +55,7 @@ public class ScheduleViewer extends Activity implements OnClickListener {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.schedule_viewer);
 
+        mSchedule_date = (TextView) findViewById(R.id.schedule_date);
         mSchedule_conents = (TextView) findViewById(R.id.schedule_contents);
         mSchedule_repeat = (TextView) findViewById(R.id.schedule_repeat);
         mSpecialday_displayyn = (TextView) findViewById(R.id.specialday_displayyn);
@@ -106,18 +111,30 @@ public class ScheduleViewer extends Activity implements OnClickListener {
         }
 
         String title = scheduleBean.getSchedule_title();
-        String lunarlabel = this.getResources().getString(R.string.check_lunar_label);
-        if (scheduleBean.getSchedule_repeat() != 9) {
-            if (scheduleBean.getLunaryn()) {
-                title += " (" + lunarlabel + ":" + scheduleBean.getSchedule_ldate() + ")";
-            } else {
-                title += " (" + scheduleBean.getDisplayDate() + ")";
-            }
-        }
         this.setTitle(title);
         ((TextView) findViewById(R.id.title)).setText(title);
 
+        String schedule_date = scheduleBean.getSchedule_date();
+        int day = Common.getCalValue(Calendar.DAY_OF_WEEK, schedule_date);
+        schedule_date += " " + DAYNAMES[day] + "요일";
+
+        if (scheduleBean.getSchedule_repeat() == 9) {
+            if (scheduleBean.getAlarm_lunasolar() == 1) {
+                schedule_date = "음력 " + scheduleBean.getAlarm_date();
+            } else {
+                schedule_date = scheduleBean.getAlarm_date();
+            }
+        } else {//if (scheduleBean.getSchedule_repeat() != 9) {
+            if (scheduleBean.getLunaryn()) {
+                String ldate = Common.fmtDate(Lunar2Solar.s2l(schedule_date));
+                schedule_date += " (" + ldate.substring(5) + ")";
+            }
+        }
+
+        mSchedule_date.setText(schedule_date);
         mSchedule_conents.setText(scheduleBean.getSchedule_contents());
+        if ("".equals(scheduleBean.getSchedule_contents()))
+            mSchedule_conents.setVisibility(View.GONE);
 
         String repeat[] = getResources().getStringArray(R.array.schedule_repeat);
         String days[] = getResources().getStringArray(R.array.repeat_days);
@@ -166,6 +183,8 @@ public class ScheduleViewer extends Activity implements OnClickListener {
         }
 
         mSchedule_repeat.setText(repeatnm);
+        if ("".equals(repeatnm))
+            mSchedule_repeat.setVisibility(View.GONE);
 
         String ddaykind[] = getResources().getStringArray(R.array.specialday_displayyn);
         String ddayalarmyn[] = getResources().getStringArray(R.array.specialday_alarmyn);
@@ -214,6 +233,8 @@ public class ScheduleViewer extends Activity implements OnClickListener {
         }
 
         mSpecialday_displayyn.setText(ddayinfo);
+        if ("".equals(ddayinfo))
+            mSpecialday_displayyn.setVisibility(View.GONE);
 
     }
 

@@ -38,6 +38,24 @@
 				android:orientation="vertical" android:layout_gravity="center_horizontal"
 				android:paddingLeft="10dip" android:layout_width="fill_parent"
 				android:layout_height="wrap_content">
+				<LinearLayout android:layout_width="fill_parent"
+					android:layout_height="wrap_content" android:orientation="horizontal"
+					android:layout_marginTop="5dip" android:layout_marginBottom="5dip"
+					android:layout_marginLeft="5dip" android:layout_marginRight="5dip">
+
+					<TextView android:layout_width="wrap_content"
+						android:layout_height="wrap_content" android:text="●"
+						android:paddingRight="1sp" />
+					<TextView android:layout_width="70dp"
+						android:layout_height="wrap_content" android:text="날짜" />
+
+					<TextView android:id="@+id/schedule_date"
+						android:maxLines="10" android:scrollbars="vertical"
+						android:editable="false" android:layout_width="fill_parent"
+						android:layout_height="wrap_content" />
+
+				</LinearLayout>
+
 
 				<LinearLayout android:layout_width="fill_parent"
 					android:layout_height="wrap_content" android:orientation="horizontal"
@@ -100,7 +118,6 @@
 					<Button android:text="@string/btn_editalarm" android:id="@+id/btn_editalarm"
 						android:layout_width="100dip" android:layout_height="wrap_content"
 						style="?android:attr/buttonStyleSmall" />
-
 				</LinearLayout>
 			</LinearLayout>
 		</LinearLayout>

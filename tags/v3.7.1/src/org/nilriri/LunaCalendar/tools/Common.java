@@ -45,7 +45,7 @@ public class Common extends Activity {
     public static final int ONLINE_WIDGET = 0;
 
     public static final int ALARM_INTERVAL = 1000 * 60 * 5; // 5분
-    public static final int WIDGET_REFRESH_INTERVAL = 1000 * 60 * 20 * 1; // 1시간 
+    public static final int WIDGET_REFRESH_INTERVAL = 1000 * 60 * 20 * 4; // 1시간 
 
     public static final String ACTION_ALARM_START = "org.nilriri.LunarCalendar.ALARM_START";
     public static final String ACTION_ALARM_STOP = "org.nilriri.LunarCalendar.ALARM_STOP";

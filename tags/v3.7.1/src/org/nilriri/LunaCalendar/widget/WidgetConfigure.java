@@ -59,6 +59,8 @@ public class WidgetConfigure extends Activity {
     private static final String PREF_RECEIVER_KEY = "receiver";
     private static final String PREF_FONTCOLOR_KEY = "fontcolor";
 
+    private static final String[] PREF_KEYS = new String[] { "kind_", "color_", "pk_", "url_", "receiver", "fontcolor" };
+
     private int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
 
     private Spinner spin_widgetkind;
@@ -297,47 +299,47 @@ public class WidgetConfigure extends Activity {
                     switch (spin_fontcolor.getSelectedItemPosition()) {
                         default:
                         case 0: { // LTGRAY
-                            setFontColor(getBaseContext(), Color.LTGRAY);
+                            setFontColor(getBaseContext(), mAppWidgetId, Color.LTGRAY);
                             break;
                         }
                         case 1: { // DKGRAY
-                            setFontColor(getBaseContext(), Color.DKGRAY);
+                            setFontColor(getBaseContext(), mAppWidgetId, Color.DKGRAY);
                             break;
                         }
                         case 2: { // GRAY
-                            setFontColor(getBaseContext(), Color.GRAY);
+                            setFontColor(getBaseContext(), mAppWidgetId, Color.GRAY);
                             break;
                         }
                         case 3: { // WHITE
-                            setFontColor(getBaseContext(), Color.WHITE);
+                            setFontColor(getBaseContext(), mAppWidgetId, Color.WHITE);
                             break;
                         }
                         case 4: { // RED
-                            setFontColor(getBaseContext(), Color.RED);
+                            setFontColor(getBaseContext(), mAppWidgetId, Color.RED);
                             break;
                         }
                         case 5: { // GREEN
-                            setFontColor(getBaseContext(), Color.GREEN);
+                            setFontColor(getBaseContext(), mAppWidgetId, Color.GREEN);
                             break;
                         }
                         case 6: { // BLUE
-                            setFontColor(getBaseContext(), Color.BLUE);
+                            setFontColor(getBaseContext(), mAppWidgetId, Color.BLUE);
                             break;
                         }
                         case 7: { // YELLOW
-                            setFontColor(getBaseContext(), Color.YELLOW);
+                            setFontColor(getBaseContext(), mAppWidgetId, Color.YELLOW);
                             break;
                         }
                         case 8: { // CYAN
-                            setFontColor(getBaseContext(), Color.CYAN);
+                            setFontColor(getBaseContext(), mAppWidgetId, Color.CYAN);
                             break;
                         }
                         case 9: { // MAGENTA
-                            setFontColor(getBaseContext(), Color.MAGENTA);
+                            setFontColor(getBaseContext(), mAppWidgetId, Color.MAGENTA);
                             break;
                         }
                         case 10: { // BLACK
-                            setFontColor(getBaseContext(), Color.BLACK);
+                            setFontColor(getBaseContext(), mAppWidgetId, Color.BLACK);
                             break;
                         }
                     }
@@ -431,20 +433,22 @@ public class WidgetConfigure extends Activity {
     static void removePrefData(Context context, int appWidgetId) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
-        if (prefs.contains(PREF_PK_KEY + appWidgetId)) {
-            prefs.edit().remove(PREF_PK_KEY + appWidgetId).commit();
+        for (String keys : PREF_KEYS) {
+            if (prefs.contains(keys + appWidgetId)) {
+                prefs.edit().remove(keys + appWidgetId).commit();
+            }
         }
     }
 
-    static void setFontColor(Context context, int fontcolor) {
+    static void setFontColor(Context context, int appWidgetId, int fontcolor) {
         SharedPreferences.Editor prefs = PreferenceManager.getDefaultSharedPreferences(context).edit();
-        prefs.putInt(PREF_FONTCOLOR_KEY, fontcolor);
+        prefs.putInt(PREF_FONTCOLOR_KEY + appWidgetId, fontcolor);
         prefs.commit();
     }
 
-    public static int getFontColor(Context context) {
+    public static int getFontColor(Context context, int appWidgetId) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        return prefs.getInt(PREF_FONTCOLOR_KEY, android.R.color.darker_gray);
+        return prefs.getInt(PREF_FONTCOLOR_KEY + appWidgetId, Color.LTGRAY);
     }
 
 }

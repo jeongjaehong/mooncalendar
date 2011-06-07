@@ -141,10 +141,15 @@ public class WidgetProvider extends AppWidgetProvider {
                 Bitmap bitmap = null;
                 String imguri = null;
 
+                //dataPK 가 0보다 작업경우...  
+                // 온라인 일정을 조회한다.
                 if (0 > dataPK) {
 
-                    StringBuilder eventdata = new StringBuilder();
+                    Intent serviceIntent = new Intent(mContext, WidgetRefreshService.class);
+                    serviceIntent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+                    serviceIntent.putExtra("WidgetId", mAppWidgetId);
 
+                    StringBuilder eventdata = new StringBuilder();
                     String url = WidgetConfigure.getWidgetUrl(mContext, mAppWidgetId);
 
                     if ("".equals(url)) {
@@ -167,6 +172,7 @@ public class WidgetProvider extends AppWidgetProvider {
 
                     GoogleUtil gu = new GoogleUtil(Prefs.getAuthToken(mContext));
                     todayEvents = gu.getEvents(url);
+                    // 조회된 온라인 일정이 없는경우.
                     if (todayEvents.size() <= 0) {
 
                         views.setTextViewText(R.id.text_dday, "OnLine");
@@ -176,81 +182,80 @@ public class WidgetProvider extends AppWidgetProvider {
                         views.setTextViewText(R.id.text_contents, "");
                         views.setImageViewResource(R.id.widget_icon, R.drawable.flag4);
 
-                        Intent intent = new Intent(mContext, WidgetRefreshService.class);
-                        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-                        intent.putExtra("WidgetId", mAppWidgetId);
-
-                        views.setOnClickPendingIntent(R.id.widget, PendingIntent.getService(mContext, mAppWidgetId, intent, 0));
+                        views.setOnClickPendingIntent(R.id.widget, //
+                                PendingIntent.getService(mContext, mAppWidgetId, serviceIntent, 0));
 
                     } else {
-
-                        String names[] = new String[todayEvents.size()];
-                        String contents[] = new String[todayEvents.size()];
-
-                        for (int i = 0; i < todayEvents.size() && i < 10; i++) {
-                            names[i] = todayEvents.get(i).getStartDate().substring(5, 10) + " : " + todayEvents.get(i).title;
-                            contents[i] = todayEvents.get(i).content;
-                            eventdata.append(names[i]).append("\n");
-                            imguri = todayEvents.get(i).getWebContentsLink();
-                        }
-
-                        views.setTextViewText(R.id.text_dday, "OnLine");
-                        views.setTextViewText(R.id.text_title2, eventdata.toString());
-                        views.setViewVisibility(R.id.text_title, View.GONE);
-                        views.setViewVisibility(R.id.text_title2, View.VISIBLE);
-                        views.setTextViewText(R.id.text_contents, "");
-
-                        if ("".equals(imguri)) {
-                            views.setImageViewResource(R.id.widget_icon, R.drawable.flag4);
+                        if ("0".equals(todayEvents.get(0).id)) {
+                            // 일정조회중 네트워크 오류나 기타 타임아웃같은 오류가 발생했을경우..
+                            // 터치 했을때 리프레쉬 가능하도록 설정만 해준다.
+                            views.setOnClickPendingIntent(R.id.widget, //
+                                    PendingIntent.getService(mContext, mAppWidgetId, serviceIntent, 0));
                         } else {
-                            URL u = new URL(imguri);
-                            bitmap = BitmapFactory.decodeStream(u.openStream());
-                            views.setImageViewBitmap(R.id.widget_icon, bitmap);
-                        }
+                            String names[] = new String[todayEvents.size()];
+                            String contents[] = new String[todayEvents.size()];
 
-                        if (contents.length == 0 || contents == null) {
-                            Intent intent = new Intent(mContext, WidgetRefreshService.class);
-                            intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-                            intent.putExtra("WidgetId", mAppWidgetId);
-
-                            views.setOnClickPendingIntent(R.id.widget, PendingIntent.getService(mContext, mAppWidgetId, intent, 0));
-                        } else {
-                            if (contents[0] == null) {
-                                Intent intent = new Intent(mContext, WidgetRefreshService.class);
-                                intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-                                intent.putExtra("WidgetId", mAppWidgetId);
-
-                                views.setOnClickPendingIntent(R.id.widget, PendingIntent.getService(mContext, mAppWidgetId, intent, 0));
-                            } else if (contents[0].indexOf("bindex:") >= 0) {
-
-                                Intent intent = new Intent();//mContext, LunarCalendar.class);
-
-                                intent.setAction("org.nilriri.webbibles.VIEW");
-                                intent.setType("vnd.org.nilriri/web-bible");
-
-                                intent.putExtra("VERSION", 0);
-                                intent.putExtra("VERSION2", 0);
-                                intent.putExtra("BOOK", 0);
-                                intent.putExtra("CHAPTER", 0);
-                                intent.putExtra("VERSE", 0);
-                                intent.putExtra("BPLANT", names);
-                                intent.putExtra("BPLANI", contents);
-
-                                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_bible);
-
-                                views.setOnClickPendingIntent(R.id.widget, PendingIntent.getActivity(mContext, mAppWidgetId, intent, 0));
-                            } else {
-
-                                Intent intent = new Intent(mContext, WidgetRefreshService.class);
-                                intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-                                intent.putExtra("WidgetId", mAppWidgetId);
-
-                                views.setOnClickPendingIntent(R.id.widget, PendingIntent.getService(mContext, mAppWidgetId, intent, 0));
-
+                            for (int i = 0; i < todayEvents.size() && i < 10; i++) {
+                                names[i] = todayEvents.get(i).getStartDate().substring(5, 10) + " : " + todayEvents.get(i).title;
+                                contents[i] = todayEvents.get(i).content;
+                                eventdata.append(names[i]).append("\n");
+                                imguri = todayEvents.get(i).getWebContentsLink();
                             }
+
+                            views.setTextViewText(R.id.text_dday, "OnLine");
+                            views.setTextViewText(R.id.text_title2, eventdata.toString());
+                            views.setViewVisibility(R.id.text_title, View.GONE);
+                            views.setViewVisibility(R.id.text_title2, View.VISIBLE);
+                            views.setTextViewText(R.id.text_contents, "");
+
+                            // 이미지가 없는경우 기본 아이콘을 사용한다.
+                            if ("".equals(imguri)) {
+                                views.setImageViewResource(R.id.widget_icon, R.drawable.flag4);
+
+                            } else { // 이미지 정보가 있는경우 온라인 이미지를 아이콘으로 사용한다.
+                                URL u = new URL(imguri);
+                                bitmap = BitmapFactory.decodeStream(u.openStream());
+                                views.setImageViewBitmap(R.id.widget_icon, bitmap);
+                            }
+
+                            // 일정의 상세내용이 없는경우...
+                            if (contents.length == 0 || contents == null) {
+
+                                views.setOnClickPendingIntent(R.id.widget,//
+                                        PendingIntent.getService(mContext, mAppWidgetId, serviceIntent, 0));
+                            } else { // 일정의 상세내용이 있는경우 내용에 따라서 작업한다.
+                                String eventContent = contents[0] == null ? "" : contents[0];
+
+                                if (eventContent.indexOf("bindex:") >= 0) {
+
+                                    Intent bibleIntent = new Intent();//mContext, LunarCalendar.class);
+
+                                    bibleIntent.setAction("org.nilriri.webbibles.VIEW");
+                                    bibleIntent.setType("vnd.org.nilriri/web-bible");
+
+                                    bibleIntent.putExtra("VERSION", 0);
+                                    bibleIntent.putExtra("VERSION2", 0);
+                                    bibleIntent.putExtra("BOOK", 0);
+                                    bibleIntent.putExtra("CHAPTER", 0);
+                                    bibleIntent.putExtra("VERSE", 0);
+                                    bibleIntent.putExtra("BPLANT", names);
+                                    bibleIntent.putExtra("BPLANI", contents);
+
+                                    views.setImageViewResource(R.id.widget_icon, R.drawable.ic_bible);
+
+                                    views.setOnClickPendingIntent(R.id.widget, //
+                                            PendingIntent.getActivity(mContext, mAppWidgetId, bibleIntent, 0));
+                                } else {
+
+                                    views.setOnClickPendingIntent(R.id.widget, //
+                                            PendingIntent.getService(mContext, mAppWidgetId, serviceIntent, 0));
+
+                                }
+                            }
+
                         }
                     }
-                } else {
+                } else { // db에서 일정을 조회한다.
 
                     dao = new ScheduleDaoImpl(mContext, null, Prefs.getSDCardUse(mContext));
                     Cursor cursor = dao.queryWidgetByID(dataPK);
@@ -356,7 +361,7 @@ public class WidgetProvider extends AppWidgetProvider {
 
                     dao.close();
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 if (dao != null)
                     dao.close();
 
@@ -370,7 +375,7 @@ public class WidgetProvider extends AppWidgetProvider {
                 e.printStackTrace();
             }
 
-            int fontcolor = WidgetConfigure.getFontColor(mContext);
+            int fontcolor = WidgetConfigure.getFontColor(mContext, mAppWidgetId);
             views.setTextColor(R.id.text_dday, fontcolor);
             views.setTextColor(R.id.text_title, fontcolor);
             views.setTextColor(R.id.text_title2, fontcolor);
@@ -449,6 +454,25 @@ public class WidgetProvider extends AppWidgetProvider {
                     default:
                         return R.layout.widget2x2_transparent;
                 }
+
+            case R.layout.widget3x1_transparent:
+
+                switch (getWidgetColor(context, appWidgetId)) {
+
+                    case 0:
+                        return R.layout.widget3x1_transparent;
+                    case 1:
+                        return R.layout.widget3x1_black;
+                    case 2:
+                        return R.layout.widget3x1_orange;
+                    case 3:
+                        return R.layout.widget3x1_green;
+                    case 4:
+                        return R.layout.widget3x1_blue;
+                    default:
+                        return R.layout.widget3x1_black;
+                }
+
             case R.layout.widget4x4_transparent:
 
                 switch (getWidgetColor(context, appWidgetId)) {

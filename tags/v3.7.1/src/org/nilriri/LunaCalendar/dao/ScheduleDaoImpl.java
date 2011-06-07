@@ -14,6 +14,7 @@ import org.nilriri.LunaCalendar.gcal.CalendarEntry;
 import org.nilriri.LunaCalendar.gcal.EventEntry;
 import org.nilriri.LunaCalendar.gcal.GoogleUtil;
 import org.nilriri.LunaCalendar.tools.Common;
+import org.nilriri.LunaCalendar.tools.ContactEvent;
 import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 import org.nilriri.LunaCalendar.tools.Prefs;
 import org.nilriri.LunaCalendar.tools.WhereClause;
@@ -24,7 +25,9 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDatabase.CursorFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -778,6 +781,10 @@ public class ScheduleDaoImpl extends AbstractDao {
     }
 
     public Cursor query(String date, String lDay) {
+        return query(new ContactEvent[0], date, lDay);
+    }
+
+    public Cursor query(ContactEvent[] events, String date, String lDay) {
 
         String sday = date.substring(5);
         String lday = lDay.substring(4, 6) + "-" + lDay.substring(6);
@@ -790,8 +797,8 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("    ,'Schedule' " + Schedule.SCHEDULE_TYPE + " ");
         query.append("    ," + Schedule.SCHEDULE_TITLE + " ");
         query.append("    ,6 kind ");
-        query.append("    ,0 " + Schedule.BIBLE_BOOK + " ");
-        query.append("    ,0 " + Schedule.BIBLE_CHAPTER + " ");
+        query.append("    ,'' as displayname ");
+        query.append("    ,'' as uri ");
         query.append("    ,case when " + Schedule.SCHEDULE_DATE + " > '1900-01-01' then " + Schedule.SCHEDULE_REPEAT + " else 0 end as " + Schedule.SCHEDULE_REPEAT);
         query.append(" FROM  schedule ");
         query.append(" WHERE " + Schedule.SCHEDULE_DATE + " = ? and lunaryn <> 'Y' and  anniversary <> 'Y' ");
@@ -801,8 +808,8 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("union all  ");
         query.append("select _id, 'Anniversary' " + Schedule.SCHEDULE_TYPE + ", " + Schedule.SCHEDULE_TITLE + " ");
         query.append("    ,3 kind ");
-        query.append("    ,0 " + Schedule.BIBLE_BOOK + " ");
-        query.append("    ,0 " + Schedule.BIBLE_CHAPTER + " ");
+        query.append("    ,'' as displayname ");
+        query.append("    ,'' as uri ");
         query.append("    ,case when " + Schedule.SCHEDULE_DATE + " > '1900-01-01' then " + Schedule.SCHEDULE_REPEAT + " else 0 end as " + Schedule.SCHEDULE_REPEAT);
         query.append(" from schedule ");
         query.append("where 1=1 ");
@@ -815,8 +822,8 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("union all  ");
         query.append("select _id, 'Anniversary' " + Schedule.SCHEDULE_TYPE + ", " + Schedule.SCHEDULE_TITLE + " ");
         query.append("    ," + Schedule.ALARM_DAY + " kind "); //∫”¿∫±Íπﬂ »§¿∫ ≥Ïªˆ±Íπﬂ.
-        query.append("    ,0 " + Schedule.BIBLE_BOOK + " ");
-        query.append("    ,0 " + Schedule.BIBLE_CHAPTER + " ");
+        query.append("    ,'' as displayname ");
+        query.append("    ,'' as uri ");
         query.append("    ,case when " + Schedule.SCHEDULE_DATE + " > '1900-01-01' then " + Schedule.SCHEDULE_REPEAT + " else 0 end as " + Schedule.SCHEDULE_REPEAT);
         query.append(" from schedule ");
         query.append("where " + Schedule.SCHEDULE_REPEAT + " = 9 ");
@@ -838,8 +845,8 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("then 'D day' else 'D ' ||  cast(JULIANDAY(?, 'LOCALTIME') - JULIANDAY(DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'LOCALTIME') as integer) end ");
         query.append("    ||')' " + Schedule.SCHEDULE_TITLE + " ");
         query.append("    ,5 kind ");
-        query.append("    ,0 " + Schedule.BIBLE_BOOK + " ");
-        query.append("    ,0 " + Schedule.BIBLE_CHAPTER + " ");
+        query.append("    ,'' as displayname ");
+        query.append("    ,'' as uri ");
         query.append("    ,case when " + Schedule.SCHEDULE_DATE + " > '1900-01-01' then " + Schedule.SCHEDULE_REPEAT + " else 0 end as " + Schedule.SCHEDULE_REPEAT);
         query.append(" FROM  schedule ");
         query.append("WHERE 1=1 ");
@@ -849,7 +856,36 @@ public class ScheduleDaoImpl extends AbstractDao {
         query.append("and " + Schedule.DDAY_DISPLAYYN + " in (0, 1)  ");
         query.append("and strftime('%Y-%m-%d', DATE(" + Schedule.SCHEDULE_DATE + ", " + Schedule.DDAY_ALARMSIGN + " || " + Schedule.DDAY_ALARMDAY + " ||' DAY', 'LOCALTIME'), 'localtime') = ? ) ");
 
-        query.append("ORDER BY 1 ");
+        for (ContactEvent event : events) {
+            if (date.substring(5).equals(event.mStartDate)) {
+                query.append(" UNION ALL ");
+                query.append("SELECT   ");
+                query.append("    " + event.mContact_id + " as _id ");
+                query.append("    ,'Contact' " + Schedule.SCHEDULE_TYPE + " ");
+                query.append("    ,'" + event.mDisplayName + "¥‘¿« ");
+                switch (event.mType) {
+                    case ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY:
+                        query.append("±‚≥‰¿œ");
+                        break;
+                    case ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY:
+                        query.append("ª˝¿œ");
+                        break;
+                    case ContactsContract.CommonDataKinds.Event.TYPE_OTHER:
+                        query.append("±‚≈∏¿œ¡§");
+                        break;
+                    default:
+                        query.append("¿œ¡§");
+                        break;
+                }
+                query.append(" ¿‘¥œ¥Ÿ.' as " + Schedule.SCHEDULE_TITLE + " ");
+                query.append("    ,9 kind ");
+                query.append("    ,'" + event.mDisplayName + "' as displayname ");
+                query.append("    ,'" + event.mUri + "' as uri ");
+                query.append("    ,0 " + Schedule.SCHEDULE_REPEAT + " ");
+            }
+        }
+
+        query.append(" ORDER BY 1 ");
 
         String selectionArgs[] = new String[] { date, date, date, date, date, date, };
 
