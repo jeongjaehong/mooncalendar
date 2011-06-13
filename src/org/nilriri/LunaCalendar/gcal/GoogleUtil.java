@@ -96,7 +96,7 @@ public class GoogleUtil {
             EventEntry event = new EventEntry();
             event.id = "0";
             event.title = "Sync fail...\n"+e.getMessage();
-            event.when.startTime = Common.toDateTime("");
+            event.when.startTime = Common.toDateTime(Common.fmtDate());
             event.content = e.getMessage();
             events.clear();
             

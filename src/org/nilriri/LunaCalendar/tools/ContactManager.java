@@ -3,6 +3,7 @@ package org.nilriri.LunaCalendar.tools;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.provider.CallLog;
 import android.provider.ContactsContract;
 import android.util.Log;
 
@@ -14,15 +15,28 @@ public class ContactManager {
         mContext = context;
     }
 
-    public ContactEvent[] getRecentContactDisplayName(String month) {
+    public ContactEvent[] getContactEvents(String month) {
 
         String selection = ContactsContract.Data.MIMETYPE + "=?";
         //selection += " and " + ContactsContract.CommonDataKinds.Event.TYPE + "=?";
-        selection += " and substr(" + ContactsContract.CommonDataKinds.Event.START_DATE + ", -5) like '"+month.substring(5,7)+"%' ";//            
+        selection += " and substr(" + ContactsContract.CommonDataKinds.Event.START_DATE + ", -5) like '" + month.substring(5, 7) + "%' ";//            
 
         String value = ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE;
         //int value2 = ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY;
-        String[] args = new String[] { value};//, value2 + "" };
+        String[] args = new String[] { value };//, value2 + "" };
+
+        /*
+        Cursor l = mContext.getContentResolver().query(//
+                CallLog.Calls.CONTENT_URI, new String[] { //
+                CallLog.Calls._ID, //
+                        CallLog.Calls.CACHED_NAME, CallLog.Calls.DATE, CallLog.Calls._ID, CallLog.Calls._ID, CallLog.Calls.TYPE }, // projection
+                null, null, null);
+
+        while (l.moveToNext()) {
+            for (int i = 0; i < l.getColumnCount(); i++)
+                Log.e(Common.TAG, "log=" + l.getString(i));
+        }
+        */
 
         Cursor c = mContext.getContentResolver().query(//
                 ContactsContract.Data.CONTENT_URI, //
@@ -46,9 +60,11 @@ public class ContactManager {
         int ct = 0;
         while (c.moveToNext() == true) {
 
+            /*
             for (int i = 0; i < c.getColumnCount(); i++) {
                 Log.e("ContactEvent", "Name:" + c.getColumnName(i) + " Value: " + c.getString(i));
             }
+            */
 
             Long id = c.getLong(c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Event.CONTACT_ID));
             String name = c.getString(c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Event.DISPLAY_NAME));

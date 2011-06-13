@@ -75,6 +75,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
     public static final int MENU_ITEM_EDITSCHEDULE = Menu.FIRST + 14;
     public static final int MENU_ITEM_GOTOTODAY = Menu.FIRST + 15;
     public static final int MENU_ITEM_NEXTYEAR = Menu.FIRST + 16;
+    public static final int MENU_ITEM_GOTO = Menu.FIRST + 17;
 
     // date and time
     public int mYear;
@@ -137,7 +138,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
         lunarCalendarView = (LunarCalendarView) findViewById(R.id.lunaCalendarView);
         lunarCalendarView.requestFocus();
 
-        lunarCalendarView.mToDay = mYear + "." + mMonth + "." + mDay;
+        lunarCalendarView.mToDay = c.get(Calendar.YEAR) + "." + c.get(Calendar.MONTH) + "." + c.get(Calendar.DAY_OF_MONTH);
 
         lunarCalendarView.setOnCreateContextMenuListener(this);
         lunarCalendarView.setFocusableInTouchMode(true);
@@ -155,11 +156,12 @@ public class LunarCalendar extends Activity implements RefreshManager {
                         break;
                     case MotionEvent.ACTION_UP:
 
-                        if (Common.getExpandRect(lunarCalendarView.mPrevMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
+                        /*if (Common.getExpandRect(lunarCalendarView.mPrevMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
                             AddMonth(-1);
                         } else if (Common.getExpandRect(lunarCalendarView.mNextMonthR, 20).contains((int) event.getX(), (int) event.getY())) {
                             AddMonth(1);
-                        } else if (lunarCalendarView.titleRect.contains((int) event.getX(), (int) event.getY())) {
+                        } else*/
+                        if (lunarCalendarView.titleRect.contains((int) event.getX(), (int) event.getY())) {
                             showDialog(LunarCalendar.DATE_DIALOG_ID);
                         } else {
                             if (event.getX() - oldEvent.getX() > 50 && Math.abs(event.getY() - oldEvent.getY()) < 90) {//Right
@@ -772,6 +774,7 @@ public class LunarCalendar extends Activity implements RefreshManager {
 
         menu.add(0, MENU_ITEM_GOTOTODAY, 0, R.string.goto_today);
         menu.add(0, MENU_ITEM_NEXTYEAR, 0, (this.mYear + 1) + "년 " + (this.mMonth + 1) + "월 보기");
+        menu.add(0, MENU_ITEM_GOTO, 0, "바로가기(날짜검색)");
 
         menu.add(0, MENU_ITEM_ONLINECAL, 0, R.string.onlinecalendar_label);
 
@@ -792,6 +795,11 @@ public class LunarCalendar extends Activity implements RefreshManager {
 
                 return true;
             }
+            case MENU_ITEM_GOTO: {
+                showDialog(DATE_DIALOG_ID);
+                return true;
+            }
+
             case MENU_ITEM_NEXTYEAR: {
                 ++mYear;
                 this.AddMonth(0);

@@ -18,6 +18,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
@@ -45,7 +47,7 @@ public class Common extends Activity {
     public static final int ONLINE_WIDGET = 0;
 
     public static final int ALARM_INTERVAL = 1000 * 60 * 5; // 5분
-    public static final int WIDGET_REFRESH_INTERVAL = 1000 * 60 * 20 * 4; // 1시간 
+    public static final int WIDGET_REFRESH_INTERVAL = 1000 * 60 * 60 * 4; // 4시간 
 
     public static final String ACTION_ALARM_START = "org.nilriri.LunarCalendar.ALARM_START";
     public static final String ACTION_ALARM_STOP = "org.nilriri.LunarCalendar.ALARM_STOP";
@@ -294,6 +296,26 @@ public class Common extends Activity {
                 alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, firstTime, Common.ALARM_INTERVAL, mAlarmSender);
             }
         }
+    }
+
+    public static boolean isConnectNetwork(Context context) {
+
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo info = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+
+        boolean isWifiAvail = info.isAvailable();
+        boolean isWifiConn = info.isConnected();
+
+        info = cm.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+        boolean isMobileAvail = info.isAvailable();
+        boolean isMobileConn = info.isConnected();
+
+        if ((isWifiAvail && isWifiConn) || (isMobileAvail && isMobileConn)) {
+            return true;
+        } else {
+            return false;
+        }
+
     }
 
     public static boolean isSdPresent() {
