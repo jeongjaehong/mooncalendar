@@ -5,7 +5,6 @@ import java.util.Calendar;
 import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
-import org.nilriri.LunaCalendar.dao.Constants.Schedule;
 import org.nilriri.LunaCalendar.tools.Common;
 import org.nilriri.LunaCalendar.tools.Prefs;
 
@@ -14,6 +13,7 @@ import android.app.NotificationManager;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Window;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
 
@@ -33,9 +33,10 @@ public class AlarmViewer extends Activity implements OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.alarm_viewer);
 
-        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+        //dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
 
         mSchedule_conents = (TextView) findViewById(R.id.schedule_contents);
         mSchedule_repeat = (TextView) findViewById(R.id.schedule_repeat);
@@ -62,7 +63,9 @@ public class AlarmViewer extends Activity implements OnClickListener {
                 c.setFirstDayOfWeek(Calendar.SUNDAY);
 
                 scheduleBean.setScheduleCheck(Common.fmtDate(c));
-                dao.update(scheduleBean);
+                scheduleBean.setUpdated(Common.getTime3339Format());
+
+                dao.localUpdate(scheduleBean);
 
                 mNotificationManager.cancel(id.intValue());
                 this.finish();
@@ -74,68 +77,52 @@ public class AlarmViewer extends Activity implements OnClickListener {
     protected void onResume() {
         super.onResume();
 
-        Cursor cursor = dao.query(getIntent().getLongExtra("id", 0));
+        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
 
-        if (cursor.moveToNext()) {
-            scheduleBean.setId(cursor.getInt(Schedule.COL_ID));
-            scheduleBean.setDate(cursor.getString(Schedule.COL_SCHEDULE_DATE));
-            scheduleBean.setTitle(cursor.getString(Schedule.COL_SCHEDULE_TITLE));
-            scheduleBean.setContents(cursor.getString(Schedule.COL_SCHEDULE_CONTENTS));
-            scheduleBean.setRepeat(cursor.getInt(Schedule.COL_SCHEDULE_REPEAT));
+        scheduleBean = new ScheduleBean(dao.query(getIntent().getLongExtra("id", 0)));
 
-            scheduleBean.setScheduleCheck(cursor.getString(Schedule.COL_SCHEDULE_CHECK));
-            scheduleBean.setLunaSolar(cursor.getInt(Schedule.COL_ALARM_LUNASOLAR));
-            scheduleBean.setAlarmDate(cursor.getString(Schedule.COL_ALARM_DATE));
-            scheduleBean.setAlarmTime(cursor.getString(Schedule.COL_ALARM_TIME));
-            scheduleBean.setAlarmDays(cursor.getInt(Schedule.COL_ALARM_DAYS));
-            scheduleBean.setAlarmDay(cursor.getInt(Schedule.COL_ALARM_DAY));
-
-            scheduleBean.setDday_alarmyn(cursor.getInt(Schedule.COL_DDAY_ALARMYN));
-            scheduleBean.setDday_alarmday(cursor.getInt(Schedule.COL_DDAY_ALARMDAY));
-            scheduleBean.setDday_alarmsign(cursor.getString(Schedule.COL_DDAY_ALARMSIGN));
-            scheduleBean.setDday_displayyn(cursor.getInt(Schedule.COL_DDAY_DISPLAYYN));
-        } else {
-            cursor.close();
+        if (scheduleBean.getId() <= 0) {
             this.finish();
+            return;
         }
-        cursor.close();
 
-        String title = scheduleBean.getTitle();
+        String title = scheduleBean.getSchedule_title();
         title += " (" + scheduleBean.getDisplayDate() + ")";
         this.setTitle(title);
+        ((TextView) findViewById(R.id.title)).setText(title);
 
-        mSchedule_conents.setText(scheduleBean.getContents());
+        mSchedule_conents.setText(scheduleBean.getSchedule_contents());
 
         String repeat[] = getResources().getStringArray(R.array.schedule_repeat);
         String days[] = getResources().getStringArray(R.array.repeat_days);
         String lunarsolar[] = getResources().getStringArray(R.array.repeat_lunasolar);
 
-        String repeatnm = repeat[scheduleBean.getRepeat()] + " \n";
+        String repeatnm = repeat[scheduleBean.getSchedule_repeat()] + " \n";
 
-        switch (scheduleBean.getRepeat()) {
+        switch (scheduleBean.getSchedule_repeat()) {
             case 1:
-                repeatnm += scheduleBean.getDisplayAlarmTime();
-                break;
-            case 2:
                 repeatnm += scheduleBean.getDisplayAlarmDate() + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
+            case 2:
+                repeatnm += scheduleBean.getDisplayAlarmTime();
+                break;
             case 3:
-                repeatnm += days[scheduleBean.getAlarmDays()] + ", ";
+                repeatnm += days[scheduleBean.getAlarm_days()] + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
             case 4:
-                repeatnm += lunarsolar[scheduleBean.getLunaSolar()] + ", ";
+                repeatnm += lunarsolar[scheduleBean.getAlarm_lunasolar()] + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmDay() + getResources().getString(R.string.schedule_dayname_viewer) + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
             case 5:
-                repeatnm += lunarsolar[scheduleBean.getLunaSolar()] + ", ";
+                repeatnm += lunarsolar[scheduleBean.getAlarm_lunasolar()] + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmDate() + getResources().getString(R.string.schedule_dayname_viewer) + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
             case 6:
-                repeatnm += lunarsolar[scheduleBean.getLunaSolar()] + ", ";
+                repeatnm += lunarsolar[scheduleBean.getAlarm_lunasolar()] + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmDay() + getResources().getString(R.string.schedule_dayname2_viewer) + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
@@ -165,7 +152,7 @@ public class AlarmViewer extends Activity implements OnClickListener {
                 ddayinfo += ddaysign[scheduleBean.getDisplayDday_alarmsign()];
 
                 String mDday_msg = "";
-                Cursor cursor1 = dao.queryDDay(getIntent().getLongExtra("id", 0));
+                Cursor cursor1 = dao.queryWidgetByID(getIntent().getLongExtra("id", 0));
                 if (cursor1.moveToNext()) {
                     int D_Day = cursor1.getInt(2);
 
@@ -194,8 +181,11 @@ public class AlarmViewer extends Activity implements OnClickListener {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-
+    protected void onDestroy() {
+        super.onDestroy();
+        if (dao != null) {
+            dao.close();
+        }
     }
+
 }

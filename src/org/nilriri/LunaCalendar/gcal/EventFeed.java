@@ -23,23 +23,18 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.util.Key;
 import com.google.api.client.xml.atom.AtomFeedContent;
 
-/**
- * @author Yaniv Inbar
- */
 public class EventFeed extends Feed {
 
     @Key("entry")
     public List<EventEntry> events = new ArrayList<EventEntry>();
 
-    //public List<EventEntry> events = Lists.newArrayList();
-
     public static EventFeed executeGet(HttpTransport transport, CalendarUrl url) throws IOException {
         return (EventFeed) Feed.executeGet(transport, url, EventFeed.class);
     }
 
-    public EventFeed executeBatch(HttpTransport transport, CalendarEntry calendar) throws IOException {
+    public EventFeed executeBatch(HttpTransport transport, String eventFeedLink) throws IOException {
         // batch link
-        CalendarUrl eventFeedUrl = new CalendarUrl(calendar.getEventFeedLink());
+        CalendarUrl eventFeedUrl = new CalendarUrl(eventFeedLink);
         eventFeedUrl.maxResults = 0;
         EventFeed eventFeed = EventFeed.executeGet(transport, eventFeedUrl);
         CalendarUrl url = new CalendarUrl(eventFeed.getBatchLink());
@@ -47,7 +42,9 @@ public class EventFeed extends Feed {
         HttpRequest request = transport.buildPostRequest();
         request.url = url;
         AtomFeedContent content = new AtomFeedContent();
-        content.namespaceDictionary = Util.DICTIONARY;
+        content.namespaceDictionary = Util.DICTIONARY //  
+                .set("app", "http://www.w3.org/2007/app")//
+                .set("batch", "http://schemas.google.com/gdata/batch");//
         content.feed = this;
         request.content = content;
         return RedirectHandler.execute(request).parseAs(getClass());

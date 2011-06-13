@@ -21,7 +21,8 @@ import java.util.Calendar;
 import org.nilriri.LunaCalendar.R;
 import org.nilriri.LunaCalendar.dao.ScheduleBean;
 import org.nilriri.LunaCalendar.dao.ScheduleDaoImpl;
-import org.nilriri.LunaCalendar.dao.Constants.Schedule;
+import org.nilriri.LunaCalendar.tools.Common;
+import org.nilriri.LunaCalendar.tools.Lunar2Solar;
 import org.nilriri.LunaCalendar.tools.Prefs;
 
 import android.app.Activity;
@@ -29,18 +30,20 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Window;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class ScheduleViewer extends Activity implements OnClickListener {
 
+    static final String DAYNAMES[] = { "토", "일", "월", "화", "수", "목", "금", "토" };
     static final int TIME_DIALOG_ID = 0;
     static final int DATE_DIALOG_ID = 1;
     private ScheduleDaoImpl dao = null;
 
     ScheduleBean scheduleBean = new ScheduleBean();
 
+    private TextView mSchedule_date;
     private TextView mSchedule_conents;
     private TextView mSchedule_repeat;
     private TextView mSpecialday_displayyn;
@@ -48,9 +51,11 @@ public class ScheduleViewer extends Activity implements OnClickListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+        //dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.schedule_viewer);
 
+        mSchedule_date = (TextView) findViewById(R.id.schedule_date);
         mSchedule_conents = (TextView) findViewById(R.id.schedule_contents);
         mSchedule_repeat = (TextView) findViewById(R.id.schedule_repeat);
         mSpecialday_displayyn = (TextView) findViewById(R.id.specialday_displayyn);
@@ -85,125 +90,91 @@ public class ScheduleViewer extends Activity implements OnClickListener {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (dao != null) {
+            dao.close();
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
 
-        Cursor cursor = dao.query(getIntent().getLongExtra("id", 0));
+        dao = new ScheduleDaoImpl(this, null, Prefs.getSDCardUse(this));
 
-        int anniversary = -1;
+        scheduleBean = new ScheduleBean(dao.query(getIntent().getLongExtra("id", 0)));
 
-        if (cursor.moveToNext()) {
-            if ("F".equals(cursor.getString(Schedule.COL_SCHEDULE_REPEAT)) || "P".equals(cursor.getString(Schedule.COL_SCHEDULE_REPEAT))) {
-
-                try {
-
-                    Intent intent = new Intent();
-                    intent.setAction("org.nilriri.webbibles.VIEW");
-                    intent.setType("vnd.org.nilriri/web-bible");
-
-                    intent.putExtra("VERSION", 0);
-                    intent.putExtra("VERSION2", 0);
-                    intent.putExtra("BOOK", cursor.getInt(Schedule.COL_BIBLE_BOOK));
-                    intent.putExtra("CHAPTER", cursor.getInt(Schedule.COL_BIBLE_CHAPTER));
-                    intent.putExtra("VERSE", 0);
-
-                    startActivity(intent);
-
-                    findViewById(R.id.btn_editalarm).setVisibility(View.GONE);
-
-                    //onClick(findViewById(R.id.btn_ok));
-
-                    this.finish();
-                } catch (Exception e) {
-                    Toast.makeText(getBaseContext(), "온라인성경 앱일 설치되어있지 않거나 최신버젼이 아닙니다.", Toast.LENGTH_LONG).show();
-
-                }
-
-            }
-
-            scheduleBean.setId(cursor.getInt(Schedule.COL_ID));
-            scheduleBean.setDate(cursor.getString(Schedule.COL_SCHEDULE_DATE));
-
-            scheduleBean.setLDate(cursor.getString(Schedule.COL_SCHEDULE_LDATE));
-
-            scheduleBean.setLunarYN("Y".equals(cursor.getString(Schedule.COL_LUNARYN)));
-            scheduleBean.setAnniversary("Y".equals(cursor.getString(Schedule.COL_ANNIVERSARY)));
-
-            scheduleBean.setTitle(cursor.getString(Schedule.COL_SCHEDULE_TITLE));
-            scheduleBean.setContents(cursor.getString(Schedule.COL_SCHEDULE_CONTENTS));
-            scheduleBean.setRepeat(cursor.getInt(Schedule.COL_SCHEDULE_REPEAT));
-
-            scheduleBean.setScheduleCheck(cursor.getString(Schedule.COL_SCHEDULE_CHECK));
-            scheduleBean.setLunaSolar(cursor.getInt(Schedule.COL_ALARM_LUNASOLAR));
-            scheduleBean.setAlarmDate(cursor.getString(Schedule.COL_ALARM_DATE));
-            scheduleBean.setAlarmTime(cursor.getString(Schedule.COL_ALARM_TIME));
-            scheduleBean.setAlarmDays(cursor.getInt(Schedule.COL_ALARM_DAYS));
-            scheduleBean.setAlarmDay(cursor.getInt(Schedule.COL_ALARM_DAY));
-            anniversary = cursor.getInt(Schedule.COL_ALARM_DAY);
-
-            scheduleBean.setDday_alarmyn(cursor.getInt(Schedule.COL_DDAY_ALARMYN));
-            scheduleBean.setDday_alarmday(cursor.getInt(Schedule.COL_DDAY_ALARMDAY));
-            scheduleBean.setDday_alarmsign(cursor.getString(Schedule.COL_DDAY_ALARMSIGN));
-            scheduleBean.setDday_displayyn(cursor.getInt(Schedule.COL_DDAY_DISPLAYYN));
-
-        } else {
+        if (scheduleBean.getId() <= 0) {
 
             this.finish();
         }
-        cursor.close();
 
-        String title = scheduleBean.getTitle();
-        String lunarlabel = this.getResources().getString(R.string.check_lunar_label);
-        if (scheduleBean.getRepeat() != 9) {
-            if (scheduleBean.getLunarYN()) {
-                title += " (" + lunarlabel + ":" + scheduleBean.getLDate() + ")";
+        String title = scheduleBean.getSchedule_title();
+        this.setTitle(title);
+        ((TextView) findViewById(R.id.title)).setText(title);
+
+        String schedule_date = scheduleBean.getSchedule_date();
+        int day = Common.getCalValue(Calendar.DAY_OF_WEEK, schedule_date);
+        schedule_date += " " + DAYNAMES[day] + "요일";
+
+        if (scheduleBean.getSchedule_repeat() == 9) {
+            if (scheduleBean.getAlarm_lunasolar() == 1) {
+                schedule_date = "음력 " + scheduleBean.getAlarm_date();
             } else {
-                title += " (" + scheduleBean.getDisplayDate() + ")";
+                schedule_date = scheduleBean.getAlarm_date();
+            }
+        } else {//if (scheduleBean.getSchedule_repeat() != 9) {
+            if (scheduleBean.getLunaryn()) {
+                String ldate = Common.fmtDate(Lunar2Solar.s2l(schedule_date));
+                schedule_date += " (" + ldate.substring(5) + ")";
             }
         }
-        this.setTitle(title);
 
-        mSchedule_conents.setText(scheduleBean.getContents());
+        mSchedule_date.setText(schedule_date);
+        mSchedule_conents.setText(scheduleBean.getSchedule_contents());
+        if ("".equals(scheduleBean.getSchedule_contents()))
+            mSchedule_conents.setVisibility(View.GONE);
 
         String repeat[] = getResources().getStringArray(R.array.schedule_repeat);
         String days[] = getResources().getStringArray(R.array.repeat_days);
         String lunarsolar[] = getResources().getStringArray(R.array.repeat_lunasolar);
 
         String repeatnm = "";
-        if (repeat.length > scheduleBean.getRepeat()) {
-            repeatnm = repeat[scheduleBean.getRepeat()] + " \n";
+        if (repeat.length > scheduleBean.getSchedule_repeat()) {
+            repeatnm = repeat[scheduleBean.getSchedule_repeat()] + " \n";
         }
 
-        switch (scheduleBean.getRepeat()) {
+        switch (scheduleBean.getSchedule_repeat()) {
             case 1:
-                repeatnm += scheduleBean.getDisplayAlarmTime();
-                break;
-            case 2:
                 repeatnm += scheduleBean.getDisplayAlarmDate() + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
+            case 2:
+                repeatnm += scheduleBean.getDisplayAlarmTime();
+                break;
             case 3:
-                repeatnm += days[scheduleBean.getAlarmDays()] + ", ";
+                repeatnm += days[scheduleBean.getAlarm_days()] + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
             case 4:
-                repeatnm += lunarsolar[scheduleBean.getLunaSolar()] + ", ";
+                repeatnm += lunarsolar[scheduleBean.getAlarm_lunasolar()] + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmDay() + getResources().getString(R.string.schedule_dayname_viewer) + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
             case 5:
-                repeatnm += lunarsolar[scheduleBean.getLunaSolar()] + ", ";
+                repeatnm += lunarsolar[scheduleBean.getAlarm_lunasolar()] + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmDate() + getResources().getString(R.string.schedule_dayname_viewer) + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
             case 6:
-                repeatnm += lunarsolar[scheduleBean.getLunaSolar()] + ", ";
+                repeatnm += lunarsolar[scheduleBean.getAlarm_lunasolar()] + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmDay() + getResources().getString(R.string.schedule_dayname2_viewer) + ", ";
                 repeatnm += scheduleBean.getDisplayAlarmTime();
                 break;
             case 9:
                 repeatnm = getResources().getString(R.string.schedule_anniversary_label);
-                if (anniversary == 0) {
+                if (scheduleBean.getAnniversary()) {
                     repeatnm += ", " + getResources().getString(R.string.schedule_holiday_label);
                 }
 
@@ -212,6 +183,8 @@ public class ScheduleViewer extends Activity implements OnClickListener {
         }
 
         mSchedule_repeat.setText(repeatnm);
+        if ("".equals(repeatnm))
+            mSchedule_repeat.setVisibility(View.GONE);
 
         String ddaykind[] = getResources().getStringArray(R.array.specialday_displayyn);
         String ddayalarmyn[] = getResources().getStringArray(R.array.specialday_alarmyn);
@@ -235,7 +208,7 @@ public class ScheduleViewer extends Activity implements OnClickListener {
                 ddayinfo += ddaysign[scheduleBean.getDisplayDday_alarmsign()];
 
                 String mDday_msg = "";
-                Cursor cursor1 = dao.queryDDay(getIntent().getLongExtra("id", 0));
+                Cursor cursor1 = dao.queryWidgetByID(getIntent().getLongExtra("id", 0));
                 if (cursor1.moveToNext()) {
                     int D_Day = cursor1.getInt(2);
 
@@ -260,12 +233,9 @@ public class ScheduleViewer extends Activity implements OnClickListener {
         }
 
         mSpecialday_displayyn.setText(ddayinfo);
+        if ("".equals(ddayinfo))
+            mSpecialday_displayyn.setVisibility(View.GONE);
 
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-    }
 }

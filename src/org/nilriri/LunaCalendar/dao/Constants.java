@@ -1,5 +1,6 @@
 package org.nilriri.LunaCalendar.dao;
 
+import android.os.Environment;
 import android.provider.BaseColumns;
 
 /**
@@ -7,22 +8,64 @@ import android.provider.BaseColumns;
  */
 public final class Constants {
 
-    public static final String DATABASE_NAME = "lunacalendar.sqlite";
-    public static final String EXTERNAL_DB_NAME = "/sdcard/lunacalendar.sqlite";
-    public static final int DATABASE_VERSION = 31;
-    public static final int EXTERNAL_DB_VERSION = 31;
+    private static final String DATABASE_NAME = "lunacalendar.sqlite";
+    public static final int DATABASE_VERSION = 34;
 
     public static final String DEFAULT_SORT_ORDER = "_id DESC";
 
+    public static String mColumns[] = new String[] { //
+    Schedule._ID, //0
+            Schedule.SCHEDULE_DATE, //1 
+            Schedule.SCHEDULE_TITLE, //2
+            Schedule.SCHEDULE_CONTENTS, //3 
+            Schedule.SCHEDULE_REPEAT, //4
+            Schedule.SCHEDULE_CHECK, //5
+            Schedule.ALARM_LUNASOLAR, //6
+            Schedule.ALARM_DATE, //7
+            Schedule.ALARM_TIME, //8
+            Schedule.ALARM_DAYOFWEEK, //9
+            Schedule.ALARM_DAY, //10
+            Schedule.DDAY_ALARMYN, //11
+            Schedule.DDAY_ALARMDAY, //12
+            Schedule.DDAY_ALARMSIGN, //13
+            Schedule.DDAY_DISPLAYYN,//14
+            Schedule.GID, //15
+            Schedule.ANNIVERSARY, //16
+            Schedule.LUNARYN, //17
+            Schedule.SCHEDULE_LDATE, //18
+            Schedule.ALARM_DETAILINFO, //19
+            Schedule.DDAY_DETAILINFO, //20
+            Schedule.SCHEDULE_TYPE, //21
+            Schedule.BIBLE_BOOK,//22
+            Schedule.BIBLE_CHAPTER,//23
+            Schedule.ETAG,//24
+            Schedule.PUBLISHED,//25
+            Schedule.UPDATED,//26
+            Schedule.WHEN,//27
+            Schedule.WHO,//28
+            Schedule.RECURRENCE,//29
+            Schedule.SELFURL,//30
+            Schedule.EDITURL,//31
+            Schedule.ORIGINALEVENT,//32
+            Schedule.EVENTSTATUS,//33
+    };
+
     // This class cannot be instantiated
     private Constants() {
+    }
+
+    public static String getDatabaseName() {
+        return DATABASE_NAME;
+    }
+
+    public static String getExternalDatabaseName() {
+        return Environment.getExternalStorageDirectory() + "/" + DATABASE_NAME;
     }
 
     /**
      * Schedule table
      */
     public static final class Schedule implements BaseColumns {
-        // This class cannot be instantiated
         private Schedule() {
         }
 
@@ -38,7 +81,7 @@ public final class Constants {
         public static final String ALARM_LUNASOLAR = "alarm_lunasolar";
         public static final String ALARM_DATE = "alarm_date";
         public static final String ALARM_TIME = "alarm_time";
-        public static final String ALARM_DAYS = "alarm_days";
+        public static final String ALARM_DAYOFWEEK = "alarm_days";
         public static final String ALARM_DAY = "alarm_day";
         public static final String DDAY_ALARMYN = "dday_alarmyn";
         public static final String DDAY_ALARMDAY = "dday_alarmday";
@@ -53,6 +96,19 @@ public final class Constants {
         public static final String SCHEDULE_TYPE = "schedule_type";
         public static final String BIBLE_BOOK = "bible_book";
         public static final String BIBLE_CHAPTER = "bible_chapter";
+        public static final String ETAG = "etag";
+        public static final String PUBLISHED = "published";
+        public static final String UPDATED = "updated";
+        public static final String WHEN = "gwhen";
+        public static final String WHO = "who";
+        public static final String RECURRENCE = "recurrence";
+        public static final String SELFURL = "selfurl";
+        public static final String EDITURL = "editurl";
+        public static final String ORIGINALEVENT = "originalevent";
+        public static final String EVENTSTATUS = "eventstatus";
+
+        public static final String SCHEDULE_MMDD = "schedule_mmdd";
+        public static final String SCHEDULE_KIND = "kind";
 
         public static final int COL_ID = 0;
         public static final int COL_SCHEDULE_DATE = 1;
@@ -78,6 +134,16 @@ public final class Constants {
         public static final int COL_SCHEDULE_TYPE = 21;
         public static final int COL_BIBLE_BOOK = 22;
         public static final int COL_BIBLE_CHAPTER = 23;
+        public static final int COL_ETAG = 24;
+        public static final int COL_PUBLISHED = 25;
+        public static final int COL_UPDATED = 26;
+        public static final int COL_WHEN = 27;
+        public static final int COL_WHO = 28;
+        public static final int COL_RECURRENCE = 29;
+        public static final int COL_SELFURL = 30;
+        public static final int COL_EDITURL = 31;
+        public static final int COL_ORIGINALEVENT = 32;
+        public static final int COL_EVENTSTATUS = 33;
 
     }
 

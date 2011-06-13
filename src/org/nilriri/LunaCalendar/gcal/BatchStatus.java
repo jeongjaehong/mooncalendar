@@ -18,9 +18,6 @@ package org.nilriri.LunaCalendar.gcal;
 
 import com.google.api.client.util.Key;
 
-/**
- * @author Yaniv Inbar
- */
 public class BatchStatus {
 
     @Key("@code")

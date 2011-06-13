@@ -24,6 +24,8 @@ public class CalendarUrl extends GoogleUrl {
 
     public static final String ROOT_URL = "https://www.google.com/calendar/feeds";
 
+    //https://www.google.com/calendar/feeds/default/private/full/
+
     @Key("max-results")
     public Integer maxResults;
 
@@ -76,5 +78,20 @@ public class CalendarUrl extends GoogleUrl {
 
     public static CalendarUrl forDefaultPrivateFullEventFeed() {
         return forEventFeed("default", "private", "full");
+    }
+
+    public static CalendarUrl forDeleteEventFeed(String account, String uid) {
+        CalendarUrl result = forEventFeed(account, "private", "full");
+        if (!"".equals(uid))
+            result.pathParts.add(uid);
+        return result;
+    }
+
+    public static CalendarUrl forUpdateEventFeed(String account, String uid) {
+        CalendarUrl result = forEventFeed(account, "private", "full");
+
+        result.pathParts.add(uid);
+        return result;//.build();
+
     }
 }
