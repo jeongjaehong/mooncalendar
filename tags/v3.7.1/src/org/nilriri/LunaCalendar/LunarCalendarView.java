@@ -57,9 +57,9 @@ public class LunarCalendarView extends View {
 
     public final Rect titleRect = new Rect();
     //public final Rect mPrevYearR = new Rect();
-    public final Rect mPrevMonthR = new Rect();
+    //public final Rect mPrevMonthR = new Rect();
     //public final Rect mNextYearR = new Rect();
-    public final Rect mNextMonthR = new Rect();
+    //public final Rect mNextMonthR = new Rect();
 
     public String mToDay;
 
@@ -81,13 +81,12 @@ public class LunarCalendarView extends View {
     private String mCurrentMonth;
     private String mGAPJA = "";
 
-    private Drawable drawableTitle;
+    //private Drawable drawableTitle;
     private Drawable drawableAnimal;
 
     //private Drawable drawPrevYear;
-    private Drawable drawPrevMonth;
-    private Drawable drawNextMonth;
-
+    //private Drawable drawPrevMonth;
+    //private Drawable drawNextMonth;
     //private Drawable drawNextYear;
 
     public LunarCalendarView(Context context, AttributeSet attrs) {
@@ -107,15 +106,15 @@ public class LunarCalendarView extends View {
         setFocusable(true);
 
         //Drawable 
-        drawableTitle = getResources().getDrawable(R.drawable.title);
+        //drawableTitle = getResources().getDrawable(R.drawable.title);
 
         //drawPrevYear = getResources().getDrawable(R.drawable.prevyear);
         //drawPrevMonth = getResources().getDrawable(R.drawable.prevmonth);
         //drawNextMonth = getResources().getDrawable(R.drawable.nextmonth);
         //drawNextYear = getResources().getDrawable(R.drawable.nextyear);
 
-        drawPrevMonth = getResources().getDrawable(R.drawable.prevyear);
-        drawNextMonth = getResources().getDrawable(R.drawable.nextyear);
+        //drawPrevMonth = getResources().getDrawable(R.drawable.prevyear);
+        //drawNextMonth = getResources().getDrawable(R.drawable.nextyear);
 
         loadSchduleExistsInfo();
     }
@@ -132,7 +131,7 @@ public class LunarCalendarView extends View {
         cursor.close();
 
         // 주소록 생일 정보를 조회한다.
-        mMonthlyEvent = mContactManager.getRecentContactDisplayName(queryMonth);
+        mMonthlyEvent = mContactManager.getContactEvents(queryMonth);
 
         // 주소록 생일정보 유무를 map에 저장한다.
         for (int i = 0; i < mMonthlyEvent.length; i++) {
@@ -180,14 +179,15 @@ public class LunarCalendarView extends View {
             //String D_dayDate = cursor.getString(1);
             int D_Day = cursor.getInt(2);
 
-            mDday_msg = D_dayTitle.length() >= 19 ? D_dayTitle.substring(0, 19) + "..." : D_dayTitle;
             if (D_Day == 0) {
-                mDday_msg += " (D day)";
+                mDday_msg = " (D day)";
             } else if (D_Day > 0) {
-                mDday_msg += " (D + " + D_Day + getResources().getString(R.string.day_label) + ")";
+                mDday_msg = " (D+" + (D_Day + 1) + getResources().getString(R.string.day_label) + ")";
             } else {
-                mDday_msg += " (D - " + Math.abs(D_Day - 1) + getResources().getString(R.string.day_label) + ")";
+                mDday_msg = " (D-" + Math.abs(D_Day) + getResources().getString(R.string.day_label) + ")";
             }
+            mDday_msg += D_dayTitle.length() >= 8 ? D_dayTitle.substring(0, 8) + "..." : D_dayTitle;
+
             mDday_msg = mDday_msg == null ? "" : mDday_msg;
         } else {
             mDday_msg = "";
@@ -323,7 +323,7 @@ public class LunarCalendarView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         setTileWidth(w / 7f);
-        setTileHeight(h / 8f);
+        setTileHeight(h / 7f);
         getRect(getSelX(), getSelY(), selRect);
         super.onSizeChanged(w, h, oldw, oldh);
     }
@@ -346,20 +346,20 @@ public class LunarCalendarView extends View {
         light.setColor(getResources().getColor(R.color.cal_light));
 
         // 세로줄
-        for (int i = 0; i < 8; i++) {
-            canvas.drawLine(i * getTileWidth(), 2 * getTileHeight() - (getTileHeight() * 0.5f), i * getTileWidth(), 8 * getTileHeight(), light);
-            canvas.drawLine(i * getTileWidth() + 1, 2 * getTileHeight() - (getTileHeight() * 0.5f), i * getTileWidth() + 1, 8 * getTileHeight(), hilite);
+        for (int i = 0; i < 7; i++) {
+            canvas.drawLine(i * getTileWidth(), getTileHeight() - (getTileHeight() * 0.5f), i * getTileWidth(), 7 * getTileHeight(), light);
+            canvas.drawLine(i * getTileWidth() + 1, getTileHeight() - (getTileHeight() * 0.5f), i * getTileWidth() + 1, 7 * getTileHeight(), hilite);
         }
 
         // 가로줄
-        canvas.drawLine(0, getTileHeight() + (getTileHeight() * 0.5f), getWidth(), getTileHeight() + (getTileHeight() * 0.5f), light);
-        canvas.drawLine(0, getTileHeight() + (getTileHeight() * 0.5f) + 1, getWidth(), getTileHeight() + (getTileHeight() * 0.5f) + 1, hilite);
-        for (int i = 2; i < 8; i++) {
+        canvas.drawLine(0, (getTileHeight() * 0.5f), getWidth(), (getTileHeight() * 0.5f), light);
+        canvas.drawLine(0, (getTileHeight() * 0.5f) + 1, getWidth(), (getTileHeight() * 0.5f) + 1, hilite);
+        for (int i = 1; i < 7; i++) {
             canvas.drawLine(0, i * getTileHeight(), getWidth(), i * getTileHeight(), light);
             canvas.drawLine(0, i * getTileHeight() + 1, getWidth(), i * getTileHeight() + 1, hilite);
         }
-        canvas.drawLine(0, 8 * getTileHeight() - 2, getWidth(), 8 * getTileHeight() - 2, light);
-        canvas.drawLine(0, 8 * getTileHeight() - 1, getWidth(), 8 * getTileHeight() - 1, hilite);
+        canvas.drawLine(0, 7 * getTileHeight() - 2, getWidth(), 7 * getTileHeight() - 2, light);
+        canvas.drawLine(0, 7 * getTileHeight() - 1, getWidth(), 7 * getTileHeight() - 1, hilite);
 
         // Draw the numbers...
         // Define color and style for numbers
@@ -382,23 +382,28 @@ public class LunarCalendarView extends View {
 
         RectF r = new RectF();
 
-        int titleLeft = (int) (getTileWidth() * 1.5f);
-        int titleTop = (int) (getTileHeight() * 0.2f);
-        int titleRight = (int) (2 * getTileWidth() + (getTileWidth() * 3.5f) - 2);
-        int titleBottom = (int) ((0 * getTileHeight() + getTileHeight() - 2) * 1.8f);
-        titleRect.set(titleLeft, titleTop, titleRight, titleBottom);
+        titleRect.set(0, 0, (int) getTileWidth() * 2, (int) getTileHeight());
 
         Rect headR = new Rect();
-        headR.set(0, 0, getWidth(), (int) (getTileHeight() * 2));
-        //Drawable drawableTitle = getResources().getDrawable(R.drawable.title);
+
+        //headR.set(-50, (int) (getTileHeight() * 0.5f), getWidth() + 50, (int) getTileHeight());
+        headR.set(0, 0, getWidth(), (int) (getTileHeight() * 0.5f)+1);
+        // Drawable drawableTitle = getResources().getDrawable(R.drawable.widget_background_blue);
+        Drawable drawableTitle = getResources().getDrawable(R.drawable.background);
         drawableTitle.setBounds(headR);
         drawableTitle.setAlpha(120);
+        drawableTitle.draw(canvas);
+
+        headR.set(0, (int) (getTileHeight() * 0.5f), getWidth(), getHeight());
+        drawableTitle = getResources().getDrawable(R.drawable.background_top);
+        drawableTitle.setBounds(headR);
+        drawableTitle.setAlpha(60);
         drawableTitle.draw(canvas);
 
         // 띠별 동물아이콘 그리기
         // TODO:
         Rect all = new Rect();
-        all.set(getWidth() - (getWidth() / 7), getHeight() - (getHeight() / 8), getWidth() - 3, getHeight() - 1);
+        all.set(getWidth() - (getWidth() / 7), getHeight() - (getHeight() / 6), getWidth() - 3, getHeight() - 1);
         //Drawable drawableAnimal = getResources().getDrawable(ARRAY_DDI[num2]);
         drawableAnimal.setBounds(all);
         drawableAnimal.setAlpha(100);
@@ -407,15 +412,19 @@ public class LunarCalendarView extends View {
         String lday = this.getLunaday(lunarCalendar.mDay);
         lday = "(" + mGAPJA + lday.substring(4, 6) + getResources().getString(R.string.month_label) + lday.substring(6) + getResources().getString(R.string.day_label) + ")";
 
-        foreground.setTextSize(getTileHeight() * 0.40f);
-        canvas.drawText(mCurrentMonth, (3 * getTileWidth() + y), (0 * getTileHeight() + (x * 2.0f)), foreground);
-        foreground.setTextSize(getTileHeight() * 0.28f);
-        canvas.drawText(lday, (3 * getTileWidth() + y), (0 * getTileHeight() + (x * 2.6f)), foreground);
+        // 년월과 함께 음력 날짜를 표시한다.
+        foreground.setTextSize(getTileHeight() * 0.380f);
+        //canvas.drawText(mCurrentMonth, (3 * getTileWidth() + y), (0 * getTileHeight() + (x * 2.0f)), foreground);
+        canvas.drawText(mCurrentMonth, (getTileWidth() + (y * 0.2f)), (0 * getTileHeight() + (x * 0.9f)), foreground);
+        foreground.setTextSize(getTileHeight() * 0.27f);
+        canvas.drawText(lday, (3.1f * getTileWidth() + (y * 0.2f)), (0 * getTileHeight() + (x * 0.8f)), foreground);
 
         // 화면상단에 표시할 D-Day가 있으면 표시한다.        
+
         if (mDday_msg != null && !"".equals(mDday_msg)) {
-            foreground.setTextSize(getTileHeight() * 0.3f);
-            canvas.drawText(mDday_msg, (3 * getTileWidth() + y), (0 * getTileHeight() + x), foreground);
+            foreground.setTextSize(getTileHeight() * 0.27f);
+            foreground.setColor(getResources().getColor(R.color.orange));
+            canvas.drawText(mDday_msg, (5.15f * getTileWidth() + y), (0 * getTileHeight() + (x * 0.8f)), foreground);
         }
 
         //이전다음버튼
@@ -427,16 +436,16 @@ public class LunarCalendarView extends View {
 
         //iconLeft = (int) (1 * getTileWidth() + (getTileWidth() * 0.2f));
         //Drawable drawPrevMonth = getResources().getDrawable(R.drawable.prevmonth);
-        mPrevMonthR.set(iconLeft, iconTop, iconLeft + 40, iconTop + 40);
-        drawPrevMonth.setBounds(mPrevMonthR);
-        drawPrevMonth.draw(canvas);
+        //mPrevMonthR.set(iconLeft, iconTop, iconLeft + 40, iconTop + 40);
+        //drawPrevMonth.setBounds(mPrevMonthR);
+        //drawPrevMonth.draw(canvas);
 
         //iconLeft = (int) (5 * getTileWidth() + (getTileWidth() * 0.2f));
-        iconLeft = (int) (5 * getTileWidth() + (getTileWidth() * 0.6f));
+        //iconLeft = (int) (5 * getTileWidth() + (getTileWidth() * 0.6f));
         //Drawable drawNextMonth = getResources().getDrawable(R.drawable.nextmonth);
-        mNextMonthR.set(iconLeft, iconTop, iconLeft + 40, iconTop + 40);
-        drawNextMonth.setBounds(mNextMonthR);
-        drawNextMonth.draw(canvas);
+        //mNextMonthR.set(iconLeft, iconTop, iconLeft + 40, iconTop + 40);
+        //drawNextMonth.setBounds(mNextMonthR);
+        //drawNextMonth.draw(canvas);
 
         //iconLeft = (int) (6 * getTileWidth() + (getTileWidth() * 0.2f));
         //mNextYearR.set(iconLeft, iconTop, iconLeft + 40, iconTop + 40);
@@ -453,13 +462,13 @@ public class LunarCalendarView extends View {
                 foreground.setColor(getResources().getColor(R.color.cal_normalday));
             }
             foreground.setTextSize(getTileHeight() * 0.30f);
-            canvas.drawText(DAYNAMES[dayname], dayname * getTileWidth() + y, 1 * getTileHeight() + (x * 1.8f), foreground);
+            canvas.drawText(DAYNAMES[dayname], dayname * getTileWidth() + y, 0 * getTileHeight() + (x * 1.8f), foreground);
         }
 
         Drawable drawableICON;
-        for (int week = 2; week < 10; week++) {
+        for (int week = 1; week < 9; week++) {
             for (int dayname = 0; dayname < 7; dayname++) {
-                if ((week == 2 && dayname < dayofweek - 1) || day > endofmonth) {
+                if ((week == 1 && dayname < dayofweek - 1) || day > endofmonth) {
                     canvas.drawText(" ", dayname * getTileWidth() + y, week * getTileHeight() + x, foreground);
                 } else {
 
@@ -937,9 +946,9 @@ public class LunarCalendarView extends View {
         setSelX(Math.min(Math.max(x, 0), 6));
         setSelY(Math.min(Math.max(y, 0), 8));
 
-        if (y >= 2 && y <= 7) {
+        if (y >= 1 && y <= 8) {
 
-            int newDay = (getSelY() - 2) * 7 + (getSelX() + 1) - (7 - (8 - dayofweek));
+            int newDay = (getSelY() - 1) * 7 + (getSelX() + 1) - (7 - (8 - dayofweek));
 
             if (lunarCalendar.mDay != newDay) {
                 lunarCalendar.todayEvents.clear();

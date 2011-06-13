@@ -20,6 +20,7 @@ public class WidgetRefreshService extends Service {
     @Override
     public void onCreate() {
         mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
         Log.d(Common.TAG, "WidgetRefreshService Create...");
 
         // 3초후 서비스 자동 종료.
@@ -30,18 +31,21 @@ public class WidgetRefreshService extends Service {
     @Override
     public void onStart(Intent intent, int startId) {
         try {
-            Log.d(Common.TAG, "onStart=" + intent);
-            if (AppWidgetManager.ACTION_APPWIDGET_UPDATE.equals(intent.getAction())) {
-                //WidgetUtil.refreshWidgets(context);
-                AppWidgetManager awm = AppWidgetManager.getInstance(getBaseContext());
+            if (Common.isConnectNetwork(WidgetRefreshService.this)) {
 
-                int appWidgetId = intent.getIntExtra("WidgetId", AppWidgetManager.INVALID_APPWIDGET_ID);
+                Log.d(Common.TAG, "onStart=" + intent);
+                if (AppWidgetManager.ACTION_APPWIDGET_UPDATE.equals(intent.getAction())) {
+                    //WidgetUtil.refreshWidgets(context);
+                    AppWidgetManager awm = AppWidgetManager.getInstance(getBaseContext());
 
-                WidgetProvider.updateAppWidget(getBaseContext(), awm, appWidgetId);
+                    int appWidgetId = intent.getIntExtra("WidgetId", AppWidgetManager.INVALID_APPWIDGET_ID);
 
-                Log.d(Common.TAG, "Refresh Call=" + appWidgetId);
-            } else {
-                WidgetUtil.refreshWidgets(getBaseContext());
+                    WidgetProvider.updateAppWidget(getBaseContext(), awm, appWidgetId);
+
+                    Log.d(Common.TAG, "Refresh Call=" + appWidgetId);
+                } else {
+                    WidgetUtil.refreshWidgets(getBaseContext());
+                }
             }
         } catch (Exception e) {
         } finally {

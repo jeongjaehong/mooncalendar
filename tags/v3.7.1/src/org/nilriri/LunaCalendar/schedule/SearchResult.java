@@ -33,7 +33,6 @@ import android.widget.ExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.SimpleCursorTreeAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -257,7 +256,7 @@ public class SearchResult extends ExpandableListActivity implements OnTouchListe
         }
 
         class GroupHolder {
-            RelativeLayout itemLine;
+           // RelativeLayout itemLine;
             ImageView clock;
             ImageView glass;
             TextView date;
@@ -289,7 +288,7 @@ public class SearchResult extends ExpandableListActivity implements OnTouchListe
 
                 groupHolder = new GroupHolder();
 
-                groupHolder.itemLine = (RelativeLayout) convertView.findViewById(R.id.schedule_group);
+               // groupHolder.itemLine = (RelativeLayout) convertView.findViewById(R.id.schedule_group);
                 groupHolder.clock = (ImageView) convertView.findViewById(R.id.clock_flags);
                 groupHolder.glass = (ImageView) convertView.findViewById(R.id.glass_flags);
                 groupHolder.date = (TextView) convertView.findViewById(R.id.schedule_date);

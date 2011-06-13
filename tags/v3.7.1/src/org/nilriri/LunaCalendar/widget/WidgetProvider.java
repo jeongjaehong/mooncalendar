@@ -1,6 +1,5 @@
 package org.nilriri.LunaCalendar.widget;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -100,8 +99,16 @@ public class WidgetProvider extends AppWidgetProvider {
         mAppWidgetManager = appWidgetManager;
 
         try {
+
             if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
-                new ShowOnlineCalendar().execute(appWidgetId);
+
+                AppWidgetProviderInfo wf = appWidgetManager.getAppWidgetInfo(appWidgetId);
+
+                Log.d(Common.TAG, "widget provider=" + wf.provider);
+
+                if (wf.provider.toString().indexOf("org.nilriri.LunaCalendar.widget") > 0) {
+                    new ShowOnlineCalendar().execute(appWidgetId);
+                }
             }
         } catch (Exception e) {
         }
@@ -176,7 +183,7 @@ public class WidgetProvider extends AppWidgetProvider {
                     if (todayEvents.size() <= 0) {
 
                         views.setTextViewText(R.id.text_dday, "OnLine");
-                        views.setTextViewText(R.id.text_title2, Common.fmtDate(c) + "\n일정없음.");
+                        views.setTextViewText(R.id.text_title2, Common.fmtDate() + "\n일정없음.");
                         views.setViewVisibility(R.id.text_title, View.GONE);
                         views.setViewVisibility(R.id.text_title2, View.VISIBLE);
                         views.setTextViewText(R.id.text_contents, "");
@@ -273,9 +280,9 @@ public class WidgetProvider extends AppWidgetProvider {
                                 if (D_Day == 0) {
                                     mDday_title += "D day";
                                 } else if (D_Day > 0) {
-                                    mDday_title += "D+" + D_Day + mContext.getResources().getString(R.string.day_label) + "";
+                                    mDday_title += "D+" + (D_Day + 1) + mContext.getResources().getString(R.string.day_label) + "";
                                 } else {
-                                    mDday_title += "D-" + Math.abs(D_Day - 1) + mContext.getResources().getString(R.string.day_label) + "";
+                                    mDday_title += "D-" + Math.abs(D_Day) + mContext.getResources().getString(R.string.day_label) + "";
                                 }
 
                                 if (WidgetConfigure.getReceiver(mContext)) {
@@ -395,8 +402,16 @@ public class WidgetProvider extends AppWidgetProvider {
     }
 
     public static int getWidgetLayout(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
+        System.out.println("---------------------------------------------");
+        System.out.println("appWidgetId=" + appWidgetId);
+        System.out.println("getWidgetColor(context, appWidgetId)=" + getWidgetColor(context, appWidgetId));
 
         AppWidgetProviderInfo wf = appWidgetManager.getAppWidgetInfo(appWidgetId);
+
+        System.out.println("wf.minWidth=" + wf.minWidth);
+        System.out.println("wf.minHeight=" + wf.minHeight);
+        System.out.println("wf.label=" + wf.label);
+        System.out.println("---------------------------------------------");
 
         switch (wf.initialLayout) {
 
